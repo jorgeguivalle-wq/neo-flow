@@ -3150,41 +3150,48 @@ window.abrirPasta = function(pastaId) {
   }
 };
 
-// Sobrescreve a função renderReservas para adicionar os checkboxes e esconder os que estão em pastas
-const originalRenderReservas = renderReservas;
-renderReservas = function(filtro) {
+// ============================================================
+// RENDERIZAÇÃO DOS CARDS COM PASTAS
+// ============================================================
+// Salva a função original do sistema antes de sobrescrever
+const originalRenderReservas = window.renderReservas || renderReservas;
+
+// Cria a nossa versão que adiciona os checkboxes e esconde os que estão em pastas
+window.renderReservas = function(filtro) {
+  // 1. Chama a função original do app.js (que desenha os cards e tira o "Carregando...")
+  originalRenderReservas(filtro);
+
+  // 2. Pega a lista de reservas
+  const lista = document.getElementById('lista-reservas-render');
+  if (!lista) return;
+
+  // 3. Descobre quais IDs estão guardados dentro de pastas
   let idsEmPastas = [];
   pastasAgendamento.forEach(p => { if (p.cards) idsEmPastas.push(...p.cards); });
 
-  originalRenderReservas(filtro);
+  // 4. Adiciona os checkboxes e esconde os que estão na pasta
+  lista.querySelectorAll('.card-reserva').forEach(card => {
+    const btnDeletar = card.querySelector('button[onclick*="DeletarReserva"]');
+    if (btnDeletar) {
+      const match = btnDeletar.getAttribute('onclick').match(/'([^']+)'/);
+      if (match) {
+        const idReserva = match[1];
 
-  setTimeout(() => {
-    const lista = document.getElementById('lista-reservas-render');
-    if (!lista) return;
-
-    lista.querySelectorAll('.card-reserva').forEach(card => {
-      const btnDeletar = card.querySelector('button[onclick*="DeletarReserva"]');
-      if (btnDeletar) {
-        const match = btnDeletar.getAttribute('onclick').match(/'([^']+)'/);
-        if (match) {
-          const idReserva = match[1];
-
-          if (idsEmPastas.includes(idReserva)) {
-            card.style.display = 'none'; // Esconde se estiver na pasta
-            return;
-          }
-
-          card.style.position = 'relative';
-          const chk = document.createElement('input');
-          chk.type = 'checkbox';
-          chk.className = 'checkbox-card';
-          chk.value = idReserva;
-          chk.onchange = verificarSelecaoCards;
-          card.appendChild(chk); // Adiciona o quadradinho de marcar
+        if (idsEmPastas.includes(idReserva)) {
+          card.style.display = 'none'; // Esconde o card que está na pasta
+          return;
         }
+
+        card.style.position = 'relative';
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.className = 'checkbox-card';
+        chk.value = idReserva;
+        chk.onchange = verificarSelecaoCards;
+        card.appendChild(chk); // Adiciona o quadradinho de marcar
       }
-    });
-  }, 100);
+    }
+  });
 };
 
 // Mostra o botão "Agrupar" só quando tem card selecionado
