@@ -755,29 +755,15 @@
       <!-- ============================================================ -->
       <div style="margin-top: 40px; border-top: 2px solid var(--border-color); padding-top: 30px;">
         
-        <!-- BARRA DE AÇÕES DAS PASTAS -->
+              <!-- BARRA DE AÇÕES DAS PASTAS -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
           <h3 style="margin: 0;">📋 Relatório de Agendamentos Ativos</h3>
           <div style="display: flex; gap: 10px;">
-            <button type="button" id="btn-agrupar-selecionados" class="btn btn-primary" style="background-color: #3498db; width: auto; padding: 8px 16px; font-size: 13px; display: none;">📁 Agrupar Selecionados</button>
-            <button type="button" id="btn-nova-pasta" class="btn btn-outline" style="border-color: #8e5868; color: #8e5868; padding: 8px 16px; font-size: 13px;">➕ Nova Pasta</button>
+            <button type="button" id="btn-agrupar-selecionados" onclick="window.abrirModalPastas()" class="btn btn-primary" style="background-color: #3498db; width: auto; padding: 8px 16px; font-size: 13px; display: none;">📁 Agrupar Selecionados</button>
+            <button type="button" id="btn-nova-pasta" onclick="window.abrirModalPastas()" class="btn btn-outline" style="border-color: #8e5868; color: #8e5868; padding: 8px 16px; font-size: 13px;">📁 Gerenciar Pastas</button>
           </div>
         </div>
-
-        <!-- LISTA DE PASTAS -->
-        <div id="lista-pastas-render" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
-          <!-- As pastas vão aparecer aqui automaticamente -->
-        </div>
-
-        <!-- LISTA DE CARDS SOLTOS -->
-        <div id="lista-reservas-render">
-          <p style="text-align: center; color: #999;">Carregando agendamentos...</p>
-        </div>
-
-      </div>
-    </section>
-  </div>
-
+      
   <!-- ============================================================ -->
   <!-- MODAIS (Contrato, Peças, Temas, etc.)                        -->
   <!-- ============================================================ -->
@@ -1016,12 +1002,35 @@
     </div>
   </div>
 
+
   <!-- MODAL DE LOADING -->
   <div id="modal-status-operacao" class="modal-loading-overlay">
     <div class="modal-loading-box">
       <div id="spinner-status" class="spinner-loading"></div>
       <div id="titulo-status-operacao" class="modal-loading-titulo">PROCESSANDO...</div>
       <p id="subtitulo-status-operacao" class="modal-loading-subtitulo">Aguarde um momento.</p>
+    </div>
+</div>
+    <!-- ============================================================ -->
+  <!-- MODAL DE GERENCIAR PASTAS                                    -->
+  <!-- ============================================================ -->
+  <div id="modal-gerenciar-pastas" class="modal-contrato" style="z-index: 20000;">
+    <div class="modal-conteudo" style="max-width: 600px;">
+      
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #3498db; padding-bottom:10px; margin-bottom:20px;">
+        <h3 style="margin:0; color:#3498db;">📁 Gerenciar Pastas</h3>
+        <button type="button" onclick="document.getElementById('modal-gerenciar-pastas').classList.remove('ativo')" style="background:none; border:none; font-size:20px; cursor:pointer; color:#999;">✕</button>
+      </div>
+      
+      <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <input type="text" id="input-nova-pasta-nome" placeholder="Nome da nova pasta..." style="flex:1; padding:10px; border:1.5px solid var(--border-color); border-radius:8px;">
+        <button type="button" onclick="window.criarNovaPasta()" class="btn btn-primary" style="width:auto; padding:0 20px; background:#3498db;">Criar Pasta</button>
+      </div>
+
+      <div id="lista-pastas-gerenciar" style="max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+        <!-- As pastas vão aparecer aqui automaticamente -->
+      </div>
+      
     </div>
   </div>
 
