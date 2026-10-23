@@ -1015,19 +1015,19 @@
   <!-- MODAL DE GERENCIAR PASTAS                                    -->
   <!-- ============================================================ -->
   <div id="modal-gerenciar-pastas" class="modal-contrato" style="z-index: 20000;">
-    <div class="modal-conteudo" style="max-width: 600px;">
+    <div class="modal-conteudo" style="max-width: 850px;">
       
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #3498db; padding-bottom:10px; margin-bottom:20px;">
         <h3 style="margin:0; color:#3498db;">📁 Gerenciar Pastas</h3>
         <button type="button" onclick="document.getElementById('modal-gerenciar-pastas').classList.remove('ativo')" style="background:none; border:none; font-size:20px; cursor:pointer; color:#999;">✕</button>
       </div>
       
-      <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+      <div id="criar-pasta-linha" style="display: flex; gap: 10px; margin-bottom: 20px;">
         <input type="text" id="input-nova-pasta-nome" placeholder="Nome da nova pasta..." style="flex:1; padding:10px; border:1.5px solid var(--border-color); border-radius:8px;">
         <button type="button" onclick="window.criarNovaPasta()" class="btn btn-primary" style="width:auto; padding:0 20px; background:#3498db;">Criar Pasta</button>
       </div>
 
-      <div id="lista-pastas-gerenciar" style="max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+      <div id="lista-pastas-gerenciar" style="max-height: 65vh; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
         <!-- As pastas vão aparecer aqui automaticamente -->
       </div>
       
