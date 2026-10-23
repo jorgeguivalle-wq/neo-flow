@@ -200,6 +200,26 @@
     buscar: function(textoOriginal) {
       if (!textoOriginal) return null;
       const t = this.normalizarTexto(textoOriginal);
+      
+if (
+  t.includes('o que voce faz') ||
+  t.includes('o que vc faz') ||
+  t.includes('como voce pode ajudar') ||
+  t.includes('quais suas funcoes')
+) {
+  return {
+    resposta:
+      '🌸 Eu sou a Lalá, sua secretária virtual do Neo Flow! 💗<br><br>' +
+      '📅 <b>Agenda:</b> Consulto reuniões e próximos eventos.<br>' +
+      '💰 <b>Faturamento:</b> Mostro o resumo das vendas.<br>' +
+      '📦 <b>Estoque:</b> Consulto o catálogo.<br>' +
+      '💬 <b>Mensagens:</b> Ajudo a responder clientes.<br>' +
+      '🧮 <b>Lucro:</b> Faço cálculos de lucro e margem.<br>' +
+      '🎓 <b>Tutorial:</b> Ensino a usar o Neo Flow.<br><br>' +
+      '✨ É só me dizer o que você precisa!'
+  };
+}
+
 
       if (this.agendamentoPendente) {
         const ehSim = /^(sim|s|yes|confirmo|confirmar|pode salvar|salvar|ok|claro)\b/.test(t);
