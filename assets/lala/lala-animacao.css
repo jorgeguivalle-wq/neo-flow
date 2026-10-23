@@ -1,1 +1,94 @@
+/* ============================================================
+   LALA - ANIMAÇÃO SPRITE SHEET (IMAGEM NA RAIZ)
+   ============================================================ */
 
+.lala-personagem-container {
+  position: fixed;
+  bottom: 100px;
+  right: 25px;
+  width: 200px;
+  height: 200px;
+  z-index: 99997; 
+  pointer-events: none; 
+  transition: opacity 0.3s ease;
+  display: none; 
+}
+
+.lala-sprite {
+  width: 100%;
+  height: 100%;
+  /* O caminho volta duas pastas para achar a imagem na raiz */
+  background-image: url('../../animacaolala.png'); 
+  background-repeat: no-repeat;
+  
+  /* Matemática para a grade 4x2 (4 colunas, 2 linhas) */
+  background-size: 400% 200%; 
+  background-position: 0% 0%; 
+  transition: background-position 0.1s steps(1); 
+}
+
+/* Balão de fala da Lalá (Tutorial) */
+.lala-balao-tutorial {
+  position: fixed;
+  bottom: 310px; 
+  right: 25px;
+  background: #fff;
+  border: 2px solid var(--primary);
+  border-radius: 15px;
+  padding: 15px 20px;
+  width: 300px;
+  box-shadow: 0 10px 25px rgba(163, 83, 106, 0.2);
+  z-index: 99999;
+  font-size: 14px;
+  color: var(--text-main);
+  display: none;
+  animation: lalaSubir 0.3s ease;
+}
+
+.lala-balao-tutorial.ativo { display: block; }
+
+.lala-balao-tutorial::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  right: 60px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-right: 2px solid var(--primary);
+  border-bottom: 2px solid var(--primary);
+  transform: rotate(45deg);
+}
+
+.lala-balao-tutorial .lala-tutorial-titulo {
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.lala-balao-tutorial .lala-tutorial-texto { margin-bottom: 15px; line-height: 1.4; }
+.lala-balao-tutorial .lala-tutorial-acoes { display: flex; gap: 8px; justify-content: flex-end; }
+.lala-balao-tutorial button { padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s; }
+.lala-balao-tutorial .btn-tutorial-pular { background: #f0f0f0; color: #666; }
+.lala-balao-tutorial .btn-tutorial-voltar { background: #f0f0f0; color: #666; margin-right: auto; }
+.lala-balao-tutorial .btn-tutorial-proximo { background: var(--primary); color: #fff; }
+.lala-balao-tutorial .btn-tutorial-proximo:hover { background: var(--primary-dark); }
+
+.tutorial-destaque {
+  position: relative;
+  z-index: 100000 !important;
+  box-shadow: 0 0 0 4px rgba(163, 83, 106, 0.5), 0 0 20px rgba(163, 83, 106, 0.4) !important;
+  border-radius: 8px;
+  transition: box-shadow 0.3s ease;
+}
+
+@keyframes lalaSubir { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 600px) {
+  .lala-personagem-container { width: 150px; height: 150px; bottom: 80px; right: 15px; }
+  .lala-balao-tutorial { width: calc(100vw - 30px); right: 15px; bottom: 240px; }
+  .lala-balao-tutorial::after { right: 100px; }
+}
