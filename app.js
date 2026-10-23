@@ -3278,3 +3278,276 @@ function gerarContratoAvulso(gerarPdf) {
   
   if (gerarPdf) setTimeout(function() { window.BaixarPDFContrato(); }, 300);
 }
+
+// NEO FLOW — Gerenciador de Pastas
+// Cole no FINAL do app.js, sem substituir o código existente.
+
+(function () {
+  const $ = id => document.getElementById(id);
+  const lista = () => Array.isArray(pastasAgendamento) ? pastasAgendamento : [];
+  const ids = p => Array.isArray(p.cards) ? p.cards : Object.values(p.cards || {});
+  let pastaAtual = null;
+
+  function criarJanela() {
+    if ($('nf-modal-pastas')) return;
+
+    const fundo = document.createElement('div');
+    fundo.id = 'nf-modal-pastas';
+    fundo.style.cssText = 'display:none;position:fixed;inset:0;background:#0009;z-index:99999;overflow:auto;padding:24px 12px';
+
+    fundo.innerHTML = `
+      <section style="background:white;max-width:850px;margin:auto;border-radius:16px;padding:20px;color:#333">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <h2 style="margin:0">📁 Gerenciar Pastas</h2>
+          <button id="nf-fechar-pastas" type="button">✕ Fechar</button>
+        </div>
+        <div id="nf-conteudo-pastas" style="margin-top:20px"></div>
+      </section>
+    `;
+
+    document.body.appendChild(fundo);
+    $('nf-fechar-pastas').onclick = () => fundo.style.display = 'none';
+    fundo.addEventListener('click', e => {
+      if (e.target === fundo) fundo.style.display = 'none';
+    });
+  }
+
+  function abrirGerenciador(id = null) {
+    criarJanela();
+    pastaAtual = id;
+    $('nf-modal-pastas').style.display = 'block';
+    atualizarJanela();
+  }
+
+  function atualizarJanela() {
+    const area = $('nf-conteudo-pastas');
+    if (!area) return;
+
+    const pasta = lista().find(p => p.id === pastaAtual);
+    area.replaceChildren();
+
+    const barra = document.createElement('div');
+    barra.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px';
+
+    const botao = (texto, acao) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = texto;
+      b.onclick = acao;
+      b.style.cssText = 'padding:9px 12px;border:1px solid #ddd;border-radius:8px;cursor:pointer;background:#f9edf3;color:#333';
+      return b;
+    };
+
+    area.appendChild(barra);
+
+    if (!pasta) {
+      barra.appendChild(botao('➕ Nova pasta', async () => {
+        const nome = prompt('Nome da nova pasta:')?.trim();
+        if (!nome || !db) return;
+
+        try {
+          await db.ref('pastas_agendamentos').push({
+            nome,
+            cards: [],
+            criadoEm: Date.now()
+          });
+        } catch (e) {
+          alert('Não foi possível criar a pasta.');
+        }
+      }));
+
+      if (!lista().length) {
+        area.insertAdjacentHTML('beforeend', '<p>Nenhuma pasta cadastrada.</p>');
+      }
+
+      lista().forEach(p => {
+        const b = botao(
+          '📁 ' + p.nome + ' (' + ids(p).length + ' reservas)',
+          () => abrirGerenciador(p.id)
+        );
+
+        b.style.display = 'block';
+        b.style.width = '100%';
+        b.style.textAlign = 'left';
+        b.style.marginBottom = '8px';
+        area.appendChild(b);
+      });
+
+      return;
+    }
+
+    barra.appendChild(botao('← Todas as pastas', () => abrirGerenciador()));
+
+    barra.appendChild(botao('✏️ Renomear', async () => {
+      const nome = prompt('Novo nome da pasta:', pasta.nome)?.trim();
+      if (nome && db) {
+        await db.ref('pastas_agendamentos/' + pasta.id)
+          .update({ nome })
+          .catch(() => alert('Erro ao renomear.'));
+      }
+    }));
+
+    barra.appendChild(botao('➕ Adicionar reservas', () => selecionarReservas(pasta)));
+
+    barra.appendChild(botao('🗑️ Excluir pasta', async () => {
+      if (!confirm('Excluir esta pasta? As reservas NÃO serão excluídas.')) return;
+
+      try {
+        await db.ref('pastas_agendamentos/' + pasta.id).remove();
+        abrirGerenciador();
+      } catch (e) {
+        alert('Erro ao excluir pasta.');
+      }
+    }));
+
+    const titulo = document.createElement('h3');
+    titulo.textContent = '📂 ' + pasta.nome + ' — ' + ids(pasta).length + ' reserva(s)';
+    area.appendChild(titulo);
+
+    const presentes = ids(pasta)
+      .map(id => State.reservas.find(r => r.id === id))
+      .filter(Boolean);
+
+    if (!presentes.length) {
+      area.insertAdjacentHTML('beforeend', '<p>Esta pasta está vazia.</p>');
+      return;
+    }
+
+    // Reutiliza os cards originais com seus botões.
+    const origem = $('lista-reservas-render');
+
+    presentes.forEach(res => {
+      const bloco = document.createElement('div');
+      bloco.style.cssText = 'margin:14px 0;padding:12px;border:1px solid #e1cbd4;border-radius:12px';
+
+      const card = origem && [...origem.querySelectorAll('.card-reserva')]
+        .find(el => {
+          const btn = el.querySelector('button[onclick*="DeletarReserva"]');
+          return btn && btn.getAttribute('onclick').includes("'" + res.id + "'");
+        });
+
+      if (card) {
+        const copia = card.cloneNode(true);
+        copia.style.display = 'block';
+
+        copia.querySelectorAll('.checkbox-card').forEach(el => el.remove());
+        bloco.appendChild(copia);
+      } else {
+        const aviso = document.createElement('p');
+        aviso.textContent = (res.cliente || 'Cliente') + ' — card não encontrado na lista.';
+        bloco.appendChild(aviso);
+      }
+
+      bloco.appendChild(botao('↩ Retirar da pasta', async () => {
+        if (!confirm('Retirar esta reserva da pasta?')) return;
+
+        try {
+          await db.ref('pastas_agendamentos/' + pasta.id + '/cards')
+            .set(ids(pasta).filter(id => id !== res.id));
+        } catch (e) {
+          alert('Erro ao retirar reserva.');
+        }
+      }));
+
+      area.appendChild(bloco);
+    });
+  }
+
+  function selecionarReservas(pasta) {
+    const area = $('nf-conteudo-pastas');
+    area.replaceChildren();
+
+    const h = document.createElement('h3');
+    h.textContent = 'Adicionar reservas em ' + pasta.nome;
+    area.appendChild(h);
+
+    const selecionadas = new Set();
+    const ocupadas = new Set(lista().flatMap(ids));
+    const disponiveis = State.reservas.filter(r => !ocupadas.has(r.id));
+
+    if (!disponiveis.length) {
+      area.insertAdjacentHTML('beforeend', '<p>Não há reservas disponíveis fora das pastas.</p>');
+    }
+
+    disponiveis.forEach(r => {
+      const label = document.createElement('label');
+      label.style.cssText = 'display:block;padding:10px;border-bottom:1px solid #eee';
+
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.onchange = () => {
+        if (chk.checked) selecionadas.add(r.id);
+        else selecionadas.delete(r.id);
+      };
+
+      label.append(
+        chk,
+        document.createTextNode(' ' + (r.cliente || 'Sem nome') + ' — ' + (r.data || 'Sem data'))
+      );
+
+      area.appendChild(label);
+    });
+
+    const controles = document.createElement('div');
+    controles.style.marginTop = '15px';
+
+    const salvar = document.createElement('button');
+    salvar.textContent = '💾 Adicionar selecionadas';
+
+    salvar.onclick = async () => {
+      if (!selecionadas.size) {
+        return alert('Selecione pelo menos uma reserva.');
+      }
+
+      try {
+        await db.ref('pastas_agendamentos/' + pasta.id + '/cards')
+          .set([...new Set([...ids(pasta), ...selecionadas])]);
+
+        abrirGerenciador(pasta.id);
+      } catch (e) {
+        alert('Erro ao adicionar reservas.');
+      }
+    };
+
+    const voltar = document.createElement('button');
+    voltar.textContent = 'Cancelar';
+    voltar.onclick = () => abrirGerenciador(pasta.id);
+
+    controles.append(salvar, document.createTextNode(' '), voltar);
+    area.appendChild(controles);
+  }
+
+  window.abrirPasta = id => abrirGerenciador(id);
+  window.gerenciarPastasNeoFlow = () => abrirGerenciador();
+
+  function instalarBotao() {
+    if ($('nf-botao-gerenciar-pastas')) return;
+
+    const alvo = $('lista-pastas-render');
+    if (!alvo || !alvo.parentNode) return;
+
+    const b = document.createElement('button');
+    b.id = 'nf-botao-gerenciar-pastas';
+    b.type = 'button';
+    b.textContent = '📁 Gerenciar Pastas';
+    b.style.cssText = 'margin:10px 0;padding:12px 18px;border:0;border-radius:8px;background:#d24c8a;color:white;font-weight:bold;cursor:pointer';
+
+    b.onclick = window.gerenciarPastasNeoFlow;
+    alvo.parentNode.insertBefore(b, alvo);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', instalarBotao);
+  } else {
+    instalarBotao();
+  }
+
+  if (db) {
+    db.ref('pastas_agendamentos').on('value', () => {
+      if ($('nf-modal-pastas')?.style.display === 'block') {
+        setTimeout(atualizarJanela, 150);
+      }
+    });
+  }
+})();
+
