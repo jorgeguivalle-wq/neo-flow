@@ -1,319 +1,1021 @@
 // ============================================================
-// ASSISTENTE VIRTUAL LALÁ 🌸 (VERSÃO CONECTADA E BLINDADA)
+// ASSISTENTE VIRTUAL LALÁ 🌸 (VERSÃO CORRIGIDA v3)
+// Correções aplicadas sobre a v2:
+//  - Segurança: textContent para usuário, escapeHTML para
+//    todo valor dinâmico inserido via innerHTML
+//  - Validação real de data/hora (31/02, 25:00 rejeitados)
+//  - Data no passado sem ano → pergunta se quer próximo ano
+//  - confirmarAgendamento preserva pendente em caso de erro
+//  - Perfil por usuário (uid) — não grava perfil global
+//  - Comando "Trocar perfil" no chat
+//  - Estoque/faturamento não mentem antes do load
+//  - verificarTutorialInicial pronta (chamada em app.js)
 // ============================================================
 (function() {
   'use strict';
 
+  // ----------------------------------------------------------
+  // PERFIS
+  // Mapeamento por e-mail literal (mais seguro que includes).
+  // O progresso do tutorial é POR PERFIL (caminho original).
+  // O "perfil ativo" é POR USUÁRIO (uid), não global.
+  // ----------------------------------------------------------
+  const PERFIS_POR_EMAIL = {
+    'leonardodovalle@gmail.com': 'leo',
+    'jorgeguivalle@gmail.com': 'leo',
+    'tralaladecoracoes@gmail.com': 'aline'
+  };
+
+  function detectarPerfilPorEmail(email) {
+    if (!email) return 'leo';
+    const e = String(email).toLowerCase().trim();
+    if (PERFIS_POR_EMAIL[e]) return PERFIS_POR_EMAIL[e];
+    if (e.indexOf('aline') !== -1) return 'aline';
+    return 'leo';
+  }
+
+  // ----------------------------------------------------------
+  // ESCAPE HTML (para todo valor dinâmico em innerHTML)
+  // ----------------------------------------------------------
+  function escapeHTML(v) {
+    if (v === undefined || v === null) return '';
+    return String(v)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // ----------------------------------------------------------
+  // VALIDAÇÃO DE DATA/HORA
+  // ----------------------------------------------------------
+  function validarDataHora(dia, mes, ano, hora, minuto) {
+    const d = parseInt(dia, 10);
+    const m = parseInt(mes, 10);
+    const h = parseInt(hora, 10);
+    const min = parseInt(minuto, 10);
+
+    if (isNaN(d) || d < 1 || d > 31) return { ok: false, motivo: 'dia' };
+    if (isNaN(m) || m < 1 || m > 12) return { ok: false, motivo: 'mes' };
+    if (isNaN(h) || h < 0 || h > 23) return { ok: false, motivo: 'hora' };
+    if (isNaN(min) || min < 0 || min > 59) return { ok: false, motivo: 'minuto' };
+
+    // Ano: se informado, precisa ter 4 dígitos razoáveis
+    let anoUsado;
+    let anoFoiInformado = false;
+    if (ano !== undefined && ano !== null && String(ano).trim() !== '') {
+      const a = parseInt(ano, 10);
+      if (isNaN(a) || a < 1900 || a > 2999) return { ok: false, motivo: 'ano' };
+      anoUsado = a;
+      anoFoiInformado = true;
+    } else {
+      anoUsado = new Date().getFullYear();
+    }
+
+    // Dia do mês real (rejeita 31/02, 30/02, etc.)
+    const ultimoDia = new Date(anoUsado, m, 0).getDate();
+    if (d > ultimoDia) return { ok: false, motivo: 'dia_inexistente' };
+
+    return {
+      ok: true,
+      dia: d,
+      mes: m,
+      ano: anoUsado,
+      anoFoiInformado: anoFoiInformado,
+      hora: h,
+      minuto: min,
+      dataObj: new Date(anoUsado, m - 1, d, h, min, 0, 0)
+    };
+  }
+
+  // ----------------------------------------------------------
+  // ESTADO GLOBAL DA LALÁ
+  // ----------------------------------------------------------
   const LALA = {
     animacaoInterval: null,
     tutorialPasso: 0,
     totalPassos: 4,
-    agendamentoPendente: null,
-    aguardandoSituacaoMensagem: false, 
 
-    // Função que caça a conexão em qualquer lugar
+    // Agendamento em construção
+    agendamentoPendente: null,          // { cliente, dia, mes, ano, hora, minuto, dataFinal, dataStr }
+    agendamentoAguardandoAno: null,     // mesma estrutura, esperando Sim/Não para próximo ano
+
+    aguardandoSituacaoMensagem: false,
+    aguardandoEscolhaPerfil: false,
+
+    tutorialJaVerificadoNestaSessao: false,
+    _perfilForcadoNaSessao: null,       // override em memória (se banco indisponível)
+
+    // Flags de carga inicial (evitam "vazio/zero" mentiroso)
+    _dadosCarregados: {
+      estoque: false,
+      reservas: false
+    },
+
+    // ------------------------------------------------------
+    // BANCO
+    // ------------------------------------------------------
     obterBanco: function() {
       if (window.db) return window.db;
-      if (typeof db !== 'undefined') return db;
-      if (typeof firebase !== 'undefined' && firebase.apps.length) {
+      if (typeof db !== 'undefined' && db) return db;
+      if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
         return firebase.database();
       }
       return null;
     },
 
-    buscar: function(texto) {
-      if (!texto) return null;
-      var t = texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    escapeHTML: function(v) { return escapeHTML(v); },
 
-      // 1. IDENTIFICADORES FLEXÍVEIS
-      const pedeAgendar = t.includes('agend') || t.includes('marc') || t.includes('reuni') || t.includes('horari');
-      const pedeMensagem = t.includes('mensag') || t.includes('falar') || t.includes('respond') || t.includes('text') || t.includes('falo') || t.includes('recus');
-      const pedeCalculo = t.includes('calcul') || t.includes('lucro') || t.includes('margem') || t.includes('porcent');
-      const pedeBomDia = t.includes('bom dia') || t.includes('resum') || t.includes('hoje') || t.includes('pendenc') || t.includes('agenda');
-      const pedeFaturamento = t.includes('fatura') || t.includes('venda') || t.includes('lucro do mes') || t.includes('quanto ganhei');
-      const pedeProximo = t.includes('proxim') || t.includes('quais festas') || t.includes('eventos');
-      const pedeEstoque = t.includes('estoque') || t.includes('pecas') || t.includes('catalogo');
-      const pedeTutorial = t.includes('tutorial') || t.includes('refaz') || t.includes('apresent') || t.includes('faz') || t.includes('func') || t.includes('ajud');
+    // ------------------------------------------------------
+    // PERFIL ATUAL
+    // Ordem: override em memória > uid no banco > e-mail logado.
+    // Nunca grava perfil "global" compartilhado.
+    // ------------------------------------------------------
+    obterPerfil: function() {
+      if (this._perfilForcadoNaSessao === 'aline' || this._perfilForcadoNaSessao === 'leo') {
+        return this._perfilForcadoNaSessao;
+      }
+      return this._perfilCache || detectarPerfilPorEmail(window.State && window.State.usuarioLogadoEmail);
+    },
 
-      // 2. EXECUÇÃO
-      if (pedeAgendar) return this.prepararAgendamento(texto);
+    // Carrega perfil salvo do usuário logado (uid). Chamada após login.
+    carregarPerfilDoUsuario: function() {
+      const self = this;
+      const banco = this.obterBanco();
+      const uid = window.State && window.State.usuarioUID;
+      if (!banco || !uid) {
+        // Sem uid: usa o e-mail como fallback (não grava nada)
+        this._perfilCache = detectarPerfilPorEmail(window.State && window.State.usuarioLogadoEmail);
+        return Promise.resolve(this._perfilCache);
+      }
+      return banco.ref('configuracoes/tutorial/' + uid + '/perfil').once('value')
+        .then(function(snap) {
+          const salvo = snap.val();
+          if (salvo === 'aline' || salvo === 'leo') {
+            self._perfilCache = salvo;
+          } else {
+            self._perfilCache = detectarPerfilPorEmail(window.State && window.State.usuarioLogadoEmail);
+          }
+          return self._perfilCache;
+        })
+        .catch(function(err) {
+          console.warn('Lalá: erro ao ler perfil do usuário, usando e-mail.', err);
+          self._perfilCache = detectarPerfilPorEmail(window.State && window.State.usuarioLogadoEmail);
+          return self._perfilCache;
+        });
+    },
 
-      if (pedeMensagem) {
-        if (t.includes('dinheir') || t.includes('reembols') || t.includes('devolv') || t.includes('pix')) return { resposta: this.gerarMensagemFinanceiro() };
-        if (t.includes('atras') || t.includes('peca')) return { resposta: this.gerarMensagemAtraso() };
-        if (t.includes('cancel') || t.includes('desist')) return { resposta: this.gerarMensagemCancelamento() };
-        
-        this.aguardandoSituacaoMensagem = true;
-        return { resposta: "Claro! Eu te ajudo a escrever. ✍️<br><br>Sobre o que é a situação?<br>1 - Cliente quer o <b>dinheiro de volta</b><br>2 - Cliente com <b>atraso</b> na devolução<br>3 - Cliente quer <b>cancelar</b><br><br>Me conte com suas palavras!" };
+    // Troca manual. Grava no uid, não no caminho global.
+    trocarPerfil: function(perfil) {
+      const self = this;
+      if (perfil !== 'aline' && perfil !== 'leo') {
+        return Promise.reject(new Error('perfil_invalido'));
+      }
+      this._perfilForcadoNaSessao = perfil;
+      this._perfilCache = perfil;
+
+      const banco = this.obterBanco();
+      const uid = window.State && window.State.usuarioUID;
+      if (!banco || !uid) {
+        return Promise.resolve(perfil);
+      }
+      return banco.ref('configuracoes/tutorial/' + uid + '/perfil').set(perfil)
+        .then(function() { return perfil; })
+        .catch(function(err) {
+          console.warn('Lalá: erro ao gravar perfil do usuário.', err);
+          return perfil;
+        });
+    },
+
+    // ------------------------------------------------------
+    // NORMALIZAÇÃO
+    // ------------------------------------------------------
+    normalizarTexto: function(texto) {
+      if (!texto) return '';
+      return String(texto)
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
+    },
+
+    // ------------------------------------------------------
+    // BUSCAR — reconhecedor
+    // ------------------------------------------------------
+    buscar: function(textoOriginal) {
+      if (!textoOriginal) return null;
+      const t = this.normalizarTexto(textoOriginal);
+
+      // 0. Confirmação de agendamento pendente (prioridade absoluta)
+      if (this.agendamentoPendente) {
+        const ehSim = /^(sim|s|yes|confirmo|confirmar|pode salvar|salvar|ok|claro)\b/.test(t);
+        const ehNao = /^(nao|n|cancel|cancela|desist|deixa|deixa pra depois|melhor nao)\b/.test(t);
+        if (ehSim) return { isConfirmar: true };
+        if (ehNao) return { isCancelar: true };
+        // Se não for sim/não, não sequestra a conversa.
       }
 
+      // 0.b Aguardando decisão sobre ano do agendamento
+      if (this.agendamentoAguardandoAno) {
+        const ehSim = /^(sim|s|yes|confirmo|pode|isso|usar proximo ano|proximo ano)\b/.test(t);
+        const ehNao = /^(nao|n|cancel|cancela|desist|deixa)\b/.test(t);
+        if (ehSim) {
+          const base = this.agendamentoAguardandoAno;
+          this.agendamentoAguardandoAno = null;
+          const proximoAno = new Date().getFullYear() + 1;
+          const v = validarDataHora(base.dia, base.mes, proximoAno, base.hora, base.minuto);
+          if (!v.ok) {
+            return { resposta: 'Não consegui ajustar para o próximo ano. Vamos tentar de novo: informe a data completa com ano.' };
+          }
+          this.agendamentoPendente = {
+            cliente: base.cliente,
+            dia: v.dia, mes: v.mes, ano: v.ano,
+            hora: v.hora, minuto: v.minuto,
+            dataFinal: v.ano + '-' + String(v.mes).padStart(2, '0') + '-' + String(v.dia).padStart(2, '0') + 'T' + String(v.hora).padStart(2, '0') + ':' + String(v.minuto).padStart(2, '0'),
+            dataStr: String(v.dia).padStart(2, '0') + '/' + String(v.mes).padStart(2, '0') + '/' + v.ano
+          };
+          return { resposta: '📅 <b>Confirmação (próximo ano):</b><br><br>👤 <b>' + escapeHTML(base.cliente) + '</b><br>📆 <b>' + escapeHTML(this.agendamentoPendente.dataStr) + '</b><br>⏰ <b>' + String(v.hora).padStart(2,'0') + ':' + String(v.minuto).padStart(2,'0') + '</b><br><br>Posso salvar? (Digite <b>Sim</b> ou <b>Não</b>)' };
+        }
+        if (ehNao) {
+          const base = this.agendamentoAguardandoAno;
+          this.agendamentoAguardandoAno = null;
+          return { resposta: 'Ok, cancelei. Quando quiser, me diga a data completa com o ano, por exemplo: <b>"Agende com Maria 25/10/2027 às 15:00"</b>.' };
+        }
+        return { resposta: 'Só pra confirmar: você quer usar o <b>próximo ano</b> para essa data? Responda <b>Sim</b> ou <b>Não</b>.' };
+      }
+
+      // 0.c Aguardando escolha de perfil (comando "Trocar perfil")
+      if (this.aguardandoEscolhaPerfil) {
+        this.aguardandoEscolhaPerfil = false;
+        if (t.indexOf('aline') !== -1) {
+          return this.executarTrocaPerfil('aline');
+        }
+        if (t.indexOf('leo') !== -1) {
+          return this.executarTrocaPerfil('leo');
+        }
+        return { resposta: 'Não entendi. Responda <b>aline</b> ou <b>leo</b>.' };
+      }
+
+      // 1. Aguardando situação de mensagem
       if (this.aguardandoSituacaoMensagem) {
         this.aguardandoSituacaoMensagem = false;
-        if (t.includes('dinheir') || t.includes('reembols') || t === '1') return { resposta: this.gerarMensagemFinanceiro() };
-        if (t.includes('atras') || t === '2') return { resposta: this.gerarMensagemAtraso() };
-        if (t.includes('cancel') || t === '3') return { resposta: this.gerarMensagemCancelamento() };
-        return { resposta: "Entendi. Aqui vai uma mensagem educada para acalmar o cliente:<br><br><i>\"Olá, [Nome]! Tudo bem? Entendo a sua situação. Vou verificar e te retorno ainda hoje.\"</i>" };
+        if (t === '1' || t.indexOf('dinheir') !== -1 || t.indexOf('reembols') !== -1) {
+          return { resposta: this.gerarMensagemFinanceiro() };
+        }
+        if (t === '2' || t.indexOf('atras') !== -1) {
+          return { resposta: this.gerarMensagemAtraso() };
+        }
+        if (t === '3' || t.indexOf('cancel') !== -1) {
+          return { resposta: this.gerarMensagemCancelamento() };
+        }
+        return { resposta: 'Entendi. Aqui vai uma mensagem educada para acalmar o cliente:<br><br><i>"Olá, [Nome]! Tudo bem? Entendo a sua situação. Vou verificar e te retorno ainda hoje."</i>' };
       }
 
-      if (pedeCalculo) return { resposta: this.calcularLucro(texto) };
-      
-      if (pedeBomDia) return { isBomDia: true };
-      
-      if (pedeFaturamento) return { isFaturamento: true };
-      if (pedeProximo) return { isProximos: true };
-      if (pedeEstoque) return { resposta: this.verificarEstoque() };
+      // 2. COMANDO "Trocar perfil"
+      const querTrocarPerfil =
+        t.indexOf('trocar perfil') !== -1 ||
+        t.indexOf('trocar de perfil') !== -1 ||
+        t.indexOf('mudar perfil') !== -1 ||
+        t.indexOf('mudar de perfil') !== -1 ||
+        t.indexOf('trocar para aline') !== -1 ||
+        t.indexOf('trocar para leo') !== -1 ||
+        t.indexOf('perfil aline') !== -1 ||
+        t.indexOf('perfil leo') !== -1;
 
-      if (pedeTutorial) {
-        if (t.includes('refaz') || t.includes('tutorial') || t.includes('apresent')) return { isTutorial: true };
-        return { resposta: "Eu sou a Lalá! 🌸 Posso:<br><br>☀️ <b>Bom dia:</b> Ver a agenda de hoje.<br>📅 <b>Agendar:</b> 'Agende com Maria 25/10 15:00'.<br>💬 <b>Mensagens:</b> Te ajudo a responder clientes.<br>🧮 <b>Lucro:</b> 'Calcula lucro de 1500 com custo 400'.<br>📊 <b>Faturamento:</b> 'Qual o faturamento do mês?'<br>📦 <b>Estoque:</b> 'Quantas peças temos?'<br>🎓 <b>Tutorial:</b> 'Refazer tutorial'." };
+      if (querTrocarPerfil) {
+        if (t.indexOf('aline') !== -1) return this.executarTrocaPerfil('aline');
+        if (t.indexOf('leo') !== -1) return this.executarTrocaPerfil('leo');
+        this.aguardandoEscolhaPerfil = true;
+        return { resposta: 'Para qual perfil você quer trocar? Responda <b>aline</b> ou <b>leo</b>.' };
       }
 
-      if (t.includes('oi') || t.includes('ola') || t.includes('tud') || t.includes('eai') || t.includes('opa')) {
+      // 3. Identificadores
+      const temFaturamento =
+        t.indexOf('faturament') !== -1 ||
+        t.indexOf('vendas do mes') !== -1 ||
+        t.indexOf('lucro do mes') !== -1 ||
+        t.indexOf('quanto ganhei') !== -1 ||
+        t.indexOf('quanto vendi') !== -1;
+
+      const temEstoque =
+        t.indexOf('estoque') !== -1 ||
+        t.indexOf('quantas pecas') !== -1 ||
+        t.indexOf('catalogo') !== -1;
+
+      const temCalculo =
+        t.indexOf('calcul') !== -1 ||
+        (t.indexOf('lucro') !== -1 && /\d/.test(t)) ||
+        t.indexOf('margem') !== -1;
+
+      const temProximos =
+        (t.indexOf('proxim') !== -1) ||
+        t.indexOf('quais festas') !== -1;
+
+      const temPalavraAgendar =
+        t.indexOf('agend') !== -1 ||
+        t.indexOf('marcar') !== -1 ||
+        t.indexOf('reuniao') !== -1 ||
+        t.indexOf('horario') !== -1;
+
+      const ehPedidoDeAgenda =
+        t.indexOf('minha agenda') !== -1 ||
+        t.indexOf('ver agenda') !== -1 ||
+        t.indexOf('agenda de hoje') !== -1 ||
+        t.indexOf('agenda do dia') !== -1;
+
+      const ehBomDia =
+        t.indexOf('bom dia') !== -1 ||
+        t.indexOf('resum') !== -1 ||
+        t.indexOf('hoje') !== -1 ||
+        t.indexOf('pendenc') !== -1 ||
+        ehPedidoDeAgenda;
+
+      const temTutorial =
+        t.indexOf('tutorial') !== -1 ||
+        t.indexOf('refaz') !== -1 ||
+        t.indexOf('apresent') !== -1 ||
+        t.indexOf('como funciona') !== -1 ||
+        t.indexOf('como faz') !== -1;
+
+      const temMensagemBase =
+        t.indexOf('mensag') !== -1 ||
+        t.indexOf('respond') !== -1 ||
+        t.indexOf('text') !== -1 ||
+        t.indexOf('recus') !== -1 ||
+        (t.indexOf('falar') !== -1 && !temFaturamento && !temEstoque && !temCalculo);
+
+      // 4. Execução
+      if (temPalavraAgendar && !ehPedidoDeAgenda) {
+        return this.prepararAgendamento(textoOriginal);
+      }
+
+      if (temMensagemBase && !temFaturamento && !temEstoque && !temCalculo && !temTutorial) {
+        if (t.indexOf('dinheir') !== -1 || t.indexOf('reembols') !== -1 || t.indexOf('devolv') !== -1 || t.indexOf('pix') !== -1) {
+          return { resposta: this.gerarMensagemFinanceiro() };
+        }
+        if (t.indexOf('atras') !== -1 || t.indexOf('peca') !== -1) {
+          return { resposta: this.gerarMensagemAtraso() };
+        }
+        if (t.indexOf('cancel') !== -1 || t.indexOf('desist') !== -1) {
+          return { resposta: this.gerarMensagemCancelamento() };
+        }
+        this.aguardandoSituacaoMensagem = true;
+        return { resposta: 'Claro! Eu te ajudo a escrever. ✍️<br><br>Sobre o que é a situação?<br>1 - Cliente quer o <b>dinheiro de volta</b><br>2 - Cliente com <b>atraso</b> na devolução<br>3 - Cliente quer <b>cancelar</b><br><br>Me conte com suas palavras!' };
+      }
+
+      if (temCalculo) return { resposta: this.calcularLucro(textoOriginal) };
+      if (ehBomDia) return { isBomDia: true };
+      if (temFaturamento) return { isFaturamento: true };
+      if (temProximos) return { isProximos: true };
+      if (temEstoque) return { resposta: this.verificarEstoque() };
+
+      if (temTutorial) {
+        if (t.indexOf('refaz') !== -1 || t.indexOf('tutorial') !== -1 || t.indexOf('apresent') !== -1) {
+          return { isTutorial: true };
+        }
+        return { resposta: 'Eu sou a Lalá! 🌸 Posso:<br><br>☀️ <b>Bom dia:</b> Ver a agenda de hoje.<br>📅 <b>Agendar:</b> "Agende com Maria 25/10 15:00".<br>💬 <b>Mensagens:</b> Te ajudo a responder clientes.<br>🧮 <b>Lucro:</b> "Calcula lucro de 1500 com custo 400".<br>📊 <b>Faturamento:</b> "Qual o faturamento do mês?"<br>📦 <b>Estoque:</b> "Quantas peças temos?"<br>🎓 <b>Tutorial:</b> "Refazer tutorial".<br>👤 <b>Perfil:</b> "Trocar perfil".' };
+      }
+
+      if (t === 'oi' || t === 'ola' || t === 'opa' || t === 'eai' || t.indexOf('tudo bem') !== -1 || t.indexOf('tudo bom') !== -1) {
         return { resposta: 'Oi! 🌸 Sou a Lalá. Precisa de ajuda com mensagens, agendamentos ou relatórios? Digite <b>"O que você faz?"</b>.' };
       }
 
       return null;
     },
 
-    // =======================================================
-    // CONSULTAS AO BANCO
-    // =======================================================
-    consultarFaturamentoMes: function() {
-      if (!window.State || !window.State.reservas) return "Puxa, estou sem os dados das reservas no momento. 😥";
-      const hoje = new Date(); const mesAtual = hoje.getMonth(); const anoAtual = hoje.getFullYear();
-      let totalFaturado = 0; let qtdFestas = 0;
+    // ------------------------------------------------------
+    // Troca de perfil (retorna resposta de chat e reavalia tutorial)
+    // ------------------------------------------------------
+    executarTrocaPerfil: function(novoPerfil) {
+      const self = this;
+      const anterior = this.obterPerfil();
+      if (anterior === novoPerfil) {
+        return { resposta: 'Você já está no perfil <b>' + escapeHTML(novoPerfil) + '</b>. 🌸' };
+      }
+      this.trocarPerfil(novoPerfil).then(function() {
+        // Reavalia tutorial do novo perfil
+        self.tutorialJaVerificadoNestaSessao = false;
+        self.verificarTutorialInicial();
+      });
+      return { resposta: 'Pronto! Agora estou no perfil <b>' + escapeHTML(novoPerfil) + '</b>. 🌸 O tutorial vai respeitar o progresso desse perfil.' };
+    },
 
-      window.State.reservas.forEach(r => {
+    // ======================================================
+    // CONSULTAS
+    // ======================================================
+    consultarFaturamentoMes: function() {
+      if (!window.State || !window.State.reservas) {
+        return 'Puxa, estou sem os dados das reservas no momento. 😥';
+      }
+      // Se o array está vazio, pode ser que ainda esteja carregando.
+      if (window.State.reservas.length === 0 && !this._dadosCarregados.reservas) {
+        return 'Ainda estou carregando as reservas. Me pergunte de novo em alguns segundos. ⏳';
+      }
+      this._dadosCarregados.reservas = true;
+
+      const hoje = new Date();
+      const mesAtual = hoje.getMonth();
+      const anoAtual = hoje.getFullYear();
+      let totalFaturado = 0;
+      let qtdFestas = 0;
+
+      window.State.reservas.forEach(function(r) {
         if (!r.data) return;
-        const dataReserva = new Date(r.data + "T00:00:00");
+        const dataReserva = new Date(r.data + 'T00:00:00');
         if (dataReserva.getMonth() === mesAtual && dataReserva.getFullYear() === anoAtual) {
           totalFaturado += (parseFloat(r.total) || 0) + (parseFloat(r.frete) || 0);
           qtdFestas++;
         }
       });
 
-      const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-      if (qtdFestas === 0) return `Ainda não tivemos nenhuma festa registrada em <b>${meses[mesAtual]}</b>. Vamos agitar as vendas! 🚀`;
-      return `📊 <b>Resumo de ${meses[mesAtual]}:</b><br><br>🎉 Tivemos <b>${qtdFestas} festa(s)</b>.<br>💰 Faturamento total: <b>R$ ${totalFaturado.toFixed(2).replace('.', ',')}</b>.<br><br>Quer ver os detalhes? Clique em <b>Venda Mensal & Anual</b>.`;
+      const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      if (qtdFestas === 0) {
+        return 'Ainda não tivemos nenhuma festa registrada em <b>' + escapeHTML(meses[mesAtual]) + '</b>. Vamos agitar as vendas! 🚀';
+      }
+      return '📊 <b>Resumo de ' + escapeHTML(meses[mesAtual]) + ':</b><br><br>🎉 Tivemos <b>' + qtdFestas + ' festa(s)</b>.<br>💰 Faturamento total: <b>R$ ' + totalFaturado.toFixed(2).replace('.', ',') + '</b>.<br><br>Quer ver os detalhes? Clique em <b>Venda Mensal & Anual</b>.';
     },
 
     consultarProximosEventos: function() {
-      if (!window.State || !window.State.reservas) return "Puxa, estou sem os dados das reservas no momento. 😥";
-      const hoje = new Date(); hoje.setHours(0,0,0,0);
-      const futuras = window.State.reservas.filter(r => r.data && new Date(r.data + "T00:00:00") >= hoje).sort((a, b) => new Date(a.data + "T00:00:00") - new Date(b.data + "T00:00:00")).slice(0, 3);
-      if (futuras.length === 0) return "Não temos nenhuma festa agendada para os próximos dias. 📅";
-      let resposta = "📅 <b>Próximos Eventos:</b><br><br>";
-      futuras.forEach(f => {
-        const partesData = f.data.split('-');
-        resposta += `🎉 <b>${partesData[2]}/${partesData[1]}</b> - ${f.cliente}<br>🎨 Tema: ${f.tema || 'Não informado'}<br><br>`;
+      if (!window.State || !window.State.reservas) {
+        return 'Puxa, estou sem os dados das reservas no momento. 😥';
+      }
+      if (window.State.reservas.length === 0 && !this._dadosCarregados.reservas) {
+        return 'Ainda estou carregando as reservas. Me pergunte de novo em alguns segundos. ⏳';
+      }
+      this._dadosCarregados.reservas = true;
+
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const futuras = window.State.reservas
+        .filter(function(r) { return r.data && new Date(r.data + 'T00:00:00') >= hoje; })
+        .sort(function(a, b) { return new Date(a.data + 'T00:00:00') - new Date(b.data + 'T00:00:00'); })
+        .slice(0, 3);
+
+      if (futuras.length === 0) return 'Não temos nenhuma festa agendada para os próximos dias. 📅';
+      let resposta = '📅 <b>Próximos Eventos:</b><br><br>';
+      futuras.forEach(function(f) {
+        const partesData = String(f.data).split('-');
+        resposta += '🎉 <b>' + escapeHTML(partesData[2] + '/' + partesData[1]) + '</b> - ' + escapeHTML(f.cliente) + '<br>🎨 Tema: ' + escapeHTML(f.tema || 'Não informado') + '<br><br>';
       });
       return resposta;
     },
 
     verificarEstoque: function() {
-      if (!window.State || !window.State.estoqueArray) return "Puxa, não consegui acessar o catálogo. 😥";
+      if (!window.State || !window.State.estoqueArray) {
+        return 'Puxa, não consegui acessar o catálogo. 😥';
+      }
+      if (window.State.estoqueArray.length === 0 && !this._dadosCarregados.estoque) {
+        return 'Ainda estou carregando o catálogo. Me pergunte de novo em alguns segundos. ⏳';
+      }
+      this._dadosCarregados.estoque = true;
+
       const totalPecas = window.State.estoqueArray.length;
-      if (totalPecas === 0) return "Nosso catálogo está vazio no momento. Que tal cadastrar algumas peças? 📦";
-      return `📦 Temos <b>${totalPecas} peças/temas</b> cadastrados no catálogo.<br><br>Para ver os detalhes, clique em <b>Ver Catálogo</b> no painel principal!`;
+      if (totalPecas === 0) return 'Nosso catálogo está vazio no momento. Que tal cadastrar algumas peças? 📦';
+      return '📦 Temos <b>' + totalPecas + ' peças/temas</b> cadastrados no catálogo.<br><br>Para ver os detalhes, clique em <b>Ver Catálogo</b> no painel principal!';
     },
 
-    // =======================================================
+    // ======================================================
     // AGENDAMENTO
-    // =======================================================
+    // ======================================================
     prepararAgendamento: function(textoOriginal) {
-      let texto = textoOriginal.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      let dia = "", mes = "";
+      const texto = this.normalizarTexto(textoOriginal);
+
+      let dia = '';
+      let mes = '';
+      let ano = '';
       const regexBarra = /(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{4}))?/;
-      const regexExtenso = /(\d{1,2})\s+de\s+(janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)/i;
+      const regexExtenso = /(\d{1,2})\s+de\s+(janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)(?:\s+de\s+(\d{4}))?/i;
       const matchBarra = texto.match(regexBarra);
       const matchExtenso = texto.match(regexExtenso);
 
-      if (matchBarra) { dia = matchBarra[1]; mes = matchBarra[2]; } 
-      else if (matchExtenso) {
+      if (matchBarra) {
+        dia = matchBarra[1];
+        mes = matchBarra[2];
+        ano = matchBarra[3] || '';
+      } else if (matchExtenso) {
         dia = matchExtenso[1];
-        const meses = ["janeiro","fevereiro","marco","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+        const meses = ['janeiro','fevereiro','marco','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
         mes = String(meses.indexOf(matchExtenso[2]) + 1).padStart(2, '0');
+        ano = matchExtenso[3] || '';
       }
 
-      let hora = "";
+      // Hora
+      let hora = '';
+      let minuto = '';
       const regexHora = /(\d{1,2})(?::(\d{2})|h(\d{2})?| horas?| hrs?)/;
       const matchHora = texto.match(regexHora);
-      if (matchHora) hora = matchHora[1].padStart(2, '0') + ":" + (matchHora[2] || matchHora[3] || "00");
-
-      let cliente = "Cliente";
-      const regexNome = /(?:com|para)\s+(?:a\s+|o\s+)?([a-zA-ZÀ-ÿ\s]+?)(?:\s+(?:dia|no|as|às|\d|$))/i;
-      const matchNome = textoOriginal.match(regexNome);
-      if (matchNome) { cliente = matchNome[1].trim(); cliente = cliente.replace(/(reuniao|reunião|agendar|marcar|horario)/gi, "").trim(); }
-
-      if (!dia || !hora) return { resposta: "Entendi que você quer agendar! 😊 Mas faltou a data e a hora.<br><br>Pode me dizer assim: <b>'Agende com Maria 25/10 às 15:00'</b>" };
-
-      const ano = matchBarra && matchBarra[3] ? matchBarra[3] : new Date().getFullYear();
-      const dataFormatada = `${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
-      
-      this.agendamentoPendente = { cliente, dataStr: `${dia}/${mes}`, hora, dataFinal: `${dataFormatada}T${hora}` };
-      return { resposta: `📅 <b>Confirmação:</b><br><br>👤 <b>${cliente}</b><br>📆 <b>${dia}/${mes}</b><br>⏰ <b>${hora}</b><br><br>Posso salvar? (Digite <b>Sim</b> ou <b>Não</b>)` };
-    },
-
-    confirmarAgendamento: function() {
-      if (!this.agendamentoPendente) return "Não tem nada pendente.";
-      const agendamento = this.agendamentoPendente; 
-      this.agendamentoPendente = null;
-      
-      const banco = this.obterBanco();
-      if (!banco) return "Erro: O banco de dados não está pronto. Verifique o app.js.";
-      
-      return banco.ref('reunioes').push({ cliente: agendamento.cliente, dataHora: agendamento.dataFinal, pauta: "Agendada pela Lalá", criadoEm: Date.now() })
-        .then(() => `✅ Prontinho! Reunião com <b>${agendamento.cliente}</b> salva.`)
-        .catch(() => "Erro ao salvar no banco. 😥");
-    },
-    cancelarAgendamento: function() { this.agendamentoPendente = null; return "Tudo bem, cancelei o agendamento. 🚫"; },
-
-    // =======================================================
-    // DAR BOM DIA (CORRIGIDO E BLINDADO)
-    // =======================================================
-    darBomDia: function() {
-      const banco = this.obterBanco();
-      
-      if (!window.State || !banco) {
-        return Promise.resolve("Puxa, ainda estou acordando o banco de dados... ☕ Tente me dar 'Bom dia' de novo em 2 segundinhos!");
+      if (matchHora) {
+        hora = matchHora[1];
+        minuto = matchHora[2] || matchHora[3] || '00';
       }
 
-      const hoje = new Date(); 
-      const dataHojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
-      
-      return banco.ref('reunioes').once('value').then(snap => {
-        const reunioes = snap.val() || {}; 
-        let reunioesHoje = [];
-        
-        Object.values(reunioes).forEach(r => { 
-          if (r.dataHora && r.dataHora.startsWith(dataHojeStr)) { 
-            const hora = r.dataHora.split('T')[1] || '00:00'; 
-            reunioesHoje.push(`${hora} - ${r.cliente}`); 
-          } 
+      // Nome
+      let cliente = 'Cliente';
+      const regexNome = /(?:com|para)\s+(?:a\s+|o\s+)?([a-zA-ZÀ-ÿ\s]+?)(?:\s+(?:dia|no|as|às|\d|$))/i;
+      const matchNome = textoOriginal.match(regexNome);
+      if (matchNome) {
+        cliente = matchNome[1].trim();
+        cliente = cliente.replace(/(reuniao|reunião|agendar|marcar|horario)/gi, '').trim();
+      }
+
+      if (!dia || !hora) {
+        return { resposta: 'Entendi que você quer agendar! 😊 Mas faltou a data e a hora.<br><br>Pode me dizer assim: <b>"Agende com Maria 25/10 às 15:00"</b>' };
+      }
+
+      // Validação real (dia do mês, hora, minuto, ano)
+      const v = validarDataHora(dia, mes, ano, hora, minuto);
+      if (!v.ok) {
+        let msgMotivo = '';
+        if (v.motivo === 'dia_inexistente') {
+          msgMotivo = 'Esse dia não existe no mês informado (ex.: 31/02).';
+        } else if (v.motivo === 'dia') {
+          msgMotivo = 'O dia precisa estar entre 1 e 31.';
+        } else if (v.motivo === 'mes') {
+          msgMotivo = 'O mês precisa estar entre 1 e 12.';
+        } else if (v.motivo === 'hora') {
+          msgMotivo = 'A hora precisa estar entre 00 e 23 (25:00 não existe).';
+        } else if (v.motivo === 'minuto') {
+          msgMotivo = 'Os minutos precisam estar entre 00 e 59.';
+        } else if (v.motivo === 'ano') {
+          msgMotivo = 'O ano precisa ter 4 dígitos (ex.: 2026).';
+        } else {
+          msgMotivo = 'Data ou hora inválida.';
+        }
+        return { resposta: '⚠️ ' + msgMotivo + '<br><br>Tente assim: <b>"Agende com Maria 25/10/2026 às 15:00"</b>' };
+      }
+
+      // Data no passado SEM ano informado → pergunta
+      const agora = new Date();
+      if (!v.anoFoiInformado) {
+        const dataTentativa = new Date(v.ano, v.mes - 1, v.dia, v.hora, v.minuto, 0, 0);
+        if (dataTentativa.getTime() < agora.getTime()) {
+          const proximoAno = agora.getFullYear() + 1;
+          this.agendamentoAguardandoAno = {
+            cliente: cliente,
+            dia: v.dia, mes: v.mes,
+            hora: v.hora, minuto: v.minuto
+          };
+          return { resposta: '📅 Essa data (<b>' + String(v.dia).padStart(2,'0') + '/' + String(v.mes).padStart(2,'0') + '</b> às <b>' + String(v.hora).padStart(2,'0') + ':' + String(v.minuto).padStart(2,'0') + '</b>) já passou em ' + v.ano + '.<br><br>Quer usar <b>' + proximoAno + '</b>? Responda <b>Sim</b> ou <b>Não</b>.' };
+        }
+      }
+
+      // Monta o pendente (NÃO salva ainda)
+      const dataFinal = v.ano + '-' + String(v.mes).padStart(2, '0') + '-' + String(v.dia).padStart(2, '0') + 'T' + String(v.hora).padStart(2, '0') + ':' + String(v.minuto).padStart(2, '0');
+      const dataStr = String(v.dia).padStart(2, '0') + '/' + String(v.mes).padStart(2, '0') + '/' + v.ano;
+
+      this.agendamentoPendente = {
+        cliente: cliente,
+        dia: v.dia, mes: v.mes, ano: v.ano,
+        hora: v.hora, minuto: v.minuto,
+        dataFinal: dataFinal,
+        dataStr: dataStr
+      };
+
+      return { resposta: '📅 <b>Confirmação:</b><br><br>👤 <b>' + escapeHTML(cliente) + '</b><br>📆 <b>' + escapeHTML(dataStr) + '</b><br>⏰ <b>' + String(v.hora).padStart(2,'0') + ':' + String(v.minuto).padStart(2,'0') + '</b><br><br>Posso salvar? (Digite <b>Sim</b> ou <b>Não</b>)' };
+    },
+
+    // Não zera pendente antes do push. Só zera após sucesso.
+    confirmarAgendamento: function() {
+      if (!this.agendamentoPendente) {
+        return Promise.resolve('Não tem nada pendente para confirmar.');
+      }
+      const agendamento = this.agendamentoPendente;
+
+      const banco = this.obterBanco();
+      if (!banco) {
+        return Promise.resolve('Erro: o banco de dados não está pronto. O agendamento continua pendente — tente de novo em instantes.');
+      }
+
+      const self = this;
+      return banco.ref('reunioes').push({
+        cliente: agendamento.cliente,
+        dataHora: agendamento.dataFinal,
+        pauta: 'Agendada pela Lalá',
+        criadoEm: Date.now()
+      })
+        .then(function() {
+          // Só aqui limpamos o pendente
+          self.agendamentoPendente = null;
+          return '✅ Prontinho! Reunião com <b>' + escapeHTML(agendamento.cliente) + '</b> salva em ' + escapeHTML(agendamento.dataStr) + ' às ' + String(agendamento.hora).padStart(2,'0') + ':' + String(agendamento.minuto).padStart(2,'0') + '.';
+        })
+        .catch(function(err) {
+          console.warn('Lalá: erro ao salvar reunião.', err);
+          // Mantém o pendente para tentar de novo
+          return 'Erro ao salvar no banco. 😥 O agendamento com <b>' + escapeHTML(agendamento.cliente) + '</b> continua pendente. Digite <b>Sim</b> para tentar de novo ou <b>Não</b> para cancelar.';
         });
-        
-        const orcamentosPendentes = window.State.orcamentosAbertos ? window.State.orcamentosAbertos.filter(o => o.status === 'aguardando').length : 0;
-        
-        let resposta = "Bom dia! ☀️ Aqui está o seu resumo:<br><br>";
-        resposta += reunioesHoje.length > 0 ? `📅 <b>Reuniões:</b><br>${reunioesHoje.join('<br>')}<br><br>` : `📅 <b>Reuniões:</b> Nenhuma agendada para hoje.<br><br>`;
-        resposta += orcamentosPendentes > 0 ? `💰 <b>Orçamentos:</b> Existem ${orcamentosPendentes} aguardando resposta.<br>` : `💰 <b>Orçamentos:</b> Nenhum pendente.<br>`;
-        
-        return resposta + `<br>Vamos arrasar hoje! 💗`;
-      }).catch(err => {
-        console.error("Erro no Firebase da Lalá:", err);
-        return "Deu um erro ao buscar a agenda. Verifique as permissões do banco. 😥";
+    },
+
+    cancelarAgendamento: function() {
+      if (!this.agendamentoPendente) {
+        return Promise.resolve('Não tinha nada pendente para cancelar.');
+      }
+      const agendamento = this.agendamentoPendente;
+      this.agendamentoPendente = null;
+      return Promise.resolve('Tudo bem, cancelei o agendamento com <b>' + escapeHTML(agendamento.cliente) + '</b>. 🚫');
+    },
+
+    // ======================================================
+    // DAR BOM DIA
+    // ======================================================
+    darBomDia: function() {
+      const banco = this.obterBanco();
+      if (!banco) {
+        return Promise.resolve('Puxa, ainda estou acordando o banco de dados... ☕ Tente me dar "Bom dia" de novo em 2 segundinhos!');
+      }
+
+      const hoje = new Date();
+      const dataHojeStr =
+        hoje.getFullYear() + '-' +
+        String(hoje.getMonth() + 1).padStart(2, '0') + '-' +
+        String(hoje.getDate()).padStart(2, '0');
+
+      const pReunioes = banco.ref('reunioes').once('value')
+        .then(function(snap) {
+          const reunioes = snap.val() || {};
+          const lista = [];
+          Object.keys(reunioes).forEach(function(k) {
+            const r = reunioes[k];
+            if (r && r.dataHora && String(r.dataHora).indexOf(dataHojeStr) === 0) {
+              const hora = String(r.dataHora).split('T')[1] || '00:00';
+              lista.push(escapeHTML(hora + ' - ' + (r.cliente || 'Sem nome')));
+            }
+          });
+          return lista;
+        })
+        .catch(function(err) {
+          console.warn('Lalá: erro ao ler reuniões.', err);
+          return null;
+        });
+
+      const pOrcamentos = banco.ref('orcamentos_abertos').once('value')
+        .then(function(snap) {
+          const todos = snap.val() || {};
+          let pendentes = 0;
+          Object.keys(todos).forEach(function(k) {
+            const o = todos[k];
+            if (o && o.status === 'aguardando') pendentes++;
+          });
+          return pendentes;
+        })
+        .catch(function(err) {
+          console.warn('Lalá: erro ao ler orçamentos.', err);
+          return null;
+        });
+
+      return Promise.all([pReunioes, pOrcamentos]).then(function(res) {
+        const reunioesHoje = res[0];
+        const orcamentosPendentes = res[1];
+        let resposta = 'Bom dia! ☀️ Aqui está o seu resumo:<br><br>';
+
+        if (reunioesHoje === null) {
+          resposta += '📅 <b>Reuniões:</b> não consegui consultar a agenda agora.<br><br>';
+        } else if (reunioesHoje.length > 0) {
+          resposta += '📅 <b>Reuniões:</b><br>' + reunioesHoje.join('<br>') + '<br><br>';
+        } else {
+          resposta += '📅 <b>Reuniões:</b> Nenhuma agendada para hoje.<br><br>';
+        }
+
+        if (orcamentosPendentes === null) {
+          resposta += '💰 <b>Orçamentos:</b> não consegui consultar agora.<br>';
+        } else if (orcamentosPendentes > 0) {
+          resposta += '💰 <b>Orçamentos:</b> Existem ' + orcamentosPendentes + ' aguardando resposta.<br>';
+        } else {
+          resposta += '💰 <b>Orçamentos:</b> Nenhum pendente.<br>';
+        }
+
+        return resposta + '<br>Vamos arrasar hoje! 💗';
+      }).catch(function(err) {
+        console.error('Lalá: erro no Bom Dia.', err);
+        return 'Deu um erro ao buscar a agenda. Verifique as permissões do banco. 😥';
       });
     },
 
-    // =======================================================
-    // OUTRAS FUNÇÕES
-    // =======================================================
-    calcularLucro: function(texto) {
+    // ======================================================
+    // CÁLCULO DE LUCRO
+    // ======================================================
+    calcularLucro: function(textoOriginal) {
+      const texto = this.normalizarTexto(textoOriginal);
       const numeros = texto.match(/\d+([.,]\d+)?/g);
-      if (!numeros || numeros.length < 2) return "Preciso do valor e do custo. Exemplo: <b>'Calcula lucro de 1500 com custo 400'</b>";
-      let v1 = parseFloat(numeros[0].replace(',', '.')), v2 = parseFloat(numeros[1].replace(',', '.'));
-      let valorFesta = Math.max(v1, v2), custo = Math.min(v1, v2);
-      let lucro = valorFesta - custo, margem = (lucro / valorFesta) * 100;
-      return `🧮 <b>Calculadora de Lucro</b><br><br>💰 Festa: R$ ${valorFesta.toFixed(2)}<br>💸 Custo: R$ ${custo.toFixed(2)}<br>📈 Lucro: <b style="color:#27ae60;">R$ ${lucro.toFixed(2)}</b><br>🎯 Margem: <b>${margem.toFixed(1)}%</b>`;
+      if (!numeros || numeros.length < 2) {
+        return 'Preciso do valor e do custo. Exemplo: <b>"Calcula lucro de 1500 com custo 400"</b>';
+      }
+      const n1 = parseFloat(numeros[0].replace(',', '.'));
+      const n2 = parseFloat(numeros[1].replace(',', '.'));
+
+      const posCusto = texto.indexOf('custo');
+      const posPrimeiroNum = texto.search(/\d/);
+      const custoPrimeiro = posCusto !== -1 && posPrimeiroNum !== -1 && posCusto < posPrimeiroNum;
+
+      let valorFesta, custo;
+      if (custoPrimeiro) { custo = n1; valorFesta = n2; }
+      else { valorFesta = n1; custo = n2; }
+
+      const lucro = valorFesta - custo;
+      const margem = valorFesta > 0 ? (lucro / valorFesta) * 100 : 0;
+      const corLucro = lucro >= 0 ? '#27ae60' : '#e74c3c';
+      const rotulo = lucro >= 0 ? '📈 Lucro' : '📉 Prejuízo';
+
+      return '🧮 <b>Calculadora de Lucro</b><br><br>' +
+        '💰 Festa: R$ ' + valorFesta.toFixed(2) +
+        '<br>💸 Custo: R$ ' + custo.toFixed(2) +
+        '<br>' + rotulo + ': <b style="color:' + corLucro + ';">R$ ' + lucro.toFixed(2) + '</b>' +
+        '<br>🎯 Margem: <b>' + margem.toFixed(1) + '%</b>';
     },
 
-    gerarMensagemFinanceiro: function() { return `<i>"Olá, [Nome]! Tudo bem? Entendo. Sobre o valor, infelizmente não consigo fazer a devolução no momento, pois o valor já foi destinado aos custos. Mas posso verificar se é possível usar como crédito para uma próxima festa."</i>`; },
-    gerarMensagemAtraso: function() { return `<i>"Olá, [Nome]! Passando para saber se as peças já estão prontas para devolução. Precisamos organizar o estoque. Lembrando que a diária de atraso se aplica."</i>`; },
-    gerarMensagemCancelamento: function() { return `<i>"Oi, [Nome]! Que pena saber que a festa não vai mais acontecer. Conforme o contrato, o sinal é retido, mas posso verificar com a direção a possibilidade de uma carta de crédito futura."</i>`; },
+    // ======================================================
+    // MENSAGENS PRONTAS
+    // ======================================================
+    gerarMensagemFinanceiro: function() {
+      return '<i>"Olá, [Nome]! Tudo bem? Entendo. Sobre o valor, infelizmente não consigo fazer a devolução no momento, pois o valor já foi destinado aos custos. Mas posso verificar se é possível usar como crédito para uma próxima festa."</i>';
+    },
+    gerarMensagemAtraso: function() {
+      return '<i>"Olá, [Nome]! Passando para saber se as peças já estão prontas para devolução. Precisamos organizar o estoque. Lembrando que a diária de atraso se aplica."</i>';
+    },
+    gerarMensagemCancelamento: function() {
+      return '<i>"Oi, [Nome]! Que pena saber que a festa não vai mais acontecer. Conforme o contrato, o sinal é retido, mas posso verificar com a direção a possibilidade de uma carta de crédito futura."</i>';
+    },
 
+    // ======================================================
+    // ANIMAÇÃO
+    // ======================================================
     iniciarAnimacao: function() {
       this.pararAnimacao();
       const sprite = document.getElementById('lala-sprite');
       if (!sprite) return;
       const posicoesX = ['0%', '33.33%', '66.66%', '100%'];
       const posicoesY = ['0%', '100%'];
-      let frame = 0; 
-      this.animacaoInterval = setInterval(() => {
-        let linha = Math.floor(frame / 4); 
-        let coluna = frame % 4;            
-        sprite.style.backgroundPosition = `${posicoesX[coluna]} ${posicoesY[linha]}`;
+      let frame = 0;
+      this.animacaoInterval = setInterval(function() {
+        const linha = Math.floor(frame / 4);
+        const coluna = frame % 4;
+        sprite.style.backgroundPosition = posicoesX[coluna] + ' ' + posicoesY[linha];
         frame++;
-        if (frame >= 8) frame = 0; 
-      }, 500); 
+        if (frame >= 8) frame = 0;
+      }, 500);
     },
-    pararAnimacao: function() { if (this.animacaoInterval) clearInterval(this.animacaoInterval); },
+    pararAnimacao: function() {
+      if (this.animacaoInterval) {
+        clearInterval(this.animacaoInterval);
+        this.animacaoInterval = null;
+      }
+    },
 
+    // ======================================================
+    // TUTORIAL
+    // ======================================================
     iniciarTutorial: function() {
       const container = document.getElementById('lala-personagem-container');
       const balao = document.getElementById('lala-balao-tutorial');
       if (!container || !balao) return;
-      container.style.display = 'block'; balao.classList.add('ativo'); this.iniciarAnimacao(); this.tutorialPasso = 1; this.atualizarBalaoTutorial();
+      container.style.display = 'block';
+      balao.classList.add('ativo');
+      this.iniciarAnimacao();
+      this.tutorialPasso = 1;
+      this.atualizarBalaoTutorial();
     },
+
     pular: function() {
-      const balao = document.getElementById('lala-balao-tutorial'); if (balao) balao.classList.remove('ativo');
-      this.pararAnimacao(); this.limparDestaques();
+      const balao = document.getElementById('lala-balao-tutorial');
+      if (balao) balao.classList.remove('ativo');
+      this.pararAnimacao();
+      this.limparDestaques();
+
       const banco = this.obterBanco();
-      if (banco && window.State && window.State.usuarioLogadoEmail) {
-        const u = window.State.usuarioLogadoEmail.includes('aline') ? 'aline' : 'leo';
-        banco.ref(`configuracoes/tutorial/${u}`).update({ dispensado: true });
-      }
+      if (!banco) return;
+      const perfil = this.obterPerfil();
+      banco.ref('configuracoes/tutorial/' + perfil).update({ dispensado: true })
+        .catch(function(err) { console.warn('Lalá: erro ao marcar tutorial como pulado.', err); });
     },
+
     proximo: function() {
-      if (this.tutorialPasso < this.totalPassos) { this.tutorialPasso++; this.atualizarBalaoTutorial(); }
-      else {
+      if (this.tutorialPasso < this.totalPassos) {
+        this.tutorialPasso++;
+        this.atualizarBalaoTutorial();
+      } else {
         this.pular();
         const banco = this.obterBanco();
-        if (banco && window.State && window.State.usuarioLogadoEmail) {
-          const u = window.State.usuarioLogadoEmail.includes('aline') ? 'aline' : 'leo';
-          banco.ref(`configuracoes/tutorial/${u}`).update({ apresentado: true, dispensado: false });
-        }
+        if (!banco) return;
+        const perfil = this.obterPerfil();
+        banco.ref('configuracoes/tutorial/' + perfil).update({ apresentado: true, dispensado: false })
+          .catch(function(err) { console.warn('Lalá: erro ao marcar tutorial como concluído.', err); });
       }
     },
-    voltar: function() { if (this.tutorialPasso > 1) { this.tutorialPasso--; this.atualizarBalaoTutorial(); } },
-    limparDestaques: function() { document.querySelectorAll('.tutorial-destaque').forEach(el => el.classList.remove('tutorial-destaque')); },
-    destacarElemento: function(idElemento) {
-      this.limparDestaques(); const el = document.getElementById(idElemento);
-      if (el) { el.classList.add('tutorial-destaque'); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+
+    voltar: function() {
+      if (this.tutorialPasso > 1) {
+        this.tutorialPasso--;
+        this.atualizarBalaoTutorial();
+      }
     },
+
+    limparDestaques: function() {
+      document.querySelectorAll('.tutorial-destaque').forEach(function(el) {
+        el.classList.remove('tutorial-destaque');
+      });
+    },
+
+    destacarElemento: function(idElemento) {
+      this.limparDestaques();
+      const el = document.getElementById(idElemento);
+      if (el) {
+        el.classList.add('tutorial-destaque');
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    },
+
     atualizarBalaoTutorial: function() {
-      const txt = document.getElementById('lala-tutorial-texto'); const btnVoltar = document.getElementById('btn-tutorial-voltar'); const btnProximo = document.getElementById('btn-tutorial-proximo');
+      const txt = document.getElementById('lala-tutorial-texto');
+      const btnVoltar = document.getElementById('btn-tutorial-voltar');
+      const btnProximo = document.getElementById('btn-tutorial-proximo');
       if (!txt) return;
       if (btnVoltar) btnVoltar.style.display = this.tutorialPasso > 1 ? 'block' : 'none';
       if (btnProximo) btnProximo.innerText = this.tutorialPasso === this.totalPassos ? 'Concluir 🎉' : 'Próximo ➔';
 
-      if (this.tutorialPasso === 1) { txt.innerHTML = "Oi! Eu sou a Lalá! Este é o <b>Agendamento</b>."; this.destacarElemento("titulo-form-reserva"); } 
-      else if (this.tutorialPasso === 2) { txt.innerHTML = "Digite <b>'Bom dia'</b> para ver suas reuniões e pendências!"; this.destacarElemento("btn-abrir-orcamentos-aberto"); } 
-      else if (this.tutorialPasso === 3) { txt.innerHTML = "Peça pra mim agendar reuniões! <b>'Agende com Maria 25/10 15:00'</b>."; this.destacarElemento("btn-abrir-reunioes-painel"); } 
-      else if (this.tutorialPasso === 4) { txt.innerHTML = "Quer saber as vendas ou calcular o lucro? <b>'Qual o faturamento do mês?'</b>."; this.destacarElemento("btn-abrir-central-relatorios"); }
+      if (this.tutorialPasso === 1) {
+        txt.innerHTML = 'Oi! Eu sou a Lalá! Este é o <b>Agendamento</b>. É aqui que você cadastra uma nova festa.';
+        this.destacarElemento('titulo-form-reserva');
+      } else if (this.tutorialPasso === 2) {
+        txt.innerHTML = 'Aqui estão os <b>Orçamentos em Aberto</b>. Use esse painel para acompanhar quem ainda não fechou.';
+        this.destacarElemento('btn-abrir-orcamentos-aberto');
+      } else if (this.tutorialPasso === 3) {
+        txt.innerHTML = 'Quer marcar reunião com cliente? Use <b>Agendar Reuniões</b>. Ou me diga <b>"Agende com Maria 25/10 15:00"</b>.';
+        this.destacarElemento('btn-abrir-reunioes-painel');
+      } else if (this.tutorialPasso === 4) {
+        txt.innerHTML = 'Quer saber as vendas ou calcular o lucro? Abra <b>Venda Mensal & Anual</b> ou pergunte pra mim.';
+        this.destacarElemento('btn-abrir-central-relatorios');
+      }
+    },
+
+    // ------------------------------------------------------
+    // Chamada pelo app.js após login autorizado.
+    // 1) carrega o perfil do usuário (uid)
+    // 2) se o perfil nunca viu o tutorial, abre.
+    // ------------------------------------------------------
+    verificarTutorialInicial: function() {
+      if (this.tutorialJaVerificadoNestaSessao) return Promise.resolve(false);
+      this.tutorialJaVerificadoNestaSessao = true;
+
+      const self = this;
+      return this.carregarPerfilDoUsuario().then(function() {
+        const banco = self.obterBanco();
+        if (!banco) return false;
+        const perfil = self.obterPerfil();
+        return banco.ref('configuracoes/tutorial/' + perfil).once('value')
+          .then(function(snap) {
+            const cfg = snap.val() || {};
+            if (cfg.apresentado === true || cfg.dispensado === true) return false;
+            setTimeout(function() { self.iniciarTutorial(); }, 800);
+            return true;
+          })
+          .catch(function(err) {
+            console.warn('Lalá: erro ao verificar tutorial inicial.', err);
+            return false;
+          });
+      });
     }
   };
 
   window.LalaTutorial = LALA;
 
+  // ============================================================
+  // CHAT
+  // ============================================================
   document.addEventListener('DOMContentLoaded', function() {
-    var fab = document.getElementById('lala-fab'); var janela = document.getElementById('lala-janela'); var body = document.getElementById('lala-body'); var input = document.getElementById('lala-input'); var enviar = document.getElementById('lala-enviar'); var fechar = document.getElementById('lala-fechar');
-    if (!fab || !janela) return;
-    fab.addEventListener('click', function() { janela.classList.toggle('ativo'); fab.classList.remove('pulso'); if (janela.classList.contains('ativo')) setTimeout(() => input.focus(), 200); });
-    fechar.addEventListener('click', () => janela.classList.remove('ativo'));
+    const fab = document.getElementById('lala-fab');
+    const janela = document.getElementById('lala-janela');
+    const body = document.getElementById('lala-body');
+    const input = document.getElementById('lala-input');
+    const enviar = document.getElementById('lala-enviar');
+    const fechar = document.getElementById('lala-fechar');
 
-    function addMsg(texto, tipo) {
-      var div = document.createElement('div'); div.className = 'lala-msg ' + tipo; div.innerHTML = texto;
-      body.appendChild(div); body.scrollTop = body.scrollHeight;
+    if (!fab || !janela) return;
+
+    fab.addEventListener('click', function() {
+      janela.classList.toggle('ativo');
+      fab.classList.remove('pulso');
+      if (janela.classList.contains('ativo')) {
+        setTimeout(function() { if (input) input.focus(); }, 200);
+      }
+    });
+
+    if (fechar) {
+      fechar.addEventListener('click', function() {
+        janela.classList.remove('ativo');
+        LALA.pararAnimacao();
+      });
+    }
+
+    // Mensagens do bot: HTML permitido (com escape dos valores dinâmicos
+    // feito na origem por escapeHTML). Mensagens do usuário: textContent.
+    function addBotMsg(html) {
+      const div = document.createElement('div');
+      div.className = 'lala-msg bot';
+      div.innerHTML = String(html === undefined || html === null ? '' : html);
+      body.appendChild(div);
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function addUserMsg(texto) {
+      const div = document.createElement('div');
+      div.className = 'lala-msg user';
+      div.textContent = String(texto === undefined || texto === null ? '' : texto);
+      body.appendChild(div);
+      body.scrollTop = body.scrollHeight;
     }
 
     function responder(texto) {
       if (!texto || !texto.trim()) return;
-      addMsg(texto, 'user');
-      setTimeout(() => {
-        var resposta = LALA.buscar(texto);
-        
-        if (resposta && resposta.isBomDia) { addMsg("Deixa eu ver a agenda... ⏳", 'bot'); LALA.darBomDia().then(res => addMsg(res, 'bot')); } 
-        else if (resposta && resposta.isFaturamento) { addMsg(LALA.consultarFaturamentoMes(), 'bot'); }
-        else if (resposta && resposta.isProximos) { addMsg(LALA.consultarProximosEventos(), 'bot'); }
-        else if (resposta && resposta.isTutorial) { addMsg("Claro! Abrindo o tutorial. 😊", 'bot'); setTimeout(() => { if (LALA.iniciarTutorial) LALA.iniciarTutorial(); }, 1000); }
-        else if (resposta && resposta.resposta) { addMsg(resposta.resposta, 'bot'); }
-        else if (resposta && resposta.isConfirmar) { addMsg(LALA.confirmarAgendamento(), 'bot'); }
-        else if (resposta && resposta.isCancelar) { addMsg(LALA.cancelarAgendamento(), 'bot'); }
-        else { addMsg("Ainda não sei responder isso. 😅 Digite <b>'O que você faz?'</b>.", 'bot'); }
-      }, 800);
+      addUserMsg(texto);
+
+      setTimeout(function() {
+        let resposta;
+        try {
+          resposta = LALA.buscar(texto);
+        } catch (err) {
+          console.error('Lalá: erro em buscar().', err);
+          addBotMsg('Deu um erro interno. Tente de novo. 😥');
+          return;
+        }
+
+        if (resposta && resposta.isConfirmar) {
+          addBotMsg('Salvando... ⏳');
+          LALA.confirmarAgendamento().then(function(msg) {
+            addBotMsg(msg);
+          }).catch(function(err) {
+            console.warn('Lalá: erro em confirmarAgendamento.', err);
+            addBotMsg('Erro ao salvar. 😥 O agendamento continua pendente.');
+          });
+          return;
+        }
+
+        if (resposta && resposta.isCancelar) {
+          LALA.cancelarAgendamento().then(function(msg) {
+            addBotMsg(msg);
+          }).catch(function(err) {
+            console.warn('Lalá: erro em cancelarAgendamento.', err);
+            addBotMsg('Erro ao cancelar. 😥');
+          });
+          return;
+        }
+
+        if (resposta && resposta.isBomDia) {
+          addBotMsg('Deixa eu ver a agenda... ⏳');
+          LALA.darBomDia().then(function(res) {
+            addBotMsg(res);
+          }).catch(function(err) {
+            console.warn('Lalá: erro em darBomDia.', err);
+            addBotMsg('Erro ao consultar a agenda. 😥');
+          });
+          return;
+        }
+
+        if (resposta && resposta.isFaturamento) {
+          addBotMsg(LALA.consultarFaturamentoMes());
+          return;
+        }
+
+        if (resposta && resposta.isProximos) {
+          addBotMsg(LALA.consultarProximosEventos());
+          return;
+        }
+
+        if (resposta && resposta.isTutorial) {
+          addBotMsg('Claro! Abrindo o tutorial. 😊');
+          setTimeout(function() {
+            if (LALA.iniciarTutorial) LALA.iniciarTutorial();
+          }, 800);
+          return;
+        }
+
+        if (resposta && resposta.resposta) {
+          addBotMsg(resposta.resposta);
+          return;
+        }
+
+        addBotMsg("Ainda não sei responder isso. 😅 Digite <b>'O que você faz?'</b>.");
+      }, 500);
     }
 
-    enviar.addEventListener('click', function() { var t = input.value.trim(); if (t) { responder(t); input.value = ''; } });
-    input.addEventListener('keypress', (e) => { if (e.key === 'Enter') enviar.click(); });
+    if (enviar) {
+      enviar.addEventListener('click', function() {
+        const t = input.value.trim();
+        if (t) { responder(t); input.value = ''; }
+      });
+    }
+
+    if (input) {
+      input.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); if (enviar) enviar.click(); }
+      });
+    }
+
+    const atalhos = document.querySelectorAll('.lala-atalho');
+    atalhos.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        const pergunta = btn.getAttribute('data-pergunta');
+        if (pergunta) responder(pergunta);
+      });
+    });
   });
 })();
