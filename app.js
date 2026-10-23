@@ -245,6 +245,7 @@ try {
   if (typeof firebase !== 'undefined') {
     if (!firebase.apps.length) firebase.initializeApp(CONFIG.firebase);
     db = firebase.database();
+    window.db = db;
     auth = firebase.auth();
     State.db = db;
     console.log("🔥 Firebase inicializado. Projeto:", CONFIG.firebase.projectId);
