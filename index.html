@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tralalá Festas - Sistema Pro</title>
+  <link rel="icon" type="image/png" href="tralala-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="assets/lala/lala-animacao.css">
+  <style>
+    .lala-fab { position: fixed; bottom: 25px; right: 25px; width: 65px; height: 65px; border-radius: 50%; background: linear-gradient(135deg, #a3536a, #c26e85); color: #fff; border: none; font-size: 32px; cursor: pointer; box-shadow: 0 8px 25px rgba(163, 83, 106, 0.5); z-index: 99999; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; }
+    .lala-fab:hover { transform: scale(1.1) rotate(-8deg); box-shadow: 0 10px 30px rgba(163, 83, 106, 0.7); }
+    .lala-fab.pulso { animation: lalaPulso 1.8s infinite; }
+    @keyframes lalaPulso { 0%, 100% { box-shadow: 0 8px 25px rgba(163, 83, 106, 0.5); } 50% { box-shadow: 0 8px 35px rgba(163, 83, 106, 0.95), 0 0 0 10px rgba(163, 83, 106, 0.15); } }
+    .lala-janela { position: fixed; bottom: 100px; right: 25px; width: 360px; max-width: calc(100vw - 40px); height: 500px; max-height: calc(100vh - 130px); background: #fff; border-radius: 20px; box-shadow: 0 15px 50px rgba(0,0,0,0.25); z-index: 99998; display: none; flex-direction: column; overflow: hidden; border: 2px solid var(--primary-light); }
+    .lala-janela.ativo { display: flex; animation: lalaSubir 0.3s ease; }
+    @keyframes lalaSubir { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .lala-header { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .lala-header-info { display: flex; align-items: center; gap: 10px; }
+    .lala-avatar { width: 40px; height: 40px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+    .lala-titulo { font-weight: 700; font-size: 15px; line-height: 1.2; }
+    .lala-status { font-size: 11px; opacity: 0.85; display: flex; align-items: center; gap: 4px; }
+    .lala-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #4cd964; box-shadow: 0 0 6px #4cd964; }
+    .lala-fechar { background: rgba(255,255,255,0.2); border: none; color: #fff; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; font-size: 16px; line-height: 1; transition: background 0.2s; }
+    .lala-fechar:hover { background: rgba(255,255,255,0.35); }
+    .lala-body { flex: 1; overflow-y: auto; padding: 15px; background: #fdfbfc; display: flex; flex-direction: column; gap: 10px; }
+    .lala-msg { max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 13px; line-height: 1.5; word-wrap: break-word; animation: lalaMsg 0.3s ease; }
+    @keyframes lalaMsg { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .lala-msg.bot { background: #fff; color: var(--text-main); border: 1px solid #f1e6f5; border-bottom-left-radius: 4px; align-self: flex-start; box-shadow: 0 2px 6px rgba(163,83,106,0.06); }
+    .lala-msg.user { background: var(--primary); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+    .lala-msg.bot strong, .lala-msg.bot b { color: var(--primary); }
+    .lala-msg .lala-link-btn { display: inline-block; margin-top: 6px; margin-right: 4px; background: var(--primary-light); color: #fff; border: none; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    .lala-msg .lala-link-btn:hover { background: var(--primary-dark); }
+    .lala-digitando { display: flex; gap: 4px; align-items: center; padding: 12px 16px; }
+    .lala-digitando span { width: 7px; height: 7px; border-radius: 50%; background: var(--primary-light); animation: lalaBounce 1.2s infinite; }
+    .lala-digitando span:nth-child(2) { animation-delay: 0.2s; }
+    .lala-digitando span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes lalaBounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-6px); opacity: 1; } }
+    .lala-atalhos { padding: 10px 12px; background: #fff; border-top: 1px solid #f1e6f5; display: flex; flex-wrap: wrap; gap: 6px; flex-shrink: 0; max-height: 90px; overflow-y: auto; }
+    .lala-atalho { padding: 6px 12px; background: #f8f0f2; color: var(--primary-dark); border: 1px solid #e1cbd4; border-radius: 20px; font-size: 11px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .lala-atalho:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .lala-footer { padding: 10px 12px; background: #fff; border-top: 1px solid #f1e6f5; display: flex; gap: 8px; flex-shrink: 0; }
+    .lala-input { flex: 1; padding: 10px 14px; border: 1.5px solid var(--border-color); border-radius: 22px; font-size: 13px; font-family: inherit; outline: none; transition: border-color 0.2s; }
+    .lala-input:focus { border-color: var(--primary); }
+    .lala-enviar { width: 42px; height: 42px; border-radius: 50%; border: none; background: var(--primary); color: #fff; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+    .lala-enviar:hover { background: var(--primary-dark); transform: scale(1.05); }
+    @media (max-width: 500px) { .lala-janela { width: calc(100vw - 30px); right: 15px; bottom: 90px; height: 70vh; } .lala-fab { bottom: 15px; right: 15px; width: 58px; height: 58px; font-size: 28px; } }
+
+    .nota-promissoria { background: #fff; border: 2px solid #000; padding: 20px 25px; margin: 20px 0; font-family: 'Times New Roman', Times, serif; font-size: 11pt; line-height: 1.4; page-break-inside: avoid; }
+    .nota-promissoria h2 { text-align: center; font-size: 14pt; font-weight: bold; margin: 0 0 15px 0; border-bottom: 1px solid #000; padding-bottom: 6px; }
+    .nota-promissoria .linha-nota { margin: 8px 0; text-align: justify; }
+    .nota-promissoria .assinatura-nota { margin-top: 30px; text-align: center; }
+    .nota-promissoria .linha-assinatura-nota { border-top: 1px solid #000; width: 70%; margin: 20px auto 4px auto; }
+
+    .categoria-header-modal { background: linear-gradient(90deg, var(--primary), var(--primary-dark)); color: #fff; font-weight: 700; padding: 8px 12px; border-radius: 6px; margin: 10px 0 6px 0; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .categoria-header-modal .badge-cat-modal { background: rgba(255,255,255,0.3); padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+  </style>
+    <!-- ... outras coisas do topo ... -->
+      <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="assets/lala/lala-animacao.css">
+</head>
+<body>
+  <div class="site-container">
+    <header class="fachada">
+      <img src="tralala-logo.png" alt="Logo Tralalá" class="logo-imagem">
+    </header>
+
+    <section id="secao-login">
+      <h2 style="text-align: center;">Acesso ao Sistema</h2>
+      <p class="instrucao">Faça login para gerenciar reservas e estoque.</p>
+      <div class="input-group">
+        <label for="email">E-mail de Acesso:</label>
+        <input type="email" id="email" placeholder="Digite seu e-mail" autocomplete="username">
+      </div>
+      <div class="input-group">
+        <label for="senha">Senha Segura:</label>
+        <input type="password" id="senha" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button type="button" id="btn-login-direto" class="btn btn-primary">Entrar no Painel</button>
+    </section>
+
+    <section id="secao-verificador" style="display: none;">
+      <div class="usuario-logado">
+        <span id="nome-usuario"> 👤 Administrador (Tralalá)</span>
+        <button type="button" id="btn-logout-direto" class="btn btn-outline">Sair</button>
+      </div>
+
+      <div id="painel-ponto-eletronico" class="painel-ponto">
+        <div class="ponto-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <h3>⏰ Ponto Eletrônico</h3>
+          <button type="button" id="btn-abrir-relatorio-pontos" class="btn btn-outline" style="padding: 6px 12px; font-size: 12px;">📋 Histórico</button>
+        </div>
+        <div class="grid-2">
+          <button type="button" id="btn-ponto-entrada" class="btn btn-primary" style="background-color: var(--success);">🟢 Registrar Entrada</button>
+          <button type="button" id="btn-ponto-saida" class="btn btn-primary" style="background-color: var(--error);">🔴 Registrar Saída</button>
+        </div>
+        <div id="ponto-status-hoje" class="ponto-status" style="font-size: 13px; color: var(--text-muted); text-align: center; margin-top: 12px; padding: 8px; background: #ffffff; border-radius: 8px; border: 1px dashed var(--border-color);">
+          Buscando registros do servidor...
+        </div>
+      </div>
+
+      <div id="painel-relatorio-pontos-geral" class="painel-relatorio-pontos">
+        <h3 style="margin-top: 0; border-bottom: 2px solid var(--primary-light); padding-bottom: 5px;">📊 Histórico de Pontos</h3>
+        <div style="overflow-x: auto; max-height: 200px;">
+          <table class="tabela-pontos">
+            <thead>
+              <tr><th>Funcionário</th><th>Data</th><th>Entrada</th><th>Saída</th></tr>
+            </thead>
+            <tbody id="lista-pontos-geral-corpo">
+              <tr><td colspan="4" style="text-align:center; color:#999;">Nenhum ponto registrado.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap;">
+        <button type="button" id="btn-abrir-central-relatorios" class="btn btn-primary" style="flex: 1; min-width: 140px; background-color: #3498db;">📊 Venda Mensal & Anual</button>
+        <button type="button" id="btn-abrir-reunioes-painel" class="btn btn-primary" style="flex: 1; min-width: 140px; background-color: #27ae60;">📅 Agendar Reuniões</button>
+        <button type="button" id="btn-abrir-orcamentos" class="btn btn-outline" style="flex: 1; min-width: 140px; background-color: #a3536a; color: white; border: none;">📋 Ver Orçamentos</button>
+        <button type="button" id="btn-abrir-catalogo-temas" class="btn btn-outline" style="flex: 1; min-width: 110px;">🎨 Ver Catálogo</button>
+        <button type="button" id="btn-abrir-gerador-kits" class="btn btn-outline" style="flex: 1; min-width: 110px; border-color: #9b59b6; color: #9b59b6;">🎁 Gerar Kits</button>
+        <button type="button" id="btn-abrir-gerador-contrato" class="btn btn-outline" style="flex: 1; min-width: 130px; border-color: #e67e22; color: #e67e22;">✍️ Gerar Contrato</button>
+        
+        <button type="button" id="btn-abrir-orcamentos-aberto" class="btn btn-outline" style="flex: 1; min-width: 140px; border-color: #f39c12; color: #f39c12;">📊 Orçamentos em Aberto</button>
+        <button type="button" id="btn-abrir-clientes-campanhas" class="btn btn-outline" style="flex: 1; min-width: 140px; border-color: #3498db; color: #3498db;">👥 Clientes e Campanhas</button>
+      </div>
+            <!-- ============================================================ -->
+      <!-- NOVO PAINEL: ORÇAMENTOS EM ABERTO                            -->
+      <!-- ============================================================ -->
+      <div id="painel-orcamentos-aberto" class="painel-central-relatorios" style="display: none; border-color: #f39c12;">
+        <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center; color: #f39c12;">
+          <span>📊 Orçamentos em Aberto</span>
+          <button type="button" id="btn-fechar-orcamentos-aberto" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px; border-color: #f39c12; color: #f39c12;">✕ Fechar</button>
+        </h3>
+        
+        <div style="background: #fffaf0; border: 1px solid #fdebd0; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+          <h4 style="margin: 0 0 10px 0; color: #f39c12;">➕ Novo Orçamento</h4>
+          
+          <!-- Dados do Cliente -->
+          <h5 style="margin: 10px 0 5px 0; color: #e67e22; font-size: 13px;">1. Dados do Cliente</h5>
+          <div class="grid-2">
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 12px;">Nome do Cliente:</label>
+              <input type="text" id="oa-cliente" placeholder="Nome completo">
+            </div>
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 12px;">WhatsApp:</label>
+              <input type="text" id="oa-whatsapp" placeholder="(61) 9XXXX-XXXX">
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 12px;">Data da Festa:</label>
+              <input type="date" id="oa-data-festa">
+            </div>
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 12px;">Horário da Festa:</label>
+              <input type="time" id="oa-horario-festa">
+            </div>
+          </div>
+          <div class="input-group" style="margin-bottom: 15px;">
+            <label style="font-size: 12px;">Bairro e Endereço (quando necessário):</label>
+            <input type="text" id="oa-endereco" placeholder="Ex: Samambaia Sul - QN 508...">
+          </div>
+
+          <!-- Detalhes da Decoração -->
+          <h5 style="margin: 10px 0 5px 0; color: #e67e22; font-size: 13px;">2. Detalhes da Decoração</h5>
+          <div class="grid-2">
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 12px;">Tema da Festa:</label>
+              <input type="text" id="oa-tema" placeholder="Ex: Safári">
+            </div>
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 12px;">Tipo de Serviço:</label>
+              <select id="oa-tipo-servico">
+                <option value="Pegue e Monte">🏠 Pegue e Monte</option>
+                <option value="Decoração Completa">📦 Decoração Completa</option>
+                <option value="Peças Avulsas">🧩 Peças Avulsas</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 12px;">Kit Escolhido:</label>
+              <select id="oa-kit">
+                <option value="Só um Bolinho">🧁 Só um Bolinho</option>
+                <option value="Kit Básico">📦 Kit Básico</option>
+                <option value="Kit Prata">🥈 Kit Prata</option>
+                <option value="Kit Ouro">🥇 Kit Ouro</option>
+                <option value="Festa na Mesa">🍽️ Festa na Mesa</option>
+                <option value="Personalizado">✨ Personalizado</option>
+              </select>
+            </div>
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 12px;">Adicionais (LED, Balões, etc.):</label>
+              <input type="text" id="oa-adicionais-desc" placeholder="Descreva os adicionais">
+            </div>
+          </div>
+          <div class="input-group" style="margin-bottom: 15px;">
+            <label style="font-size: 12px;">Descrição dos Itens e Quantidades:</label>
+            <textarea id="oa-descricao-itens" rows="2" placeholder="Ex: 1 Painel redondo, 2 mesas..." style="resize: vertical;"></textarea>
+          </div>
+
+          <!-- Valores e Pagamento -->
+          <h5 style="margin: 10px 0 5px 0; color: #e67e22; font-size: 13px;">3. Valores e Pagamento</h5>
+          <div class="grid-3">
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 12px;">Valor Kit/Decoração (R$):</label>
+              <input type="number" id="oa-valor-kit" step="0.01" placeholder="0.00">
+            </div>
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 12px;">Valor Adicionais (R$):</label>
+              <input type="number" id="oa-valor-adicionais" step="0.01" placeholder="0.00">
+            </div>
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 12px;">Frete (R$):</label>
+              <input type="number" id="oa-valor-frete" step="0.01" placeholder="0.00">
+            </div>
+          </div>
+          <div class="grid-3">
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 12px;">Desconto (R$):</label>
+              <input type="number" id="oa-valor-desconto" step="0.01" placeholder="0.00">
+            </div>
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 12px;">Entrada Paga (R$):</label>
+              <input type="number" id="oa-valor-entrada" step="0.01" placeholder="0.00">
+            </div>
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 12px;">Valor Total (R$):</label>
+              <input type="number" id="oa-valor-total" step="0.01" placeholder="0.00" readonly style="background:#eee; font-weight:bold;">
+            </div>
+          </div>
+          <div class="input-group" style="margin-bottom: 10px;">
+            <label style="font-size: 12px;">Forma e Prazo de Pagamento:</label>
+            <input type="text" id="oa-prazo-pagamento" placeholder="Ex: 50% no PIX, 50% em dinheiro no dia">
+          </div>
+
+          <!-- Outros campos que já existiam -->
+          <div class="grid-2" style="margin-top: 15px; border-top: 1px dashed #fdebd0; padding-top: 15px;">
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 12px;">Data de Envio do Orçamento:</label>
+              <input type="date" id="oa-data-envio">
+            </div>
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 12px;">Data Prevista de Retorno:</label>
+              <input type="date" id="oa-data-retorno">
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 12px;">Status:</label>
+              <select id="oa-status">
+                <option value="aguardando">Aguardando Resposta</option>
+                <option value="negociacao">Em Negociação</option>
+                <option value="fechado">Fechado</option>
+                <option value="perdido">Perdido</option>
+              </select>
+            </div>
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 12px;">Observações Gerais:</label>
+              <input type="text" id="oa-obs" placeholder="Observações">
+            </div>
+          </div>
+          
+          <button type="button" id="btn-salvar-orcamento-aberto" class="btn btn-primary" style="background-color: #f39c12; margin-top: 10px;">Salvar Orçamento em Aberto</button>
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+          <div class="input-group" style="flex: 1; margin-bottom: 0;">
+            <label style="font-size: 12px;">Filtrar por Status:</label>
+            <select id="filtro-status-orcamento">
+              <option value="">Todos</option>
+              <option value="aguardando">Aguardando Resposta</option>
+              <option value="negociacao">Em Negociação</option>
+              <option value="fechado">Fechado</option>
+              <option value="perdido">Perdido</option>
+            </select>
+          </div>
+          <div class="input-group" style="flex: 1; margin-bottom: 0;">
+            <label style="font-size: 12px;">Filtrar por Data de Retorno:</label>
+            <input type="date" id="filtro-data-retorno">
+          </div>
+        </div>
+
+        <h4 style="color: #f39c12; border-bottom: 1px solid #fdebd0; padding-bottom: 5px;">📋 Lista de Orçamentos:</h4>
+        <div id="lista-orcamentos-aberto-container" style="max-height: 400px; overflow-y: auto;">
+          <p style="text-align:center; color:#999;">Carregando orçamentos...</p>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- NOVO PAINEL: CLIENTES E CAMPANHAS                            -->
+      <!-- ============================================================ -->
+      <div id="painel-clientes-campanhas" class="painel-central-relatorios" style="display: none; border-color: #3498db;">
+        <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center; color: #3498db;">
+          <span>👥 Clientes e Campanhas</span>
+          <button type="button" id="btn-fechar-clientes-campanhas" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px; border-color: #3498db; color: #3498db;">✕ Fechar</button>
+        </h3>
+        
+        <div style="background: #f4f9ff; border: 1px solid #d6eaf8; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+          <h4 style="margin: 0 0 10px 0; color: #3498db;">🔍 Filtros de Clientes</h4>
+          <div class="grid-2">
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 12px;">Filtrar por Mês de Aniversário:</label>
+              <select id="filtro-mes-aniversario">
+                <option value="">Todos os meses</option>
+                <option value="Janeiro">Janeiro</option>
+                <option value="Fevereiro">Fevereiro</option>
+                <option value="Março">Março</option>
+                <option value="Abril">Abril</option>
+                <option value="Maio">Maio</option>
+                <option value="Junho">Junho</option>
+                <option value="Julho">Julho</option>
+                <option value="Agosto">Agosto</option>
+                <option value="Setembro">Setembro</option>
+                <option value="Outubro">Outubro</option>
+                <option value="Novembro">Novembro</option>
+                <option value="Dezembro">Dezembro</option>
+              </select>
+            </div>
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 12px;">Filtrar por Mês da Festa Anterior:</label>
+              <select id="filtro-mes-festa-anterior">
+                <option value="">Todos os meses</option>
+                <option value="Janeiro">Janeiro</option>
+                <option value="Fevereiro">Fevereiro</option>
+                <option value="Março">Março</option>
+                <option value="Abril">Abril</option>
+                <option value="Maio">Maio</option>
+                <option value="Junho">Junho</option>
+                <option value="Julho">Julho</option>
+                <option value="Agosto">Agosto</option>
+                <option value="Setembro">Setembro</option>
+                <option value="Outubro">Outubro</option>
+                <option value="Novembro">Novembro</option>
+                <option value="Dezembro">Dezembro</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <h4 style="color: #3498db; border-bottom: 1px solid #d6eaf8; padding-bottom: 5px;">📋 Lista de Clientes:</h4>
+        <div id="lista-clientes-campanhas-container" style="max-height: 400px; overflow-y: auto;">
+          <p style="text-align:center; color:#999;">Carregando clientes...</p>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- PAINEL DE REUNIÕES (Já existia)                              -->
+      <!-- ============================================================ -->
+      <div id="painel-reunioes-exclusivo" class="painel-central-relatorios" style="display: none; border-color: #27ae60;">
+        <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center; color: #27ae60;">
+          <span>📅 Painel de Reuniões com Clientes</span>
+          <button type="button" id="btn-fechar-reunioes" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px; border-color: #27ae60; color: #27ae60;">✕ Fechar</button>
+        </h3>
+        <div style="background: #f4faf6; border: 1px solid #d4efdf; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+          <h4 style="margin: 0 0 10px 0; color: #27ae60;">➕ Marcar Nova Reunião</h4>
+          <div class="grid-2">
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 12px;">Cliente / Noiva:</label>
+              <input type="text" id="reuniao-cliente" placeholder="Nome da Contratante">
+            </div>
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 12px;">Data & Hora:</label>
+              <input type="datetime-local" id="reuniao-data-hora">
+            </div>
+          </div>
+          <div class="input-group" style="margin-bottom: 10px;">
+            <label style="font-size: 12px;">Pauta / Objetivo:</label>
+            <input type="text" id="reuniao-pauta" placeholder="Ex: Escolha das flores">
+          </div>
+          <button type="button" id="btn-salvar-reuniao-avulsa" class="btn btn-primary" style="background-color: #27ae60;">Agendar Reunião</button>
+        </div>
+        <h4 style="color: #2c3e50; border-bottom: 1px solid #ddd; padding-bottom: 5px;">📍 Reuniões Agendadas:</h4>
+        <div id="lista-reunioes-container" style="max-height: 250px; overflow-y: auto;">
+          <p style="color: #999; text-align: center;">Buscando reuniões da nuvem...</p>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- CATÁLOGO DE TEMAS (Já existia)                               -->
+      <!-- ============================================================ -->
+      <div id="painel-catalogo-temas" class="painel-relatorio-pontos" style="border-color: var(--primary); background: #ffffff; display: none;">
+        <h3 style="margin-top: 0; border-bottom: 2px solid var(--primary); padding-bottom: 5px; color: var(--primary); display: flex; justify-content: space-between; align-items: center;">
+          <span>🎨 Catálogo de Temas & Peças</span>
+          <span id="contador-catalogo-total" style="font-size: 13px; font-weight: normal; background: var(--primary); color: white; padding: 2px 8px; border-radius: 20px;">0 itens</span>
+        </h3>
+
+        <div style="background: #ffffff; border: 1.5px solid var(--primary-light); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+          <h4 style="margin: 0 0 10px 0; color: var(--primary); font-size: 14px;">➕ Adicionar Peça / Tema</h4>
+          <div class="grid-3">
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 11px;">Nome da Peça/Tema:</label>
+              <input type="text" id="catalogo-peca-nome" placeholder="Ex: Mesa Provençal">
+            </div>
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 11px;">Quantidade:</label>
+              <input type="number" id="catalogo-peca-qtd" value="1" min="0">
+            </div>
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 11px;">Categoria:</label>
+              <select id="catalogo-peca-categoria">
+                <option value="Maquete">Maquete</option>
+                <option value="Louças de porcelana">Louças de porcelana</option>
+                <option value="Painéis">Painéis</option>
+                <option value="Infantil">Infantil</option>
+                <option value="Casamento">Casamento</option>
+                <option value="15 Anos">15 Anos</option>
+                <option value="Outros">Outros</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid-3">
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 11px;">Modelo/Estilo:</label>
+              <input type="text" id="catalogo-peca-modelo" placeholder="Ex: Rústico">
+            </div>
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 11px;">💰 Preço da Locação (R$):</label>
+              <input type="number" id="catalogo-peca-preco" placeholder="0.00" step="0.01" value="0">
+            </div>
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 11px;">🔧 Preço de Reposição (R$):</label>
+              <input type="number" id="catalogo-peca-preco-reposicao" placeholder="0.00" step="0.01" value="0">
+            </div>
+          </div>
+          <div class="input-group" style="margin-bottom: 10px;">
+            <label style="font-size: 11px;">Foto da Peça / Upload:</label>
+            <input type="file" id="catalogo-peca-imagem" accept="image/*" capture="environment" style="padding: 10px;">
+          </div>
+          <button type="button" id="btn-adicionar-peca" class="btn btn-primary" style="margin-top: 5px;">Salvar Peça no Acervo</button>
+        </div>
+
+        <div style="background: #f5f0f0; border: 1.5px solid #e1cbd4; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+          <h4 style="margin: 0 0 12px 0; color: var(--primary-dark); display: flex; justify-content: space-between; align-items: center;">
+            <span>📂 Gerenciar Categorias</span>
+            <span id="contador-categorias" style="font-size:12px; background:var(--primary); color:#fff; padding:2px 10px; border-radius:12px;">0</span>
+          </h4>
+          <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <input type="text" id="input-nova-categoria" placeholder="Nome da nova categoria" style="flex:1; min-width:180px; padding:10px 12px; border:1.5px solid var(--border-color); border-radius:8px;">
+              <button type="button" id="btn-adicionar-categoria" class="btn btn-primary" style="padding:10px 16px; width:auto; font-size:13px; white-space:nowrap;">➕ Adicionar</button>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <select id="select-remover-categoria" style="flex:1; min-width:180px; padding:10px 12px; border:1.5px solid var(--border-color); border-radius:8px;">
+                <option value="">Selecione a categoria para remover...</option>
+              </select>
+              <button type="button" id="btn-remover-categoria" class="btn btn-danger" style="padding:10px 16px; width:auto; font-size:13px; white-space:nowrap;">🗑️ Remover</button>
+            </div>
+          </div>
+          <div id="lista-categorias-admin" style="display:flex; flex-wrap:wrap; gap:6px; padding:8px; background:#fff; border-radius:8px; min-height:40px; border:1px solid var(--border-color);"></div>
+        </div>
+
+        <div style="background: #fff5f5; border: 1.5px solid #f5c6c6; padding: 15px; border-radius: 10px;">
+          <h4 style="margin: 0 0 12px 0; color: var(--error);">🗑️ Remover Tema/Peça</h4>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <select id="select-remover-tema" style="flex:1; min-width:200px; padding:10px 14px; border:1.5px solid var(--border-color); border-radius:8px;">
+              <option value="">Selecione um tema para remover...</option>
+            </select>
+            <button type="button" id="btn-remover-tema-admin" class="btn btn-danger" style="padding:10px 20px; width:auto; font-size:14px;">🗑️ Remover</button>
+          </div>
+        </div>
+
+        <div style="overflow-x: auto; max-height: 500px; margin-top: 15px;">
+          <table class="tabela-pontos">
+            <thead>
+              <tr style="background: var(--primary);">
+                <th style="background: var(--primary); width: 60px;">Imagem</th>
+                <th style="background: var(--primary);">Item / Preços</th>
+                <th style="background: var(--primary); width: 180px; text-align: center;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="lista-temas-gerenciados-corpo">
+              <tr><td colspan="3" style="text-align:center; color:#999; padding: 10px;">Buscando catálogo...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+            <!-- ============================================================ -->
+      <!-- PAINEL GERADOR DE KITS (Já existia)                          -->
+      <!-- ============================================================ -->
+      <div id="painel-gerador-kits" class="painel-central-relatorios" style="display: none; border-color: #9b59b6;">
+        <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center; color: #9b59b6;">
+          <span>🎁 Gerador de Kits Personalizados</span>
+          <button type="button" id="btn-fechar-gerador-kits" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px; border-color: #9b59b6; color: #9b59b6;">✕ Fechar</button>
+        </h3>
+        <div style="background: #f9f4fb; border: 1.5px solid #d8b4e2; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+          <h4 style="margin: 0 0 10px 0; color: #9b59b6; font-size: 14px;">➕ Criar Novo Kit</h4>
+          <div class="grid-2">
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 11px;">Nome do Kit:</label>
+              <input type="text" id="kit-nome" placeholder="Ex: Kit Princesa Encantada">
+            </div>
+            <div class="input-group" style="margin-bottom: 10px;">
+              <label style="font-size: 11px;">Quantidade Disponível:</label>
+              <input type="number" id="kit-quantidade" value="1" min="0">
+            </div>
+          </div>
+          <div class="grid-2" style="margin-bottom: 10px;">
+            <button type="button" id="btn-kit-selecionar-pecas" class="btn-pecas-tema" style="padding:12px;">🍽️ Selecionar Peças</button>
+            <button type="button" id="btn-kit-selecionar-temas" class="btn-pecas-tema" style="padding:12px;">🎨 Selecionar Temas</button>
+          </div>
+          <div id="kit-info-selecao" style="background:#fff; padding:10px; border-radius:8px; margin-bottom:10px; font-size:12px; color:var(--text-muted); border:1px dashed #d8b4e2; min-height:40px;">
+            Nenhuma peça ou tema selecionado ainda.
+          </div>
+          <div class="input-group" style="margin-bottom: 10px;">
+            <label style="font-size: 11px;">Foto do Kit / Upload:</label>
+            <input type="file" id="kit-imagem" accept="image/*" capture="environment" style="padding: 10px;">
+          </div>
+          <button type="button" id="btn-salvar-kit" class="btn btn-primary" style="background-color: #9b59b6;">💾 Salvar Kit no Acervo</button>
+        </div>
+        <h4 style="color: #9b59b6; border-bottom: 1px solid #d8b4e2; padding-bottom: 5px;">📦 Kits Cadastrados:</h4>
+        <div id="lista-kits-render" style="max-height: 400px; overflow-y: auto;">
+          <p style="text-align:center; color:#999;">Carregando kits...</p>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- RELATÓRIO DE VENDAS (Já existia)                             -->
+      <!-- ============================================================ -->
+      <div id="secao-central-relatorios" class="painel-central-relatorios" style="display: none;">
+        <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center;">
+          <span>📊 Relatório de Vendas & Faturamento</span>
+          <button type="button" id="btn-fechar-central-relatorios" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">✕ Fechar</button>
+        </h3>
+        <div class="grid-2" style="margin-bottom: 15px; align-items: flex-end;">
+          <div class="input-group" style="margin-bottom: 0;">
+            <label>Mês:</label>
+            <select id="seletor-mes-planilha">
+              <option value="Janeiro">Janeiro</option>
+              <option value="Fevereiro">Fevereiro</option>
+              <option value="Março">Março</option>
+              <option value="Abril">Abril</option>
+              <option value="Maio">Maio</option>
+              <option value="Junho">Junho</option>
+              <option value="Julho" selected>Julho</option>
+              <option value="Agosto">Agosto</option>
+              <option value="Setembro">Setembro</option>
+              <option value="Outubro">Outubro</option>
+              <option value="Novembro">Novembro</option>
+              <option value="Dezembro">Dezembro</option>
+            </select>
+          </div>
+          <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+            <button type="button" id="btn-transformar-grafico" class="btn btn-primary" style="background-color: #e74c3c; font-size: 11px; padding: 8px;">📈 Gráfico</button>
+            <button type="button" id="btn-toggle-grafico" class="btn btn-outline" style="border-color: #3498db; color: #3498db; font-size: 11px; padding: 8px;">📈 Anual</button>
+          </div>
+        </div>
+        <div id="painel-grafico-faturamento" class="grafico-wrapper" style="display: none;">
+          <h4 style="margin: 0 0 10px 0; color: #2c3e50;">📈 Desempenho Anual</h4>
+          <canvas id="graficoAnual" style="max-height: 250px; width: 100%;"></canvas>
+        </div>
+        <div style="overflow-x: auto; margin-top: 15px;">
+          <table class="planilha-festa-simulada" id="tabela-planilha-corpo">
+            <thead>
+              <tr>
+                <th style="width: 35%;">Cliente</th>
+                <th style="width: 25%;">Kit</th>
+                <th style="width: 25%;">Valor (R$)</th>
+                <th style="width: 15%;">Ação</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+          <!-- ============================================================ -->
+      <!-- FORMULÁRIO PRINCIPAL DE AGENDAMENTO                          -->
+      <!-- ============================================================ -->
+      <h2 id="titulo-form-reserva">Agendar Nova Festa</h2>
+
+      <div class="grid-2">
+        <div class="input-group">
+          <label>Nome do Cliente:</label>
+          <input type="text" id="nome-cliente" placeholder="Ex: Maria Flor">
+        </div>
+        <div class="input-group">
+          <label>CPF do Cliente:</label>
+          <input type="text" id="cliente-cpf" placeholder="000.000.000-00">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="input-group">
+          <label>Telefone:</label>
+          <input type="text" id="cliente-telefone" placeholder="(61) 9XXXX-XXXX">
+        </div>
+        <div class="input-group">
+          <label>Data do Evento:</label>
+          <input type="date" id="data">
+        </div>
+      </div>
+      <div class="input-group">
+        <label>Endereço do Cliente:</label>
+        <input type="text" id="cliente-endereco" placeholder="Endereço completo">
+      </div>
+      <div class="input-group">
+        <label>Local do Evento:</label>
+        <input type="text" id="local-evento" placeholder="Local do evento">
+      </div>
+
+      <div class="input-group">
+        <label>Buscar e Selecionar Tema/Peça:</label>
+        <div class="sugestoes-wrapper">
+          <div class="busca-container">
+            <input type="text" id="filtro-tema-input" placeholder="Digite para buscar..." autocomplete="off">
+          </div>
+          <div id="wrapper-lista-sugestoes" class="lista-sugestoes"></div>
+        </div>
+        <input type="hidden" id="busca-tema-input" value="">
+      </div>
+
+      <div class="painel-kits">
+        <label style="font-weight: 600; display: block; margin-bottom: 12px; color: var(--primary);">🛍️ Modelo do Kit:</label>
+        <div id="grupo-kits-dinamico" class="grid-kits">
+          <button type="button" class="btn-kit-opcao" data-kit="Só um Bolinho">🧁 Só um Bolinho</button>
+          <button type="button" class="btn-kit-opcao" data-kit="Kit Básico">📦 Kit Básico</button>
+          <button type="button" class="btn-kit-opcao" data-kit="Kit Prata">🥈 Kit Prata</button>
+          <button type="button" class="btn-kit-opcao" data-kit="Kit Ouro">🥇 Kit Ouro</button>
+          <button type="button" class="btn-kit-opcao" data-kit="Festa na Mesa">🍽️ Festa na Mesa</button>
+        </div>
+
+        <div id="kit-acoes-box" class="kit-acoes-box">
+          <div class="kit-acoes-titulo">📋 Personalizar <span id="kit-acoes-nome">Kit</span></div>
+          <button type="button" id="btn-esc-pecas" class="btn-pecas-tema">🍽️ Escolher Peças</button>
+          <button type="button" id="btn-esc-tema" class="btn-pecas-tema">🎨 Escolher Tema</button>
+          <div class="kit-acoes-info" id="kit-acoes-info">Nenhuma peça selecionada</div>
+        </div>
+
+        <div style="margin-top: 20px;">
+          <label class="check-container">
+            <input type="checkbox" id="chk-montar-local">
+            <span>🛠️ Montar no Local?</span>
+          </label>
+          <div id="painel-montagem-local" class="montagem-local-container">
+            <div class="grid-2">
+              <div class="input-group" style="margin-bottom: 10px;">
+                <label style="font-size:12px;">Quantas peças vão?</label>
+                <input type="number" id="ml-qtd-pecas" value="0" min="0">
+              </div>
+              <div class="input-group" style="margin-bottom: 10px;">
+                <label style="font-size:12px;">Vai LED?</label>
+                <select id="ml-led"><option value="Não">Não</option><option value="Sim">Sim</option></select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="resumo-selecao" style="background: #f8f4ff; border: 1.5px solid #d8b4e2; padding: 15px; border-radius: 10px; margin-top: 20px; display: none;">
+          <h4 style="margin: 0 0 10px 0; color: #9b59b6; font-size: 14px;">📋 Itens Selecionados</h4>
+          <div id="resumo-temas-pecas" style="font-size: 13px; line-height: 1.6;"></div>
+        </div>
+
+        <div class="input-group" style="margin-top: 15px;">
+          <label style="font-weight: 600; color: var(--primary);">💰 Acerto Financeiro & Frete</label>
+          <div class="calc-frete-box">
+            <span style="font-size: 12px; font-weight: 600; color: var(--primary-dark);">🚗 Calculadora de Frete (9 km/L):</span>
+            <div class="grid-2" style="margin-top: 10px;">
+              <div>
+                <label style="font-size: 11px;">KM só IDA:</label>
+                <input type="number" id="calc-km" placeholder="Ex: 45" style="padding: 8px;">
+              </div>
+              <div>
+                <label style="font-size: 11px;">Preço Combustível (R$):</label>
+                <input type="number" id="calc-valor-litro" value="8.00" step="0.01" style="padding: 8px;">
+              </div>
+            </div>
+            <div style="margin-top: 10px;">
+              <label class="check-container" style="font-size: 12px;">
+                <input type="checkbox" id="chk-segunda-viagem" style="width: 16px; height: 16px;">
+                <span>🔄 Cliente pediu 2ª viagem?</span>
+              </label>
+            </div>
+            <div style="font-size: 12px; margin-top: 12px; line-height: 1.6;">
+              🚗 KM total: <span id="calc-km-total">0</span> km<br>
+              Combustível: <span id="calc-total-combustivel">R$ 0.00</span> | Manutenção: <span id="calc-manutencao">R$ 0.00</span><br>
+              <strong>Frete: <span id="calc-cobrar-cliente" style="color: var(--success);">R$ 0.00</span></strong>
+            </div>
+          </div>
+
+          <div style="background: #e8f8f5; border: 1.5px solid #27ae60; padding: 15px; border-radius: 10px; margin-top: 15px;">
+            <h4 style="margin: 0 0 10px 0; color: #27ae60; font-size: 14px;">🧮 Soma Automática</h4>
+            <button type="button" id="btn-soma-automatica" class="btn btn-success" style="margin-bottom: 10px;">🧮 Calcular Soma Automática</button>
+            <div id="detalhes-soma" style="font-size: 12px; line-height: 1.6; color: var(--text-main);"></div>
+          </div>
+
+          <div style="background: #fff3e0; border: 1.5px solid #ff9800; padding: 15px; border-radius: 10px; margin-top: 15px;">
+            <h4 style="margin: 0 0 10px 0; color: #e65100; font-size: 14px;">🏷️ Aplicar Desconto</h4>
+            <div class="grid-3">
+              <div>
+                <label style="font-size: 11px;">Tipo:</label>
+                <select id="desconto-tipo" style="padding: 8px;">
+                  <option value="percent">% Percentual</option>
+                  <option value="reais">R$ Reais</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size: 11px;">Valor do Desconto:</label>
+                <input type="number" id="desconto-valor" placeholder="0" step="0.01" style="padding: 8px;">
+              </div>
+              <div style="display:flex; align-items:flex-end;">
+                <button type="button" id="btn-aplicar-desconto" class="btn btn-primary" style="background-color:#ff9800;">Aplicar</button>
+              </div>
+            </div>
+            <div id="resultado-desconto" style="margin-top:12px; font-size:13px; line-height:1.6;"></div>
+          </div>
+
+          <div class="grid-3" style="margin-top: 15px;">
+            <div>
+              <label style="font-size: 12px;">Valor da Festa (R$):</label>
+              <input type="number" id="valor-festa" placeholder="0.00" step="0.01" value="0.00">
+            </div>
+            <div>
+              <label style="font-size: 12px;">Frete (R$):</label>
+              <input type="number" id="valor-frete" placeholder="0.00" step="0.01" readonly style="background:#fdf5f6; font-weight:bold; color:var(--primary);">
+            </div>
+            <div>
+              <label style="font-size: 12px;">Total (Festa + Frete):</label>
+              <input type="number" id="valor-total" placeholder="0.00" step="0.01" readonly style="font-weight:bold; background:#ebfbf2;">
+            </div>
+          </div>
+          <div class="grid-2" style="margin-top: 15px;">
+            <div>
+              <label style="font-size: 12px;">Sinal Pago (R$):</label>
+              <input type="number" id="valor-sinal" placeholder="0.00" step="0.01" value="0.00">
+            </div>
+            <div>
+              <label style="font-size: 12px; color: var(--error); font-weight:600;">Resta Pagar (R$):</label>
+              <input type="number" id="valor-restante" placeholder="0.00" step="0.01" readonly style="background:#fff5f6; font-weight:bold; color:var(--error);">
+            </div>
+          </div>
+        </div>
+
+        <div class="input-group" style="margin-bottom: 0;">
+          <label>➕ Observações / Local da Festa:</label>
+          <input type="text" id="adicionais-festa" placeholder="Ex: Salão de Festas">
+        </div>
+      </div>
+
+      <button type="button" id="btn-confirmar-agendamento" class="btn btn-primary" style="padding: 18px; font-size: 16px;">✅ Confirmar e Salvar Reserva</button>
+
+      <!-- ============================================================ -->
+      <!-- RELATÓRIO DE AGENDAMENTOS E PASTAS                           -->
+      <!-- ============================================================ -->
+      <div style="margin-top: 40px; border-top: 2px solid var(--border-color); padding-top: 30px;">
+        
+        <!-- BARRA DE AÇÕES DAS PASTAS -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+          <h3 style="margin: 0;">📋 Relatório de Agendamentos Ativos</h3>
+          <div style="display: flex; gap: 10px;">
+            <button type="button" id="btn-agrupar-selecionados" class="btn btn-primary" style="background-color: #3498db; width: auto; padding: 8px 16px; font-size: 13px; display: none;">📁 Agrupar Selecionados</button>
+            <button type="button" id="btn-nova-pasta" class="btn btn-outline" style="border-color: #8e5868; color: #8e5868; padding: 8px 16px; font-size: 13px;">➕ Nova Pasta</button>
+          </div>
+        </div>
+
+        <!-- LISTA DE PASTAS -->
+        <div id="lista-pastas-render" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+          <!-- As pastas vão aparecer aqui automaticamente -->
+        </div>
+
+        <!-- LISTA DE CARDS SOLTOS -->
+        <div id="lista-reservas-render">
+          <p style="text-align: center; color: #999;">Carregando agendamentos...</p>
+        </div>
+
+      </div>
+    </section>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- MODAIS (Contrato, Peças, Temas, etc.)                        -->
+  <!-- ============================================================ -->
+  
+  <div id="modal-gerador-contrato" class="modal-contrato">
+    <div class="modal-conteudo">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--primary); padding-bottom:10px; margin-bottom:20px;">
+        <h3 style="margin:0; color:var(--primary);">✍️ Gerador de Contrato</h3>
+        <button type="button" id="btn-fechar-modal-contrato" style="background:none; border:none; font-size:20px; cursor:pointer; color:#999;">✕</button>
+      </div>
+      <form id="form-contrato-avulso">
+        <div class="grid-2">
+          <div class="input-group"><label>Nome do Contratante:</label><input type="text" id="c-nome" placeholder="Ex: Lenira Ribeiro"></div>
+          <div class="input-group"><label>CPF:</label><input type="text" id="c-cpf" placeholder="000.000.000-00"></div>
+        </div>
+        <div class="grid-2">
+          <div class="input-group"><label>Data da Festa:</label><input type="date" id="c-data"></div>
+          <div class="input-group"><label>Horário:</label><input type="time" id="c-horario"></div>
+        </div>
+        <div class="grid-2">
+          <div class="input-group"><label>Valor Total (R$):</label><input type="number" id="c-valor" placeholder="600.00" step="0.01"></div>
+          <div class="input-group"><label>Endereço do Cliente:</label><input type="text" id="c-endereco" placeholder="Endereço completo"></div>
+        </div>
+        <div class="grid-2">
+          <div class="input-group"><label>Telefone:</label><input type="text" id="c-telefone" placeholder="(61) 9XXXX-XXXX"></div>
+          <div class="input-group">
+            <label>Modelo do Contrato:</label>
+            <select id="c-modelo">
+              <option value="com-frete">📦 Com Frete</option>
+              <option value="pegue-monte">🏠 Pegue e Monte</option>
+              <option value="pegue-monte-loja">🏬 Pegue e Monte (Loja)</option>
+            </select>
+          </div>
+        </div>
+        <div class="input-group"><label>Local do Evento:</label><input type="text" id="c-local" placeholder="Endereço do evento"></div>
+        <div class="grid-2">
+          <div class="input-group"><label>📅 Retirada dos Itens:</label><input type="date" id="c-data-retirada"></div>
+          <div class="input-group"><label>📅 Devolução dos Itens:</label><input type="date" id="c-data-devolucao"></div>
+        </div>
+        <div class="input-group">
+          <label>🔍 Tema do Contrato:</label>
+          <div class="sugestoes-wrapper">
+            <div class="busca-container"><input type="text" id="contrato-tema-busca" placeholder="Digite o nome do tema..." autocomplete="off"></div>
+            <div id="contrato-tema-sugestoes" class="lista-sugestoes"></div>
+          </div>
+          <input type="hidden" id="contrato-tema-selecionado" value="">
+        </div>
+        <div class="input-group">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <label style="margin:0;">Peças (do Catálogo):</label>
+            <button type="button" id="btn-abrir-pecas-contrato" class="btn-pecas-tema" style="width:auto; padding:6px 12px; font-size:12px;">🍽️ Abrir Lista de Peças</button>
+          </div>
+          <select id="c-pecas" multiple style="height:90px; padding:5px;"></select>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:5px;" id="c-pecas-info">Clique em "Abrir Lista de Peças" pra escolher.</div>
+        </div>
+        <div class="input-group"><label>Observações:</label><input type="text" id="c-obs" placeholder="Ex: Fazer entrega às 13h"></div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px;">
+          <button type="button" id="btn-gerar-salvar-contrato" class="btn btn-primary" style="background-color:#e67e22; flex:1;">💾 Salvar Contrato</button>
+          <button type="button" id="btn-gerar-pdf-contrato" class="btn btn-success" style="flex:1;">📄 Gerar PDF</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL VISUALIZAR CONTRATO -->
+  <div id="modal-visualizar-contrato" class="modal-visualizar-contrato">
+    <div class="modal-visualizar-conteudo">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--primary); padding-bottom:10px; margin-bottom:20px;">
+        <h3 style="margin:0; color:var(--primary);">📄 Visualização do Contrato</h3>
+        <button type="button" id="btn-fechar-visualizacao" style="background:none; border:none; font-size:20px; cursor:pointer; color:#999;">✕</button>
+      </div>
+      <div class="visualizador-contrato-scroll" id="visualizador-scroll">
+        <div id="contrato-preview-content"></div>
+      </div>
+      <div style="margin-top:20px; display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;" class="no-print">
+        <button type="button" id="btn-baixar-pdf-contrato" class="btn btn-pdf" style="width:auto; padding:12px 24px;">📥 Baixar PDF</button>
+        <button type="button" id="btn-editar-contrato" class="btn btn-outline" style="width:auto; padding:12px 24px; border-color:#3498db; color:#3498db;">✏️ Editar Manualmente</button>
+        <button type="button" id="btn-salvar-edicao-contrato" class="btn btn-success" style="width:auto; padding:12px 24px; display:none;">💾 Salvar Alterações</button>
+        <button type="button" id="btn-add-nota-promissoria" class="btn btn-outline" style="width:auto; padding:12px 24px; border-color:#9b59b6; color:#9b59b6; display:none;">📝 Adicionar Nota Promissória</button>
+        <button type="button" id="btn-imprimir-contrato" class="btn btn-outline" style="width:auto; padding:12px 24px;">🖨️ Imprimir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE PEÇAS -->
+  <div id="modal-pecas" class="modal-pecas">
+    <div class="modal-pecas-conteudo">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #3498db; padding-bottom:10px; margin-bottom:20px;">
+        <h3 style="margin:0; color:#3498db;" id="titulo-modal-pecas">🍽️ Escolher Peças</h3>
+        <button type="button" id="btn-fechar-modal-pecas" style="background:none; border:none; font-size:20px; cursor:pointer; color:#999;">✕</button>
+      </div>
+      <div class="input-group" style="margin-bottom: 12px;">
+        <label style="font-size: 13px;">🔍 Filtrar peças:</label>
+        <input type="text" id="filtro-pecas" placeholder="Digite o nome..." style="padding: 10px;">
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <span style="font-size:13px; color:var(--text-muted);">Marque as peças:</span>
+        <span class="badge-contador" id="contador-pecas-selecionadas">0 selecionadas</span>
+      </div>
+      <div class="lista-pecas-checkbox" id="lista-pecas-checkbox">
+        <div style="text-align:center; padding: 20px; color: #999; font-size: 13px;">Carregando peças...</div>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <button type="button" id="btn-cancelar-pecas" class="btn btn-outline" style="flex:1;">Cancelar</button>
+        <button type="button" id="btn-confirmar-pecas" class="btn btn-success" style="flex:2;">✅ Confirmar Peças</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE TEMA -->
+  <div id="modal-tema-reserva" class="modal-tema-reserva">
+    <div class="modal-tema-reserva-conteudo">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--primary); padding-bottom:10px; margin-bottom:20px;">
+        <h3 style="margin:0; color:var(--primary);">🎨 Escolher Tema</h3>
+        <button type="button" id="btn-fechar-modal-tema" style="background:none; border:none; font-size:20px; cursor:pointer; color:#999;">✕</button>
+      </div>
+      <div class="input-group" style="margin-bottom: 12px;">
+        <label style="font-size: 13px;">🔍 Buscar tema:</label>
+        <input type="text" id="filtro-tema-modal" placeholder="Digite o nome..." style="padding: 10px;">
+      </div>
+      <div style="font-size:13px; color:var(--text-muted); margin-bottom:10px;">Clique em um tema pra selecionar:</div>
+      <div class="lista-pecas-checkbox" id="lista-temas-modal">
+        <div style="text-align:center; padding:20px; color:#999; font-size:13px;">Carregando temas...</div>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <button type="button" id="btn-cancelar-tema" class="btn btn-outline" style="flex:1;">Cancelar</button>
+        <button type="button" id="btn-confirmar-tema" class="btn btn-success" style="flex:2;">✅ Confirmar Tema</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EDITAR TEMA -->
+  <div id="modal-editar-tema" class="modal-editar-tema">
+    <div class="modal-editar-conteudo">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--primary); padding-bottom:10px; margin-bottom:20px;">
+        <h3 style="margin:0; color:var(--primary);">✏️ Editar Peça / Tema</h3>
+        <button type="button" id="btn-fechar-editar-tema" style="background:none; border:none; font-size:20px; cursor:pointer; color:#999;">✕</button>
+      </div>
+      <input type="hidden" id="editar-tema-id" value="">
+      <div class="preview-box-editar">
+        <img id="editar-tema-preview" class="preview-foto-editar" src="https://placehold.co/200x200?text=Sem+Foto" alt="Preview">
+        <div style="font-size:12px; color:var(--text-muted); margin-top:5px;">Pré-visualização</div>
+      </div>
+      <div class="input-group"><label>📷 Trocar Foto (opcional):</label><input type="file" id="editar-tema-imagem" class="input-file-editar" accept="image/*"></div>
+      <div class="input-group"><label>📝 Nome:</label><input type="text" id="editar-tema-nome" placeholder="Ex: Fundo do Mar"></div>
+      <div class="grid-2">
+        <div class="input-group"><label>📦 Quantidade:</label><input type="number" id="editar-tema-qtd" value="1" min="0"></div>
+        <div class="input-group"><label>🏷️ Categoria:</label><input type="text" id="editar-tema-categoria" placeholder="Ex: Maquete"></div>
+      </div>
+      <div class="input-group"><label>✨ Modelo / Estilo:</label><input type="text" id="editar-tema-modelo" placeholder="Ex: Rústico"></div>
+      <div class="grid-2">
+        <div class="input-group"><label>💰 Preço Locação (R$):</label><input type="number" id="editar-tema-preco" value="0" step="0.01"></div>
+        <div class="input-group"><label>🔧 Preço Reposição (R$):</label><input type="number" id="editar-tema-preco-reposicao" value="0" step="0.01"></div>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <button type="button" id="btn-cancelar-editar-tema" class="btn btn-outline" style="flex:1;">Cancelar</button>
+        <button type="button" id="btn-salvar-editar-tema" class="btn btn-success" style="flex:2;">💾 Salvar Alterações</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL QUANTIDADE DE PEÇAS -->
+  <div id="modal-qtd-pecas" class="modal-pecas" style="z-index:17000;">
+    <div class="modal-pecas-conteudo" style="max-width:600px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #27ae60; padding-bottom:10px; margin-bottom:15px;">
+        <h3 style="margin:0; color:#27ae60;">📦 Quantidade de Peças</h3>
+        <button type="button" id="btn-fechar-modal-qtd" style="background:none; border:none; font-size:20px; cursor:pointer; color:#999;">✕</button>
+      </div>
+      <p style="font-size:13px; color:var(--text-muted); margin-top:0;">
+        Confirme quantas unidades de cada peça vão pra festa. O estoque será atualizado automaticamente.
+      </p>
+      <div id="lista-qtd-pecas" style="max-height:400px; overflow-y:auto; border:1px solid var(--border-color); border-radius:8px; padding:10px; background:#fafafa;"></div>
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <button type="button" id="btn-cancelar-qtd" class="btn btn-outline" style="flex:1;">Cancelar</button>
+        <button type="button" id="btn-confirmar-qtd" class="btn btn-success" style="flex:2;">✅ Confirmar e Salvar Reserva</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL NOTA PROMISSÓRIA -->
+  <div id="modal-nota-promissoria" class="modal-contrato" style="z-index:19000;">
+    <div class="modal-conteudo" style="max-width:500px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #9b59b6; padding-bottom:10px; margin-bottom:20px;">
+        <h3 style="margin:0; color:#9b59b6;">📝 Nota Promissória</h3>
+        <button type="button" id="btn-fechar-modal-nota" style="background:none; border:none; font-size:20px; cursor:pointer; color:#999;">✕</button>
+      </div>
+      <div class="input-group"><label>📅 Vencimento:</label><input type="date" id="nota-vencimento"></div>
+      <div class="input-group"><label>🔢 Número da Nota:</label><input type="text" id="nota-numero" placeholder="Ex: 001"></div>
+      <div class="input-group"><label>💰 Valor (R$):</label><input type="number" id="nota-valor" step="0.01" placeholder="0.00"></div>
+      <div class="input-group"><label>📅 Data do Evento:</label><input type="date" id="nota-data-evento"></div>
+      <div class="input-group"><label>📅 Data de Devolução (Emissão):</label><input type="date" id="nota-data-emissao"></div>
+      <div class="grid-3">
+        <div class="input-group"><label>📅 Dia:</label><input type="number" id="nota-dia" placeholder="Ex: 22" min="1" max="31"></div>
+        <div class="input-group"><label>📅 Mês:</label><input type="text" id="nota-mes" placeholder="Ex: Outubro"></div>
+        <div class="input-group"><label>📅 Ano:</label><input type="number" id="nota-ano" placeholder="Ex: 2026" min="2024" max="2100"></div>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <button type="button" id="btn-cancelar-nota" class="btn btn-outline" style="flex:1;">Cancelar</button>
+        <button type="button" id="btn-gerar-nota" class="btn btn-success" style="flex:2; background-color:#9b59b6;">📝 Gerar Nota</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EDITAR RESERVA -->
+  <div id="modal-editar-reserva" class="modal-contrato" style="z-index:20000;">
+    <div class="modal-conteudo" style="max-width:700px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #3498db; padding-bottom:10px; margin-bottom:20px;">
+        <h3 style="margin:0; color:#3498db;">✏️ Editar Reserva</h3>
+        <button type="button" id="btn-fechar-editar-reserva" style="background:none; border:none; font-size:20px; cursor:pointer; color:#999;">✕</button>
+      </div>
+      <input type="hidden" id="edit-reserva-id" value="">
+      <div class="grid-2">
+        <div class="input-group"><label>Nome do Cliente:</label><input type="text" id="edit-cliente"></div>
+        <div class="input-group"><label>CPF:</label><input type="text" id="edit-cpf"></div>
+      </div>
+      <div class="grid-2">
+        <div class="input-group"><label>Telefone:</label><input type="text" id="edit-telefone"></div>
+        <div class="input-group"><label>Data do Evento:</label><input type="date" id="edit-data"></div>
+      </div>
+      <div class="input-group"><label>Endereço:</label><input type="text" id="edit-endereco"></div>
+      <div class="input-group"><label>Local do Evento:</label><input type="text" id="edit-local"></div>
+      <div class="grid-2">
+        <div class="input-group"><label>Tema:</label><input type="text" id="edit-tema"></div>
+        <div class="input-group"><label>Kit:</label><input type="text" id="edit-kit"></div>
+      </div>
+      <div class="grid-3">
+        <div class="input-group"><label>Total (R$):</label><input type="number" id="edit-total" step="0.01"></div>
+        <div class="input-group"><label>Sinal (R$):</label><input type="number" id="edit-sinal" step="0.01"></div>
+        <div class="input-group"><label>Frete (R$):</label><input type="number" id="edit-frete" step="0.01"></div>
+      </div>
+      <div class="input-group"><label>Observações:</label><input type="text" id="edit-obs"></div>
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <button type="button" id="btn-cancelar-editar-reserva" class="btn btn-outline" style="flex:1;">Cancelar</button>
+        <button type="button" id="btn-salvar-editar-reserva" class="btn btn-success" style="flex:2;">💾 Salvar Alterações</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE LOADING -->
+  <div id="modal-status-operacao" class="modal-loading-overlay">
+    <div class="modal-loading-box">
+      <div id="spinner-status" class="spinner-loading"></div>
+      <div id="titulo-status-operacao" class="modal-loading-titulo">PROCESSANDO...</div>
+      <p id="subtitulo-status-operacao" class="modal-loading-subtitulo">Aguarde um momento.</p>
+    </div>
+  </div>
+
+  <!-- LALÁ CHAT E FAB -->
+  <button type="button" id="lala-fab" class="lala-fab pulso" title="Fale com a Lalá 🌸">🌸</button>
+  <div id="lala-janela" class="lala-janela">
+    <div class="lala-header">
+      <div class="lala-header-info">
+        <div class="lala-avatar">🌸</div>
+        <div>
+          <div class="lala-titulo">Lalá</div>
+          <div class="lala-status">Online agora</div>
+        </div>
+      </div>
+      <button type="button" class="lala-fechar" id="lala-fechar">✕</button>
+    </div>
+    <div class="lala-body" id="lala-body">
+      <div class="lala-msg bot">Oi! 🌸 Sou a <b>Lalá</b>, sua assistente da <b>Tralalá Festas</b>!<br><br>Posso te ajudar com dúvidas sobre <b>agendamentos, orçamentos, kits, contratos, frete, catálogo</b> e muito mais.<br><br>É só digitar sua pergunta ou clicar em um dos atalhos abaixo. 💬</div>
+    </div>
+    <div class="lala-atalhos" id="lala-atalhos">
+      <button type="button" class="lala-atalho" data-pergunta="Como agendar uma festa?">📅 Agendar festa</button>
+      <button type="button" class="lala-atalho" data-pergunta="Como salvar um orçamento?">📋 Orçamento</button>
+      <button type="button" class="lala-atalho" data-pergunta="Como criar um kit?">🎁 Criar kit</button>
+      <button type="button" class="lala-atalho" data-pergunta="Como gerar um contrato?">✍️ Contrato</button>
+      <button type="button" class="lala-atalho" data-pergunta="Como funciona o frete?">🚚 Frete</button>
+      <button type="button" class="lala-atalho" data-pergunta="Como cadastrar um tema?">🎨 Cadastrar tema</button>
+      <button type="button" class="lala-atalho" data-pergunta="Como aplicar desconto?">🏷️ Desconto</button>
+      <button type="button" class="lala-atalho" data-pergunta="Como registrar ponto?">⏰ Ponto</button>
+    </div>
+    <div class="lala-footer">
+      <input type="text" id="lala-input" class="lala-input" placeholder="Digite sua dúvida..." autocomplete="off">
+      <button type="button" id="lala-enviar" class="lala-enviar" title="Enviar">➤</button>
+    </div>
+  </div>
+
+  <!-- PERSONAGEM NOVA (Sprite Sheet) -->
+  <div id="lala-personagem-container" class="lala-personagem-container" style="display: none;">
+    <div id="lala-sprite" class="lala-sprite"></div>
+  </div>
+
+  <!-- BALÃO DO TUTORIAL -->
+    <!-- BALÃO DO TUTORIAL -->
+  <div id="lala-balao-tutorial" class="lala-balao-tutorial">
+    <div class="lala-tutorial-titulo">
+      <span>🌸 Lalá</span>
+      <button type="button" class="btn-tutorial-pular" onclick="window.LalaTutorial.pular()">Pular</button>
+    </div>
+    <div class="lala-tutorial-texto" id="lala-tutorial-texto"></div>
+    <div class="lala-tutorial-acoes">
+      <!-- NOVO BOTÃO VOLTAR -->
+      <button type="button" id="btn-tutorial-voltar" class="btn-tutorial-voltar" onclick="window.LalaTutorial.voltar()" style="display: none; background: #eee; color: #555; margin-right: auto;">Voltar</button>
+      <button type="button" id="btn-tutorial-proximo" class="btn-tutorial-proximo" onclick="window.LalaTutorial.proximo()">Próximo ➔</button>
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="app.js"></script>
+  <script src="assets/lala/lala.js"></script>
+  <script src="campanhas.js"></script>
+</body>
+</html>
