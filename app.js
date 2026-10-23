@@ -1308,11 +1308,13 @@ function renderReservas(filtro, opcoes) {
     arr = arr.filter(function(r) { return Utils.normalizar(r.cliente).indexOf(f) !== -1 || Utils.normalizar(r.tema).indexOf(f) !== -1; });
   }
 
-  if (opcoes.ids) arr = arr.filter(function(r) { return opcoes.ids.includes(String(r.id)); });
-  else if (!opcoes.mostrarTodos) {
-    var ocupados = new Set(pastasAgendamento.flatMap(function(p) { return normalizarIdsPasta(p.cards); }));
-    arr = arr.filter(function(r) { return !ocupados.has(String(r.id)); });
-  }
+ if (opcoes.ids) {
+  var idsPermitidos = opcoes.ids.map(String);
+
+  arr = arr.filter(function(r) {
+    return idsPermitidos.includes(String(r.id));
+  });
+}
   if (!arr.length) container.innerHTML = "<p style='text-align:center;color:#777'>Nenhum agendamento nesta lista.</p>";
 
   var hoje = new Date();
