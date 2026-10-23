@@ -1,24 +1,22 @@
 // ============================================================
-// ASSISTENTE VIRTUAL LALÁ 🌸 (VERSÃO CORRIGIDA v3)
-// Correções aplicadas sobre a v2:
-//  - Segurança: textContent para usuário, escapeHTML para
-//    todo valor dinâmico inserido via innerHTML
-//  - Validação real de data/hora (31/02, 25:00 rejeitados)
-//  - Data no passado sem ano → pergunta se quer próximo ano
-//  - confirmarAgendamento preserva pendente em caso de erro
-//  - Perfil por usuário (uid) — não grava perfil global
-//  - Comando "Trocar perfil" no chat
-//  - Estoque/faturamento não mentem antes do load
-//  - verificarTutorialInicial pronta (chamada em app.js)
+// ASSISTENTE VIRTUAL LALÁ 🌸 (VERSÃO CORRIGIDA v4)
+// Mantém todas as correções da v3 e adiciona:
+//  - Saudação automática no 1º acesso ao chat após login
+//  - Indicador de 3 pontinhos durante o carregamento dos dados
+//  - Troca da saudação para o texto final quando dados prontos
+//  - Indicador "Lalá está consultando..." para consultas demoradas
+//  - Sem tempo fixo: polling curto até State.carregando=false
+//  - Mensagem amigável em caso de demora/erro
+//  - Sem duplicação ao fechar/abrir chat (flag + sessionStorage por uid)
+//  - Remoção garantida de indicadores (finally)
+//  - Tudo o que era da v3 preservado (segurança, datas, perfis,
+//    agendamento, tutorial, animação)
 // ============================================================
 (function() {
   'use strict';
 
   // ----------------------------------------------------------
   // PERFIS
-  // Mapeamento por e-mail literal (mais seguro que includes).
-  // O progresso do tutorial é POR PERFIL (caminho original).
-  // O "perfil ativo" é POR USUÁRIO (uid), não global.
   // ----------------------------------------------------------
   const PERFIS_POR_EMAIL = {
     'leonardodovalle@gmail.com': 'leo',
@@ -35,7 +33,7 @@
   }
 
   // ----------------------------------------------------------
-  // ESCAPE HTML (para todo valor dinâmico em innerHTML)
+  // ESCAPE
   // ----------------------------------------------------------
   function escapeHTML(v) {
     if (v === undefined || v === null) return '';
@@ -61,7 +59,6 @@
     if (isNaN(h) || h < 0 || h > 23) return { ok: false, motivo: 'hora' };
     if (isNaN(min) || min < 0 || min > 59) return { ok: false, motivo: 'minuto' };
 
-    // Ano: se informado, precisa ter 4 dígitos razoáveis
     let anoUsado;
     let anoFoiInformado = false;
     if (ano !== undefined && ano !== null && String(ano).trim() !== '') {
@@ -73,48 +70,62 @@
       anoUsado = new Date().getFullYear();
     }
 
-    // Dia do mês real (rejeita 31/02, 30/02, etc.)
     const ultimoDia = new Date(anoUsado, m, 0).getDate();
     if (d > ultimoDia) return { ok: false, motivo: 'dia_inexistente' };
 
     return {
-      ok: true,
-      dia: d,
-      mes: m,
-      ano: anoUsado,
-      anoFoiInformado: anoFoiInformado,
-      hora: h,
-      minuto: min,
+      ok: true, dia: d, mes: m, ano: anoUsado, anoFoiInformado: anoFoiInformado,
+      hora: h, minuto: min,
       dataObj: new Date(anoUsado, m - 1, d, h, min, 0, 0)
     };
   }
 
   // ----------------------------------------------------------
-  // ESTADO GLOBAL DA LALÁ
+  // SAUDAÇÃO
+  // Textos fixos — podem ir por innerHTML sem risco de XSS.
+  // ----------------------------------------------------------
+  const SAUDACAO_CARREGANDO =
+    '🌸 Olá! Sou a Lalá, sua secretária virtual! 💗 Estou organizando minha agenda e consultando as informações do Neo Flow. Só um instantinho...';
+
+  const SAUDACAO_PRONTO =
+    '✨ Prontinho! Já organizei tudo por aqui! 💕 Estou à disposição para consultar sua agenda, conferir orçamentos, ajudar com clientes e muito mais. Como posso ajudar hoje?';
+
+  const SAUDACAO_DEMOROU =
+    '⏳ Algumas informações ainda não estão disponíveis (o Neo Flow está lento agora). Já dá para conversar comigo, mas pode ser que eu não veja tudo. Tente de novo daqui a pouco! 💗';
+
+  const SAUDACAO_ERRO =
+    '😥 Puxa, não consegui carregar as informações do Neo Flow agora. Algumas consultas podem falhar. Se continuar assim, verifique a conexão e recarregue a página. 💗';
+
+  const TEXTO_CONSULTA = 'Lalá está consultando as informações...';
+
+  // ----------------------------------------------------------
+  // ESTADO
   // ----------------------------------------------------------
   const LALA = {
     animacaoInterval: null,
     tutorialPasso: 0,
     totalPassos: 4,
 
-    // Agendamento em construção
-    agendamentoPendente: null,          // { cliente, dia, mes, ano, hora, minuto, dataFinal, dataStr }
-    agendamentoAguardandoAno: null,     // mesma estrutura, esperando Sim/Não para próximo ano
+    agendamentoPendente: null,
+    agendamentoAguardandoAno: null,
 
     aguardandoSituacaoMensagem: false,
     aguardandoEscolhaPerfil: false,
 
     tutorialJaVerificadoNestaSessao: false,
-    _perfilForcadoNaSessao: null,       // override em memória (se banco indisponível)
+    _perfilForcadoNaSessao: null,
+    _perfilCache: null,
 
-    // Flags de carga inicial (evitam "vazio/zero" mentiroso)
-    _dadosCarregados: {
-      estoque: false,
-      reservas: false
-    },
+    _dadosCarregados: { estoque: false, reservas: false },
+
+    // Saudação
+    _boasVindasJaMostradas: false,
+    _saudacaoEmAndamento: false,
+    _saudacaoTimer: null,
+    _saudacaoAguardando: null,
 
     // ------------------------------------------------------
-    // BANCO
+    // BANCO / PERFIL
     // ------------------------------------------------------
     obterBanco: function() {
       if (window.db) return window.db;
@@ -127,36 +138,29 @@
 
     escapeHTML: function(v) { return escapeHTML(v); },
 
-    // ------------------------------------------------------
-    // PERFIL ATUAL
-    // Ordem: override em memória > uid no banco > e-mail logado.
-    // Nunca grava perfil "global" compartilhado.
-    // ------------------------------------------------------
     obterPerfil: function() {
       if (this._perfilForcadoNaSessao === 'aline' || this._perfilForcadoNaSessao === 'leo') {
         return this._perfilForcadoNaSessao;
       }
-      return this._perfilCache || detectarPerfilPorEmail(window.State && window.State.usuarioLogadoEmail);
+      if (this._perfilCache === 'aline' || this._perfilCache === 'leo') {
+        return this._perfilCache;
+      }
+      return detectarPerfilPorEmail(window.State && window.State.usuarioLogadoEmail);
     },
 
-    // Carrega perfil salvo do usuário logado (uid). Chamada após login.
     carregarPerfilDoUsuario: function() {
       const self = this;
       const banco = this.obterBanco();
       const uid = window.State && window.State.usuarioUID;
       if (!banco || !uid) {
-        // Sem uid: usa o e-mail como fallback (não grava nada)
         this._perfilCache = detectarPerfilPorEmail(window.State && window.State.usuarioLogadoEmail);
         return Promise.resolve(this._perfilCache);
       }
       return banco.ref('configuracoes/tutorial/' + uid + '/perfil').once('value')
         .then(function(snap) {
           const salvo = snap.val();
-          if (salvo === 'aline' || salvo === 'leo') {
-            self._perfilCache = salvo;
-          } else {
-            self._perfilCache = detectarPerfilPorEmail(window.State && window.State.usuarioLogadoEmail);
-          }
+          if (salvo === 'aline' || salvo === 'leo') self._perfilCache = salvo;
+          else self._perfilCache = detectarPerfilPorEmail(window.State && window.State.usuarioLogadoEmail);
           return self._perfilCache;
         })
         .catch(function(err) {
@@ -166,20 +170,13 @@
         });
     },
 
-    // Troca manual. Grava no uid, não no caminho global.
     trocarPerfil: function(perfil) {
-      const self = this;
-      if (perfil !== 'aline' && perfil !== 'leo') {
-        return Promise.reject(new Error('perfil_invalido'));
-      }
+      if (perfil !== 'aline' && perfil !== 'leo') return Promise.reject(new Error('perfil_invalido'));
       this._perfilForcadoNaSessao = perfil;
       this._perfilCache = perfil;
-
       const banco = this.obterBanco();
       const uid = window.State && window.State.usuarioUID;
-      if (!banco || !uid) {
-        return Promise.resolve(perfil);
-      }
+      if (!banco || !uid) return Promise.resolve(perfil);
       return banco.ref('configuracoes/tutorial/' + uid + '/perfil').set(perfil)
         .then(function() { return perfil; })
         .catch(function(err) {
@@ -188,9 +185,6 @@
         });
     },
 
-    // ------------------------------------------------------
-    // NORMALIZAÇÃO
-    // ------------------------------------------------------
     normalizarTexto: function(texto) {
       if (!texto) return '';
       return String(texto)
@@ -201,22 +195,19 @@
     },
 
     // ------------------------------------------------------
-    // BUSCAR — reconhecedor
+    // BUSCAR
     // ------------------------------------------------------
     buscar: function(textoOriginal) {
       if (!textoOriginal) return null;
       const t = this.normalizarTexto(textoOriginal);
 
-      // 0. Confirmação de agendamento pendente (prioridade absoluta)
       if (this.agendamentoPendente) {
         const ehSim = /^(sim|s|yes|confirmo|confirmar|pode salvar|salvar|ok|claro)\b/.test(t);
         const ehNao = /^(nao|n|cancel|cancela|desist|deixa|deixa pra depois|melhor nao)\b/.test(t);
         if (ehSim) return { isConfirmar: true };
         if (ehNao) return { isCancelar: true };
-        // Se não for sim/não, não sequestra a conversa.
       }
 
-      // 0.b Aguardando decisão sobre ano do agendamento
       if (this.agendamentoAguardandoAno) {
         const ehSim = /^(sim|s|yes|confirmo|pode|isso|usar proximo ano|proximo ano)\b/.test(t);
         const ehNao = /^(nao|n|cancel|cancela|desist|deixa)\b/.test(t);
@@ -245,19 +236,13 @@
         return { resposta: 'Só pra confirmar: você quer usar o <b>próximo ano</b> para essa data? Responda <b>Sim</b> ou <b>Não</b>.' };
       }
 
-      // 0.c Aguardando escolha de perfil (comando "Trocar perfil")
       if (this.aguardandoEscolhaPerfil) {
         this.aguardandoEscolhaPerfil = false;
-        if (t.indexOf('aline') !== -1) {
-          return this.executarTrocaPerfil('aline');
-        }
-        if (t.indexOf('leo') !== -1) {
-          return this.executarTrocaPerfil('leo');
-        }
+        if (t.indexOf('aline') !== -1) return this.executarTrocaPerfil('aline');
+        if (t.indexOf('leo') !== -1) return this.executarTrocaPerfil('leo');
         return { resposta: 'Não entendi. Responda <b>aline</b> ou <b>leo</b>.' };
       }
 
-      // 1. Aguardando situação de mensagem
       if (this.aguardandoSituacaoMensagem) {
         this.aguardandoSituacaoMensagem = false;
         if (t === '1' || t.indexOf('dinheir') !== -1 || t.indexOf('reembols') !== -1) {
@@ -272,7 +257,6 @@
         return { resposta: 'Entendi. Aqui vai uma mensagem educada para acalmar o cliente:<br><br><i>"Olá, [Nome]! Tudo bem? Entendo a sua situação. Vou verificar e te retorno ainda hoje."</i>' };
       }
 
-      // 2. COMANDO "Trocar perfil"
       const querTrocarPerfil =
         t.indexOf('trocar perfil') !== -1 ||
         t.indexOf('trocar de perfil') !== -1 ||
@@ -290,7 +274,6 @@
         return { resposta: 'Para qual perfil você quer trocar? Responda <b>aline</b> ou <b>leo</b>.' };
       }
 
-      // 3. Identificadores
       const temFaturamento =
         t.indexOf('faturament') !== -1 ||
         t.indexOf('vendas do mes') !== -1 ||
@@ -345,10 +328,7 @@
         t.indexOf('recus') !== -1 ||
         (t.indexOf('falar') !== -1 && !temFaturamento && !temEstoque && !temCalculo);
 
-      // 4. Execução
-      if (temPalavraAgendar && !ehPedidoDeAgenda) {
-        return this.prepararAgendamento(textoOriginal);
-      }
+      if (temPalavraAgendar && !ehPedidoDeAgenda) return this.prepararAgendamento(textoOriginal);
 
       if (temMensagemBase && !temFaturamento && !temEstoque && !temCalculo && !temTutorial) {
         if (t.indexOf('dinheir') !== -1 || t.indexOf('reembols') !== -1 || t.indexOf('devolv') !== -1 || t.indexOf('pix') !== -1) {
@@ -384,9 +364,6 @@
       return null;
     },
 
-    // ------------------------------------------------------
-    // Troca de perfil (retorna resposta de chat e reavalia tutorial)
-    // ------------------------------------------------------
     executarTrocaPerfil: function(novoPerfil) {
       const self = this;
       const anterior = this.obterPerfil();
@@ -394,7 +371,6 @@
         return { resposta: 'Você já está no perfil <b>' + escapeHTML(novoPerfil) + '</b>. 🌸' };
       }
       this.trocarPerfil(novoPerfil).then(function() {
-        // Reavalia tutorial do novo perfil
         self.tutorialJaVerificadoNestaSessao = false;
         self.verificarTutorialInicial();
       });
@@ -408,7 +384,6 @@
       if (!window.State || !window.State.reservas) {
         return 'Puxa, estou sem os dados das reservas no momento. 😥';
       }
-      // Se o array está vazio, pode ser que ainda esteja carregando.
       if (window.State.reservas.length === 0 && !this._dadosCarregados.reservas) {
         return 'Ainda estou carregando as reservas. Me pergunte de novo em alguns segundos. ⏳';
       }
@@ -481,18 +456,14 @@
     prepararAgendamento: function(textoOriginal) {
       const texto = this.normalizarTexto(textoOriginal);
 
-      let dia = '';
-      let mes = '';
-      let ano = '';
+      let dia = '', mes = '', ano = '';
       const regexBarra = /(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{4}))?/;
       const regexExtenso = /(\d{1,2})\s+de\s+(janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)(?:\s+de\s+(\d{4}))?/i;
       const matchBarra = texto.match(regexBarra);
       const matchExtenso = texto.match(regexExtenso);
 
       if (matchBarra) {
-        dia = matchBarra[1];
-        mes = matchBarra[2];
-        ano = matchBarra[3] || '';
+        dia = matchBarra[1]; mes = matchBarra[2]; ano = matchBarra[3] || '';
       } else if (matchExtenso) {
         dia = matchExtenso[1];
         const meses = ['janeiro','fevereiro','marco','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
@@ -500,135 +471,98 @@
         ano = matchExtenso[3] || '';
       }
 
-      // Hora
-      let hora = '';
-      let minuto = '';
+      let hora = '', minuto = '';
       const regexHora = /(\d{1,2})(?::(\d{2})|h(\d{2})?| horas?| hrs?)/;
       const matchHora = texto.match(regexHora);
-      if (matchHora) {
-        hora = matchHora[1];
-        minuto = matchHora[2] || matchHora[3] || '00';
-      }
+      if (matchHora) { hora = matchHora[1]; minuto = matchHora[2] || matchHora[3] || '00'; }
 
-      // Nome
       let cliente = 'Cliente';
       const regexNome = /(?:com|para)\s+(?:a\s+|o\s+)?([a-zA-ZÀ-ÿ\s]+?)(?:\s+(?:dia|no|as|às|\d|$))/i;
       const matchNome = textoOriginal.match(regexNome);
       if (matchNome) {
-        cliente = matchNome[1].trim();
-        cliente = cliente.replace(/(reuniao|reunião|agendar|marcar|horario)/gi, '').trim();
+        cliente = matchNome[1].trim().replace(/(reuniao|reunião|agendar|marcar|horario)/gi, '').trim();
       }
 
       if (!dia || !hora) {
         return { resposta: 'Entendi que você quer agendar! 😊 Mas faltou a data e a hora.<br><br>Pode me dizer assim: <b>"Agende com Maria 25/10 às 15:00"</b>' };
       }
 
-      // Validação real (dia do mês, hora, minuto, ano)
       const v = validarDataHora(dia, mes, ano, hora, minuto);
       if (!v.ok) {
         let msgMotivo = '';
-        if (v.motivo === 'dia_inexistente') {
-          msgMotivo = 'Esse dia não existe no mês informado (ex.: 31/02).';
-        } else if (v.motivo === 'dia') {
-          msgMotivo = 'O dia precisa estar entre 1 e 31.';
-        } else if (v.motivo === 'mes') {
-          msgMotivo = 'O mês precisa estar entre 1 e 12.';
-        } else if (v.motivo === 'hora') {
-          msgMotivo = 'A hora precisa estar entre 00 e 23 (25:00 não existe).';
-        } else if (v.motivo === 'minuto') {
-          msgMotivo = 'Os minutos precisam estar entre 00 e 59.';
-        } else if (v.motivo === 'ano') {
-          msgMotivo = 'O ano precisa ter 4 dígitos (ex.: 2026).';
-        } else {
-          msgMotivo = 'Data ou hora inválida.';
-        }
+        if (v.motivo === 'dia_inexistente') msgMotivo = 'Esse dia não existe no mês informado (ex.: 31/02).';
+        else if (v.motivo === 'dia') msgMotivo = 'O dia precisa estar entre 1 e 31.';
+        else if (v.motivo === 'mes') msgMotivo = 'O mês precisa estar entre 1 e 12.';
+        else if (v.motivo === 'hora') msgMotivo = 'A hora precisa estar entre 00 e 23 (25:00 não existe).';
+        else if (v.motivo === 'minuto') msgMotivo = 'Os minutos precisam estar entre 00 e 59.';
+        else if (v.motivo === 'ano') msgMotivo = 'O ano precisa ter 4 dígitos (ex.: 2026).';
+        else msgMotivo = 'Data ou hora inválida.';
         return { resposta: '⚠️ ' + msgMotivo + '<br><br>Tente assim: <b>"Agende com Maria 25/10/2026 às 15:00"</b>' };
       }
 
-      // Data no passado SEM ano informado → pergunta
       const agora = new Date();
       if (!v.anoFoiInformado) {
         const dataTentativa = new Date(v.ano, v.mes - 1, v.dia, v.hora, v.minuto, 0, 0);
         if (dataTentativa.getTime() < agora.getTime()) {
           const proximoAno = agora.getFullYear() + 1;
           this.agendamentoAguardandoAno = {
-            cliente: cliente,
-            dia: v.dia, mes: v.mes,
-            hora: v.hora, minuto: v.minuto
+            cliente: cliente, dia: v.dia, mes: v.mes, hora: v.hora, minuto: v.minuto
           };
           return { resposta: '📅 Essa data (<b>' + String(v.dia).padStart(2,'0') + '/' + String(v.mes).padStart(2,'0') + '</b> às <b>' + String(v.hora).padStart(2,'0') + ':' + String(v.minuto).padStart(2,'0') + '</b>) já passou em ' + v.ano + '.<br><br>Quer usar <b>' + proximoAno + '</b>? Responda <b>Sim</b> ou <b>Não</b>.' };
         }
       }
 
-      // Monta o pendente (NÃO salva ainda)
       const dataFinal = v.ano + '-' + String(v.mes).padStart(2, '0') + '-' + String(v.dia).padStart(2, '0') + 'T' + String(v.hora).padStart(2, '0') + ':' + String(v.minuto).padStart(2, '0');
       const dataStr = String(v.dia).padStart(2, '0') + '/' + String(v.mes).padStart(2, '0') + '/' + v.ano;
 
       this.agendamentoPendente = {
-        cliente: cliente,
-        dia: v.dia, mes: v.mes, ano: v.ano,
+        cliente: cliente, dia: v.dia, mes: v.mes, ano: v.ano,
         hora: v.hora, minuto: v.minuto,
-        dataFinal: dataFinal,
-        dataStr: dataStr
+        dataFinal: dataFinal, dataStr: dataStr
       };
 
       return { resposta: '📅 <b>Confirmação:</b><br><br>👤 <b>' + escapeHTML(cliente) + '</b><br>📆 <b>' + escapeHTML(dataStr) + '</b><br>⏰ <b>' + String(v.hora).padStart(2,'0') + ':' + String(v.minuto).padStart(2,'0') + '</b><br><br>Posso salvar? (Digite <b>Sim</b> ou <b>Não</b>)' };
     },
 
-    // Não zera pendente antes do push. Só zera após sucesso.
     confirmarAgendamento: function() {
-      if (!this.agendamentoPendente) {
-        return Promise.resolve('Não tem nada pendente para confirmar.');
-      }
+      if (!this.agendamentoPendente) return Promise.resolve('Não tem nada pendente para confirmar.');
       const agendamento = this.agendamentoPendente;
-
       const banco = this.obterBanco();
       if (!banco) {
         return Promise.resolve('Erro: o banco de dados não está pronto. O agendamento continua pendente — tente de novo em instantes.');
       }
-
       const self = this;
       return banco.ref('reunioes').push({
         cliente: agendamento.cliente,
         dataHora: agendamento.dataFinal,
         pauta: 'Agendada pela Lalá',
         criadoEm: Date.now()
-      })
-        .then(function() {
-          // Só aqui limpamos o pendente
-          self.agendamentoPendente = null;
-          return '✅ Prontinho! Reunião com <b>' + escapeHTML(agendamento.cliente) + '</b> salva em ' + escapeHTML(agendamento.dataStr) + ' às ' + String(agendamento.hora).padStart(2,'0') + ':' + String(agendamento.minuto).padStart(2,'0') + '.';
-        })
-        .catch(function(err) {
-          console.warn('Lalá: erro ao salvar reunião.', err);
-          // Mantém o pendente para tentar de novo
-          return 'Erro ao salvar no banco. 😥 O agendamento com <b>' + escapeHTML(agendamento.cliente) + '</b> continua pendente. Digite <b>Sim</b> para tentar de novo ou <b>Não</b> para cancelar.';
-        });
+      }).then(function() {
+        self.agendamentoPendente = null;
+        return '✅ Prontinho! Reunião com <b>' + escapeHTML(agendamento.cliente) + '</b> salva em ' + escapeHTML(agendamento.dataStr) + ' às ' + String(agendamento.hora).padStart(2,'0') + ':' + String(agendamento.minuto).padStart(2,'0') + '.';
+      }).catch(function(err) {
+        console.warn('Lalá: erro ao salvar reunião.', err);
+        return 'Erro ao salvar no banco. 😥 O agendamento com <b>' + escapeHTML(agendamento.cliente) + '</b> continua pendente. Digite <b>Sim</b> para tentar de novo ou <b>Não</b> para cancelar.';
+      });
     },
 
     cancelarAgendamento: function() {
-      if (!this.agendamentoPendente) {
-        return Promise.resolve('Não tinha nada pendente para cancelar.');
-      }
+      if (!this.agendamentoPendente) return Promise.resolve('Não tinha nada pendente para cancelar.');
       const agendamento = this.agendamentoPendente;
       this.agendamentoPendente = null;
       return Promise.resolve('Tudo bem, cancelei o agendamento com <b>' + escapeHTML(agendamento.cliente) + '</b>. 🚫');
     },
 
     // ======================================================
-    // DAR BOM DIA
+    // BOM DIA
     // ======================================================
     darBomDia: function() {
       const banco = this.obterBanco();
       if (!banco) {
         return Promise.resolve('Puxa, ainda estou acordando o banco de dados... ☕ Tente me dar "Bom dia" de novo em 2 segundinhos!');
       }
-
       const hoje = new Date();
-      const dataHojeStr =
-        hoje.getFullYear() + '-' +
-        String(hoje.getMonth() + 1).padStart(2, '0') + '-' +
-        String(hoje.getDate()).padStart(2, '0');
+      const dataHojeStr = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0') + '-' + String(hoje.getDate()).padStart(2, '0');
 
       const pReunioes = banco.ref('reunioes').once('value')
         .then(function(snap) {
@@ -643,10 +577,7 @@
           });
           return lista;
         })
-        .catch(function(err) {
-          console.warn('Lalá: erro ao ler reuniões.', err);
-          return null;
-        });
+        .catch(function(err) { console.warn('Lalá: erro ao ler reuniões.', err); return null; });
 
       const pOrcamentos = banco.ref('orcamentos_abertos').once('value')
         .then(function(snap) {
@@ -658,32 +589,18 @@
           });
           return pendentes;
         })
-        .catch(function(err) {
-          console.warn('Lalá: erro ao ler orçamentos.', err);
-          return null;
-        });
+        .catch(function(err) { console.warn('Lalá: erro ao ler orçamentos.', err); return null; });
 
       return Promise.all([pReunioes, pOrcamentos]).then(function(res) {
         const reunioesHoje = res[0];
         const orcamentosPendentes = res[1];
         let resposta = 'Bom dia! ☀️ Aqui está o seu resumo:<br><br>';
-
-        if (reunioesHoje === null) {
-          resposta += '📅 <b>Reuniões:</b> não consegui consultar a agenda agora.<br><br>';
-        } else if (reunioesHoje.length > 0) {
-          resposta += '📅 <b>Reuniões:</b><br>' + reunioesHoje.join('<br>') + '<br><br>';
-        } else {
-          resposta += '📅 <b>Reuniões:</b> Nenhuma agendada para hoje.<br><br>';
-        }
-
-        if (orcamentosPendentes === null) {
-          resposta += '💰 <b>Orçamentos:</b> não consegui consultar agora.<br>';
-        } else if (orcamentosPendentes > 0) {
-          resposta += '💰 <b>Orçamentos:</b> Existem ' + orcamentosPendentes + ' aguardando resposta.<br>';
-        } else {
-          resposta += '💰 <b>Orçamentos:</b> Nenhum pendente.<br>';
-        }
-
+        if (reunioesHoje === null) resposta += '📅 <b>Reuniões:</b> não consegui consultar a agenda agora.<br><br>';
+        else if (reunioesHoje.length > 0) resposta += '📅 <b>Reuniões:</b><br>' + reunioesHoje.join('<br>') + '<br><br>';
+        else resposta += '📅 <b>Reuniões:</b> Nenhuma agendada para hoje.<br><br>';
+        if (orcamentosPendentes === null) resposta += '💰 <b>Orçamentos:</b> não consegui consultar agora.<br>';
+        else if (orcamentosPendentes > 0) resposta += '💰 <b>Orçamentos:</b> Existem ' + orcamentosPendentes + ' aguardando resposta.<br>';
+        else resposta += '💰 <b>Orçamentos:</b> Nenhum pendente.<br>';
         return resposta + '<br>Vamos arrasar hoje! 💗';
       }).catch(function(err) {
         console.error('Lalá: erro no Bom Dia.', err);
@@ -692,40 +609,26 @@
     },
 
     // ======================================================
-    // CÁLCULO DE LUCRO
+    // CÁLCULO
     // ======================================================
     calcularLucro: function(textoOriginal) {
       const texto = this.normalizarTexto(textoOriginal);
       const numeros = texto.match(/\d+([.,]\d+)?/g);
-      if (!numeros || numeros.length < 2) {
-        return 'Preciso do valor e do custo. Exemplo: <b>"Calcula lucro de 1500 com custo 400"</b>';
-      }
+      if (!numeros || numeros.length < 2) return 'Preciso do valor e do custo. Exemplo: <b>"Calcula lucro de 1500 com custo 400"</b>';
       const n1 = parseFloat(numeros[0].replace(',', '.'));
       const n2 = parseFloat(numeros[1].replace(',', '.'));
-
       const posCusto = texto.indexOf('custo');
       const posPrimeiroNum = texto.search(/\d/);
       const custoPrimeiro = posCusto !== -1 && posPrimeiroNum !== -1 && posCusto < posPrimeiroNum;
-
       let valorFesta, custo;
-      if (custoPrimeiro) { custo = n1; valorFesta = n2; }
-      else { valorFesta = n1; custo = n2; }
-
+      if (custoPrimeiro) { custo = n1; valorFesta = n2; } else { valorFesta = n1; custo = n2; }
       const lucro = valorFesta - custo;
       const margem = valorFesta > 0 ? (lucro / valorFesta) * 100 : 0;
       const corLucro = lucro >= 0 ? '#27ae60' : '#e74c3c';
       const rotulo = lucro >= 0 ? '📈 Lucro' : '📉 Prejuízo';
-
-      return '🧮 <b>Calculadora de Lucro</b><br><br>' +
-        '💰 Festa: R$ ' + valorFesta.toFixed(2) +
-        '<br>💸 Custo: R$ ' + custo.toFixed(2) +
-        '<br>' + rotulo + ': <b style="color:' + corLucro + ';">R$ ' + lucro.toFixed(2) + '</b>' +
-        '<br>🎯 Margem: <b>' + margem.toFixed(1) + '%</b>';
+      return '🧮 <b>Calculadora de Lucro</b><br><br>💰 Festa: R$ ' + valorFesta.toFixed(2) + '<br>💸 Custo: R$ ' + custo.toFixed(2) + '<br>' + rotulo + ': <b style="color:' + corLucro + ';">R$ ' + lucro.toFixed(2) + '</b><br>🎯 Margem: <b>' + margem.toFixed(1) + '%</b>';
     },
 
-    // ======================================================
-    // MENSAGENS PRONTAS
-    // ======================================================
     gerarMensagemFinanceiro: function() {
       return '<i>"Olá, [Nome]! Tudo bem? Entendo. Sobre o valor, infelizmente não consigo fazer a devolução no momento, pois o valor já foi destinado aos custos. Mas posso verificar se é possível usar como crédito para uma próxima festa."</i>';
     },
@@ -755,10 +658,7 @@
       }, 500);
     },
     pararAnimacao: function() {
-      if (this.animacaoInterval) {
-        clearInterval(this.animacaoInterval);
-        this.animacaoInterval = null;
-      }
+      if (this.animacaoInterval) { clearInterval(this.animacaoInterval); this.animacaoInterval = null; }
     },
 
     // ======================================================
@@ -780,7 +680,6 @@
       if (balao) balao.classList.remove('ativo');
       this.pararAnimacao();
       this.limparDestaques();
-
       const banco = this.obterBanco();
       if (!banco) return;
       const perfil = this.obterPerfil();
@@ -789,10 +688,8 @@
     },
 
     proximo: function() {
-      if (this.tutorialPasso < this.totalPassos) {
-        this.tutorialPasso++;
-        this.atualizarBalaoTutorial();
-      } else {
+      if (this.tutorialPasso < this.totalPassos) { this.tutorialPasso++; this.atualizarBalaoTutorial(); }
+      else {
         this.pular();
         const banco = this.obterBanco();
         if (!banco) return;
@@ -802,26 +699,16 @@
       }
     },
 
-    voltar: function() {
-      if (this.tutorialPasso > 1) {
-        this.tutorialPasso--;
-        this.atualizarBalaoTutorial();
-      }
-    },
+    voltar: function() { if (this.tutorialPasso > 1) { this.tutorialPasso--; this.atualizarBalaoTutorial(); } },
 
     limparDestaques: function() {
-      document.querySelectorAll('.tutorial-destaque').forEach(function(el) {
-        el.classList.remove('tutorial-destaque');
-      });
+      document.querySelectorAll('.tutorial-destaque').forEach(function(el) { el.classList.remove('tutorial-destaque'); });
     },
 
     destacarElemento: function(idElemento) {
       this.limparDestaques();
       const el = document.getElementById(idElemento);
-      if (el) {
-        el.classList.add('tutorial-destaque');
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+      if (el) { el.classList.add('tutorial-destaque'); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
     },
 
     atualizarBalaoTutorial: function() {
@@ -847,15 +734,9 @@
       }
     },
 
-    // ------------------------------------------------------
-    // Chamada pelo app.js após login autorizado.
-    // 1) carrega o perfil do usuário (uid)
-    // 2) se o perfil nunca viu o tutorial, abre.
-    // ------------------------------------------------------
     verificarTutorialInicial: function() {
       if (this.tutorialJaVerificadoNestaSessao) return Promise.resolve(false);
       this.tutorialJaVerificadoNestaSessao = true;
-
       const self = this;
       return this.carregarPerfilDoUsuario().then(function() {
         const banco = self.obterBanco();
@@ -868,18 +749,173 @@
             setTimeout(function() { self.iniciarTutorial(); }, 800);
             return true;
           })
-          .catch(function(err) {
-            console.warn('Lalá: erro ao verificar tutorial inicial.', err);
-            return false;
-          });
+          .catch(function(err) { console.warn('Lalá: erro ao verificar tutorial inicial.', err); return false; });
       });
+    },
+
+    // ======================================================
+    // SAUDAÇÃO AUTOMÁTICA
+    // ======================================================
+    // Chave de sessionStorage por uid — evita repetir em reloads,
+    // mas não persiste entre sessões de navegador diferentes.
+    chaveSaudacaoSessao: function() {
+      const uid = (window.State && window.State.usuarioUID) || 'anon';
+      return 'lala_saudacao_' + uid;
+    },
+
+    jaMostrouSaudacaoNestaSessao: function() {
+      try { return sessionStorage.getItem(this.chaveSaudacaoSessao()) === '1'; }
+      catch (e) { return false; }
+    },
+
+    marcarSaudacaoMostrada: function() {
+      try { sessionStorage.setItem(this.chaveSaudacaoSessao(), '1'); }
+      catch (e) { /* storage bloqueado, ignora */ }
+    },
+
+    // Verifica se os dados principais já carregaram.
+    // Não usa tempo fixo: consulta o State do app.js.
+    dadosPrincipaisProntos: function() {
+      if (!window.State) return false;
+      // State.carregando começa true e vira false no 1º listenReservas.
+      if (window.State.carregando === true) return false;
+      // Estoque: se ainda não tiver sido populado, esperamos um tico mais.
+      // Se estiver vazio E carregando === false, consideramos pronto
+      // (catálogo pode estar legitimamente vazio).
+      return true;
+    },
+
+    // ------------------------------------------------------
+    // Indicador de digitação (3 pontinhos) genérico.
+    // Retorna o elemento criado para permitir substituição.
+    // ------------------------------------------------------
+    criarIndicadorHTML: function(textoOpcional) {
+      const texto = textoOpcional ? '<span class="lala-indicador-texto">' + escapeHTML(textoOpcional) + '</span>' : '';
+      return '<div class="lala-indicador">' +
+        '<span class="lala-digitando" aria-hidden="true"><span></span><span></span><span></span></span>' +
+        texto +
+        '</div>';
+    },
+
+    // ------------------------------------------------------
+    // Indicador "Lalá está consultando..."
+    // Separado do boas-vindas, com id único para não duplicar.
+    // ------------------------------------------------------
+    mostrarIndicadorConsulta: function() {
+      const body = document.getElementById('lala-body');
+      if (!body) return null;
+      if (document.getElementById('lala-indicador-consulta')) return null;
+      const div = document.createElement('div');
+      div.className = 'lala-msg bot';
+      div.id = 'lala-indicador-consulta';
+      div.innerHTML = this.criarIndicadorHTML(TEXTO_CONSULTA);
+      body.appendChild(div);
+      body.scrollTop = body.scrollHeight;
+      return div;
+    },
+
+    esconderIndicadorConsulta: function() {
+      const el = document.getElementById('lala-indicador-consulta');
+      if (el && el.parentNode) el.parentNode.removeChild(el);
+    },
+
+    // ------------------------------------------------------
+    // Saudação automática — chamada ao abrir o chat.
+    // Primeira vez após login: injeta "carregando" e depois
+    // troca para "pronto"/"demorou"/"erro" conforme o State.
+    // ------------------------------------------------------
+    iniciarSaudacaoSeNecessario: function() {
+      // Já mostrou nesta sessão de chat? Sai.
+      if (this._boasVindasJaMostradas) return;
+      if (this.jaMostrouSaudacaoNestaSessao()) {
+        this._boasVindasJaMostradas = true;
+        return;
+      }
+      if (this._saudacaoEmAndamento) return;
+
+      const body = document.getElementById('lala-body');
+      if (!body) return;
+
+      this._saudacaoEmAndamento = true;
+
+      // Evita duplicar se já existir (ex.: usuário fechou/abriu rápido)
+      const existente = document.getElementById('lala-saudacao-carregando');
+      if (existente && existente.parentNode) existente.parentNode.removeChild(existente);
+
+      // --- Mensagem 1: carregando com indicador ---
+      const divCarregando = document.createElement('div');
+      divCarregando.className = 'lala-msg bot';
+      divCarregando.id = 'lala-saudacao-carregando';
+      divCarregando.innerHTML =
+        escapeHTML(SAUDACAO_CARREGANDO) +
+        '<br><br>' + this.criarIndicadorHTML('');
+      body.appendChild(divCarregando);
+      body.scrollTop = body.scrollHeight;
+
+      const self = this;
+      const inicio = Date.now();
+      const LIMITE_ESPERA = 15000;   // 15 s → mensagem de demora
+      const INTERVALO = 400;
+
+      // Cancela timer anterior se houver
+      if (this._saudacaoTimer) { clearInterval(this._saudacaoTimer); this._saudacaoTimer = null; }
+
+      const verificar = function() {
+        // Se o chat foi fechado, não faz nada além de continuar tentando
+        // (a saudação aparece no DOM quando reabrir; e o flag impede
+        // nova tentativa no próximo abrir).
+        const bodyAtual = document.getElementById('lala-body');
+        if (!bodyAtual) return;
+
+        let estado = 'aguardando';
+
+        // Sem banco / sem State → erro
+        if (!self.obterBanco() || !window.State) {
+          estado = 'erro';
+        } else if (self.dadosPrincipaisProntos()) {
+          estado = 'pronto';
+        } else if (Date.now() - inicio > LIMITE_ESPERA) {
+          estado = 'demorou';
+        }
+
+        if (estado === 'aguardando') return;
+
+        // Para o polling
+        if (self._saudacaoTimer) { clearInterval(self._saudacaoTimer); self._saudacaoTimer = null; }
+
+        const alvo = document.getElementById('lala-saudacao-carregando');
+        if (alvo && alvo.parentNode) alvo.parentNode.removeChild(alvo);
+
+        let textoFinal;
+        if (estado === 'pronto') textoFinal = SAUDACAO_PRONTO;
+        else if (estado === 'demorou') textoFinal = SAUDACAO_DEMOROU;
+        else textoFinal = SAUDACAO_ERRO;
+
+        const divFinal = document.createElement('div');
+        divFinal.className = 'lala-msg bot';
+        divFinal.id = 'lala-saudacao-pronto';
+        // Texto fixo — pode ir por innerHTML sem risco
+        divFinal.innerHTML = escapeHTML(textoFinal);
+        bodyAtual.appendChild(divFinal);
+        bodyAtual.scrollTop = bodyAtual.scrollHeight;
+
+        self._boasVindasJaMostradas = true;
+        self._saudacaoEmAndamento = false;
+        self.marcarSaudacaoMostrada();
+      };
+
+      // Executa uma vez imediatamente (caso os dados já estejam prontos)
+      verificar();
+      if (!this._boasVindasJaMostradas) {
+        this._saudacaoTimer = setInterval(verificar, INTERVALO);
+      }
     }
   };
 
   window.LalaTutorial = LALA;
 
   // ============================================================
-  // CHAT
+  // CHAT — DOMContentLoaded
   // ============================================================
   document.addEventListener('DOMContentLoaded', function() {
     const fab = document.getElementById('lala-fab');
@@ -892,10 +928,15 @@
     if (!fab || !janela) return;
 
     fab.addEventListener('click', function() {
+      const abrindo = !janela.classList.contains('ativo');
       janela.classList.toggle('ativo');
       fab.classList.remove('pulso');
-      if (janela.classList.contains('ativo')) {
+      if (abrindo) {
         setTimeout(function() { if (input) input.focus(); }, 200);
+        // Saudação automática ao abrir pela 1ª vez após login.
+        // Verifica o State/uid: se ainda não logou, a saudação espera
+        // a próxima abertura (não força nada).
+        LALA.iniciarSaudacaoSeNecessario();
       }
     });
 
@@ -906,14 +947,14 @@
       });
     }
 
-    // Mensagens do bot: HTML permitido (com escape dos valores dinâmicos
-    // feito na origem por escapeHTML). Mensagens do usuário: textContent.
+    // -------- helpers de mensagem --------
     function addBotMsg(html) {
       const div = document.createElement('div');
       div.className = 'lala-msg bot';
       div.innerHTML = String(html === undefined || html === null ? '' : html);
       body.appendChild(div);
       body.scrollTop = body.scrollHeight;
+      return div;
     }
 
     function addUserMsg(texto) {
@@ -924,74 +965,72 @@
       body.scrollTop = body.scrollHeight;
     }
 
+    // Envolve promessas de consulta com o indicador "Lalá está consultando..."
+    // Garante remoção no finally, mesmo em erro.
+    function comIndicadorConsulta(promise) {
+      LALA.mostrarIndicadorConsulta();
+      return promise.then(function(r) {
+        LALA.esconderIndicadorConsulta();
+        return r;
+      }).catch(function(err) {
+        LALA.esconderIndicadorConsulta();
+        throw err;
+      });
+    }
+
     function responder(texto) {
       if (!texto || !texto.trim()) return;
       addUserMsg(texto);
 
       setTimeout(function() {
         let resposta;
-        try {
-          resposta = LALA.buscar(texto);
-        } catch (err) {
+        try { resposta = LALA.buscar(texto); }
+        catch (err) {
           console.error('Lalá: erro em buscar().', err);
           addBotMsg('Deu um erro interno. Tente de novo. 😥');
           return;
         }
 
         if (resposta && resposta.isConfirmar) {
-          addBotMsg('Salvando... ⏳');
-          LALA.confirmarAgendamento().then(function(msg) {
-            addBotMsg(msg);
-          }).catch(function(err) {
-            console.warn('Lalá: erro em confirmarAgendamento.', err);
-            addBotMsg('Erro ao salvar. 😥 O agendamento continua pendente.');
-          });
+          comIndicadorConsulta(LALA.confirmarAgendamento())
+            .then(function(msg) { addBotMsg(msg); })
+            .catch(function(err) {
+              console.warn('Lalá: erro em confirmarAgendamento.', err);
+              addBotMsg('Erro ao salvar. 😥 O agendamento continua pendente.');
+            });
           return;
         }
 
         if (resposta && resposta.isCancelar) {
-          LALA.cancelarAgendamento().then(function(msg) {
-            addBotMsg(msg);
-          }).catch(function(err) {
-            console.warn('Lalá: erro em cancelarAgendamento.', err);
-            addBotMsg('Erro ao cancelar. 😥');
-          });
+          comIndicadorConsulta(LALA.cancelarAgendamento())
+            .then(function(msg) { addBotMsg(msg); })
+            .catch(function(err) {
+              console.warn('Lalá: erro em cancelarAgendamento.', err);
+              addBotMsg('Erro ao cancelar. 😥');
+            });
           return;
         }
 
         if (resposta && resposta.isBomDia) {
-          addBotMsg('Deixa eu ver a agenda... ⏳');
-          LALA.darBomDia().then(function(res) {
-            addBotMsg(res);
-          }).catch(function(err) {
-            console.warn('Lalá: erro em darBomDia.', err);
-            addBotMsg('Erro ao consultar a agenda. 😥');
-          });
+          comIndicadorConsulta(LALA.darBomDia())
+            .then(function(res) { addBotMsg(res); })
+            .catch(function(err) {
+              console.warn('Lalá: erro em darBomDia.', err);
+              addBotMsg('Erro ao consultar a agenda. 😥');
+            });
           return;
         }
 
-        if (resposta && resposta.isFaturamento) {
-          addBotMsg(LALA.consultarFaturamentoMes());
-          return;
-        }
-
-        if (resposta && resposta.isProximos) {
-          addBotMsg(LALA.consultarProximosEventos());
-          return;
-        }
+        if (resposta && resposta.isFaturamento) { addBotMsg(LALA.consultarFaturamentoMes()); return; }
+        if (resposta && resposta.isProximos) { addBotMsg(LALA.consultarProximosEventos()); return; }
 
         if (resposta && resposta.isTutorial) {
           addBotMsg('Claro! Abrindo o tutorial. 😊');
-          setTimeout(function() {
-            if (LALA.iniciarTutorial) LALA.iniciarTutorial();
-          }, 800);
+          setTimeout(function() { if (LALA.iniciarTutorial) LALA.iniciarTutorial(); }, 800);
           return;
         }
 
-        if (resposta && resposta.resposta) {
-          addBotMsg(resposta.resposta);
-          return;
-        }
+        if (resposta && resposta.resposta) { addBotMsg(resposta.resposta); return; }
 
         addBotMsg("Ainda não sei responder isso. 😅 Digite <b>'O que você faz?'</b>.");
       }, 500);
