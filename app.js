@@ -1293,9 +1293,10 @@ function aplicarDesconto() {
 // ============================================================
 // RESERVAS — COM BOTÕES EDITAR/PEÇAS
 // ============================================================
-function renderReservas(filtro) {
+function renderReservas(filtro, opcoes) {
+  opcoes = opcoes || {};
   if (!filtro) filtro = "";
-  var container = document.getElementById("lista-reservas-render");
+  var container = opcoes.container || document.getElementById("lista-reservas-render");
   if (!container) return;
   container.innerHTML = "";
   if (State.carregando) { container.innerHTML = "<div style='text-align:center; padding:20px;'>⌛ Carregando...</div>"; return; }
@@ -1306,6 +1307,13 @@ function renderReservas(filtro) {
     var f = Utils.normalizar(filtro);
     arr = arr.filter(function(r) { return Utils.normalizar(r.cliente).indexOf(f) !== -1 || Utils.normalizar(r.tema).indexOf(f) !== -1; });
   }
+
+  if (opcoes.ids) arr = arr.filter(function(r) { return opcoes.ids.includes(String(r.id)); });
+  else if (!opcoes.mostrarTodos) {
+    var ocupados = new Set(pastasAgendamento.flatMap(function(p) { return normalizarIdsPasta(p.cards); }));
+    arr = arr.filter(function(r) { return !ocupados.has(String(r.id)); });
+  }
+  if (!arr.length) container.innerHTML = "<p style='text-align:center;color:#777'>Nenhum agendamento nesta lista.</p>";
 
   var hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
@@ -3063,137 +3071,143 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log("✅ app.js COMPLETO carregado com sucesso (Auth migrado + verificação corrigida)");
 });
 // ============================================================
-// LÓGICA DE PASTAS E AGRUPAMENTO (NOVO)
+// GERENCIADOR VISUAL DE PASTAS — reutiliza cards originais
 // ============================================================
-let pastasAgendamento = []; 
-
-// Escuta as pastas no Firebase
-if (typeof db !== 'undefined' && db) {
-  db.ref('pastas_agendamentos').on('value', snap => {
-    const val = snap.val() || {};
-    pastasAgendamento = Object.keys(val).map(id => ({ id, ...val[id] }));
-    if (typeof renderizarPastas === "function") renderizarPastas();
-    if (typeof renderReservas === "function") renderReservas(); 
-  });
+let pastasAgendamento = [];
+let pastaAbertaId = null;
+function normalizarIdsPasta(cards) {
+  if (Array.isArray(cards)) return cards.filter(Boolean).map(String);
+  if (cards && typeof cards === 'object') return Object.values(cards).filter(Boolean).map(String);
+  return [];
 }
-
+function escaparTexto(valor) {
+  return String(valor == null ? '' : valor).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function idsSelecionados() {
+  return Array.from(document.querySelectorAll('#lista-reservas-render .checkbox-card:checked')).map(c => c.value);
+}
+function verificarSelecaoCards() {
+  const n = idsSelecionados().length;
+  const btn = document.getElementById('btn-agrupar-selecionados');
+  if (btn) { btn.style.display = n ? 'inline-flex' : 'none'; btn.textContent = `📁 Agrupar (${n})`; }
+}
+function adicionarCheckboxes() {
+  const lista = document.getElementById('lista-reservas-render');
+  if (!lista) return;
+  const visiveis = State.reservas.filter(r => !pastasAgendamento.some(p => normalizarIdsPasta(p.cards).includes(String(r.id))));
+  lista.querySelectorAll('.card-reserva').forEach((card, i) => {
+    const botao = card.querySelector('button[onclick*="DeletarReserva"]');
+    const id = botao && botao.getAttribute('onclick').match(/'([^']+)'/);
+    if (!id || card.querySelector('.checkbox-card')) return;
+    const chk = document.createElement('input');
+    chk.type = 'checkbox'; chk.className = 'checkbox-card'; chk.value = id[1];
+    chk.setAttribute('aria-label', 'Selecionar agendamento');
+    chk.style.cssText = 'width:20px;height:20px;margin:8px;accent-color:#a3536a';
+    chk.addEventListener('change', verificarSelecaoCards);
+    card.prepend(chk);
+  });
+  verificarSelecaoCards();
+}
+const renderReservasOriginalPastas = renderReservas;
+renderReservas = function(filtro, opcoes) {
+  renderReservasOriginalPastas(filtro, opcoes);
+  if (!opcoes || !opcoes.container) adicionarCheckboxes();
+  if (pastaAbertaId && (!opcoes || !opcoes.container)) renderizarPastas();
+};
+if (db) db.ref('pastas_agendamentos').on('value', snap => {
+  const val = snap.val() || {};
+  pastasAgendamento = Object.keys(val).map(id => ({id, ...val[id]}));
+  renderReservas((document.getElementById('busca-reservas') || {}).value || '');
+  renderizarPastas();
+});
+window.abrirModalPastas = function() {
+  pastaAbertaId = null;
+  document.getElementById('modal-gerenciar-pastas').classList.add('ativo');
+  renderizarPastas();
+};
+window.criarNovaPasta = async function() {
+  const campo = document.getElementById('input-nova-pasta-nome');
+  const nome = campo.value.trim();
+  if (!nome || !db) return Utils.showToast('Informe o nome da pasta.', 'warning');
+  try { await db.ref('pastas_agendamentos').push({nome, criadoEm: Date.now(), cards: []}); campo.value = ''; }
+  catch(e) { Utils.showToast('Não foi possível criar a pasta.', 'error'); }
+};
+window.abrirPasta = function(id) { pastaAbertaId = id; renderizarPastas(); };
+window.voltarPastas = function() { pastaAbertaId = null; renderizarPastas(); };
+window.renomearPasta = async function(id) {
+  const pasta = pastasAgendamento.find(p => p.id === id); if (!pasta) return;
+  const nome = prompt('Novo nome da pasta:', pasta.nome);
+  if (!nome || !nome.trim()) return;
+  try { await db.ref('pastas_agendamentos/' + id).update({nome: nome.trim()}); }
+  catch(e) { Utils.showToast('Erro ao renomear pasta.', 'error'); }
+};
+window.excluirPasta = async function(id) {
+  if (!confirm('Excluir esta pasta? Os agendamentos voltarão à lista principal.')) return;
+  try { await db.ref('pastas_agendamentos/' + id).remove(); pastaAbertaId = null; renderizarPastas(); }
+  catch(e) { Utils.showToast('Erro ao excluir pasta.', 'error'); }
+};
+window.removerDaPasta = async function(idPasta, idReserva) {
+  const p = pastasAgendamento.find(p => p.id === idPasta); if (!p) return;
+  const ids = normalizarIdsPasta(p.cards).filter(id => id !== idReserva);
+  try { await db.ref('pastas_agendamentos/' + idPasta + '/cards').set(ids.length ? ids : null); }
+  catch(e) { Utils.showToast('Erro ao retirar agendamento.', 'error'); }
+};
+window.adicionarNaPasta = async function(idPasta) {
+  const p = pastasAgendamento.find(p => p.id === idPasta); if (!p) return;
+  const ocupados = new Set(pastasAgendamento.flatMap(x => normalizarIdsPasta(x.cards)));
+  const disponiveis = State.reservas.filter(r => !ocupados.has(String(r.id)));
+  if (!disponiveis.length) return Utils.showToast('Não há agendamentos fora das pastas.', 'warning');
+  const resposta = prompt('Digite o número do agendamento para adicionar:\n' + disponiveis.map((r,i) => `${i+1} - ${r.cliente || 'Sem nome'}`).join('\n'));
+  if (resposta === null) return;
+  const i = Number(resposta)-1;
+  if (!Number.isInteger(i) || i < 0 || i >= disponiveis.length) return Utils.showToast('Número inválido.', 'warning');
+  const ids = [...new Set([...normalizarIdsPasta(p.cards), String(disponiveis[i].id)])];
+  try { await db.ref('pastas_agendamentos/' + idPasta + '/cards').set(ids); }
+  catch(e) { Utils.showToast('Erro ao adicionar agendamento.', 'error'); }
+};
 function renderizarPastas() {
-  const container = document.getElementById('lista-pastas-render');
-  if (!container) return;
-
-  if (pastasAgendamento.length === 0) {
-    container.innerHTML = '';
+  const area = document.getElementById('lista-pastas-gerenciar');
+  if (!area) return;
+  const form = document.getElementById('criar-pasta-linha');
+  if (!pastaAbertaId) {
+    if (form) form.style.display = 'flex';
+    area.innerHTML = pastasAgendamento.length ? pastasAgendamento.map(p => `
+      <div style="padding:15px;border:1px solid #e1cbd4;border-radius:12px;background:#fff;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <button type="button" class="btn btn-outline" style="flex:1;text-align:left" onclick="abrirPasta('${p.id}')">📁 ${escaparTexto(p.nome)} (${normalizarIdsPasta(p.cards).length})</button>
+        <button type="button" class="btn btn-outline" onclick="renomearPasta('${p.id}')">✏️</button>
+        <button type="button" class="btn btn-outline" onclick="excluirPasta('${p.id}')">🗑️</button>
+      </div>`).join('') : '<p>Nenhuma pasta criada ainda.</p>';
     return;
   }
-
-  let html = '';
-  pastasAgendamento.forEach(pasta => {
-    const qtd = pasta.cards ? pasta.cards.length : 0;
-    html += `
-      <div class="card-pasta" onclick="window.abrirPasta('${pasta.id}')">
-        <div class="icone-pasta">📁</div>
-        <div class="nome-pasta">${pasta.nome}</div>
-        <div class="qtd-pasta">${qtd} agendamento(s)</div>
-      </div>
-    `;
+  const p = pastasAgendamento.find(x => x.id === pastaAbertaId);
+  if (!p) { pastaAbertaId = null; return renderizarPastas(); }
+  if (form) form.style.display = 'none';
+  area.innerHTML = `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button type="button" class="btn btn-outline" onclick="voltarPastas()">← Voltar</button><strong>📁 ${escaparTexto(p.nome)}</strong><button type="button" class="btn btn-primary" onclick="adicionarNaPasta('${p.id}')">+ Adicionar agendamento</button></div><div id="cards-dentro-pasta" style="display:grid;gap:12px;margin-top:15px"></div>`;
+  const ids = normalizarIdsPasta(p.cards);
+  const destino = document.getElementById('cards-dentro-pasta');
+  renderReservasOriginalPastas('', {container: destino, ids});
+  destino.querySelectorAll('.card-reserva').forEach(card => {
+    const botao = card.querySelector('button[onclick*="DeletarReserva"]');
+    const match = botao && botao.getAttribute('onclick').match(/'([^']+)'/);
+    if (!match) return;
+    const tirar = document.createElement('button');
+    tirar.type = 'button'; tirar.className = 'btn btn-outline'; tirar.textContent = '↩ Retirar da pasta';
+    tirar.onclick = () => window.removerDaPasta(p.id, match[1]);
+    card.appendChild(tirar);
   });
-  container.innerHTML = html;
 }
-
-// Configurar os botões de criar e agrupar
 document.addEventListener('DOMContentLoaded', () => {
-  const btnNovaPasta = document.getElementById('btn-nova-pasta');
-  if (btnNovaPasta) {
-    btnNovaPasta.onclick = () => {
-      const nome = prompt("Qual o nome da nova pasta? (Ex: Festas de Outubro, Clientes VIP...)");
-      if (nome && nome.trim() !== "") {
-        if (db) db.ref('pastas_agendamentos').push({ nome: nome.trim(), cards: [], criadoEm: Date.now() });
-      }
-    };
-  }
-
-  const btnAgrupar = document.getElementById('btn-agrupar-selecionados');
-  if (btnAgrupar) {
-    btnAgrupar.onclick = () => {
-      const selecionados = [];
-      document.querySelectorAll('.checkbox-card:checked').forEach(cb => selecionados.push(cb.value));
-
-      if (selecionados.length === 0) return alert("Selecione pelo menos um card.");
-      if (!db) return alert("Sem conexão com o banco.");
-
-      const nome = prompt("Dê um nome para essa nova pasta (Ex: Grupo da Maria):");
-      if (nome && nome.trim() !== "") {
-        db.ref('pastas_agendamentos').push({ nome: nome.trim(), cards: selecionados, criadoEm: Date.now() }).then(() => {
-          document.getElementById('btn-agrupar-selecionados').style.display = 'none';
-        });
-      }
-    };
-  }
+  const gerenciar = document.getElementById('btn-nova-pasta');
+  if (gerenciar) gerenciar.onclick = window.abrirModalPastas;
+  const agrupar = document.getElementById('btn-agrupar-selecionados');
+  if (agrupar) agrupar.onclick = async function() {
+    const ids = idsSelecionados(); if (!ids.length) return;
+    const nome = prompt('Nome da nova pasta para os agendamentos selecionados:');
+    if (!nome || !nome.trim()) return;
+    try { await db.ref('pastas_agendamentos').push({nome: nome.trim(), cards: ids, criadoEm: Date.now()}); verificarSelecaoCards(); }
+    catch(e) { Utils.showToast('Erro ao agrupar agendamentos.', 'error'); }
+  };
 });
-
-// Função para abrir a pasta e ver os cards
-window.abrirPasta = function(pastaId) {
-  const pasta = pastasAgendamento.find(p => p.id === pastaId);
-  if (!pasta) return;
-  
-  const nomes = pasta.cards.map(id => {
-    const res = State.reservas.find(r => r.id === id);
-    return res ? res.cliente : 'Cliente Excluído';
-  });
-
-  const acao = prompt(`📁 Pasta: ${pasta.nome}\n\nAgendamentos aqui:\n${nomes.join('\n')}\n\nO que deseja fazer?\n1 - Desagrupar todos (voltar pra lista)\n2 - Excluir pasta (os cards voltam pra lista)\n3 - Apenas fechar`);
-  
-  if (acao === '1' || acao === '2') {
-    if (db) db.ref('pastas_agendamentos/' + pastaId).remove();
-  }
-};
-
-// Sobrescreve a função renderReservas para adicionar os checkboxes e esconder os que estão em pastas
-const originalRenderReservas = renderReservas;
-renderReservas = function(filtro) {
-  let idsEmPastas = [];
-  pastasAgendamento.forEach(p => { if (p.cards) idsEmPastas.push(...p.cards); });
-
-  originalRenderReservas(filtro);
-
-  setTimeout(() => {
-    const lista = document.getElementById('lista-reservas-render');
-    if (!lista) return;
-
-    lista.querySelectorAll('.card-reserva').forEach(card => {
-      const btnDeletar = card.querySelector('button[onclick*="DeletarReserva"]');
-      if (btnDeletar) {
-        const match = btnDeletar.getAttribute('onclick').match(/'([^']+)'/);
-        if (match) {
-          const idReserva = match[1];
-
-          if (idsEmPastas.includes(idReserva)) {
-            card.style.display = 'none'; // Esconde se estiver na pasta
-            return;
-          }
-
-          card.style.position = 'relative';
-          const chk = document.createElement('input');
-          chk.type = 'checkbox';
-          chk.className = 'checkbox-card';
-          chk.value = idReserva;
-          chk.onchange = verificarSelecaoCards;
-          card.appendChild(chk); // Adiciona o quadradinho de marcar
-        }
-      }
-    });
-  }, 100);
-};
-
-// Mostra o botão "Agrupar" só quando tem card selecionado
-function verificarSelecaoCards() {
-  const selecionados = document.querySelectorAll('.checkbox-card:checked');
-  const btn = document.getElementById('btn-agrupar-selecionados');
-  if (btn) {
-    btn.style.display = selecionados.length > 0 ? 'inline-flex' : 'none';
-    btn.innerText = `📁 Agrupar (${selecionados.length})`;
-  }
-}
 // ============================================================
 // FUNÇÕES DE CONTRATO (Recuperadas)
 // ============================================================
