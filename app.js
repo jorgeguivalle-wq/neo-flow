@@ -1,8 +1,6 @@
 // ============================================================
 // SISTEMA PRINCIPAL — Tralalá Festas
-// Autenticação via Firebase Auth (corrigida)
 // ============================================================
-
 const CONFIG = {
   firebase: {
     apiKey: "AIzaSyCS6ofyis160STTrjhFJZDCsqAIyh_Ghmc",
@@ -27,6 +25,8 @@ const State = {
   descontoAplicado: { tipo: "percent", valor: 0, totalOriginal: 0, totalFinal: 0 },
   frete: { kmIda: 0, kmTotal: 0, precoCombustivel: 0, litros: 0, custoCombustivel: 0, manutencao: 0, freteTotal: 0, segundaViagem: false }
 };
+
+// INTEGRAÇÃO LALÁ: Torna o State visível globalmente
 window.State = State;
 
 const mesesAno = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
@@ -239,6 +239,7 @@ function recalcularTotais() {
     inputRestante.value = restante.toFixed(2);
   }
 }
+
 // ============================================================
 // FIREBASE — INICIALIZAÇÃO
 // ============================================================
@@ -246,7 +247,7 @@ try {
   if (typeof firebase !== 'undefined') {
     if (!firebase.apps.length) firebase.initializeApp(CONFIG.firebase);
     db = firebase.database();
-    window.db = db;
+    window.db = db; // INTEGRAÇÃO LALÁ
     auth = firebase.auth();
     State.db = db;
     console.log("🔥 Firebase inicializado. Projeto:", CONFIG.firebase.projectId);
@@ -289,6 +290,11 @@ function entrarNoSistema(user) {
 
   Utils.showToast("Login realizado!", "success");
   try { Database.listenPontoUsuario(); } catch (e) {}
+
+  // INTEGRAÇÃO LALÁ: Inicia o tutorial no primeiro acesso
+  if (window.LalaTutorial && typeof window.LalaTutorial.verificarTutorialInicial === "function") {
+    window.LalaTutorial.verificarTutorialInicial();
+  }
 
   if (State.usuarioLogadoEmail === "leonardodovalle@gmail.com" ||
       State.usuarioLogadoEmail === "tralaladecoracoes@gmail.com" ||
@@ -333,8 +339,7 @@ function handleLogin() {
     })
     .catch(function(err) {
       ModalStatus.fechar();
-      var msg = "E-mail ou senha incorretos.";
-      Utils.showToast(msg, "error");
+      Utils.showToast("E-mail ou senha incorretos.", "error");
     });
 }
 
@@ -602,9 +607,8 @@ function listenCategorias() {
     atualizarSeletoresCategoria();
   });
 }
-
 // ============================================================
-// LÓGICA DE ORÇAMENTOS EM ABERTO (NOVO)
+// LÓGICA DE ORÇAMENTOS EM ABERTO
 // ============================================================
 function listenOrcamentosAbertos() {
   if (!db) return;
@@ -679,6 +683,7 @@ window.excluirOrcamentoAberto = function(id) {
     db.ref('orcamentos_abertos/' + id).remove();
   }
 };
+
 // ============================================================
 // TEMAS
 // ============================================================
@@ -927,10 +932,7 @@ function abrirModalPecas(contexto) {
   setTimeout(function() { var f = document.getElementById("filtro-pecas"); if (f) f.value = ""; }, 50);
 }
 
-window.__selecaoTempModalPecas = {
-  selecionadas: [],
-  quantidades: {}
-};
+window.__selecaoTempModalPecas = { selecionadas: [], quantidades: {} };
 
 function renderizarListaPecasModal(contexto, filtro) {
   var container = document.getElementById("lista-pecas-checkbox");
@@ -1214,7 +1216,6 @@ function atualizarInfoKitCriando() {
   if (temas.length > 0) partes.push("🎨 Tema: " + temas.join(", "));
   info.innerHTML = partes.length > 0 ? partes.join(" | ") : "Nenhuma peça ou tema selecionado ainda.";
 }
-
 // ============================================================
 // RESUMO E SOMA
 // ============================================================
@@ -1701,458 +1702,6 @@ function renderRelatorioGeralPontos(dadosPontos) {
     }
   }
   container.innerHTML = tem ? html : '<tr><td colspan="4" style="text-align:center; color:#999;">Nenhum ponto registrado.</td></tr>';
-}
-
-// ============================================================
-// CONTRATOS (Funções de geração)
-// ============================================================
-// ============================================================
-// CONTRATO 1 — PEGUE E MONTE
-// ============================================================
-function gerarContratoPegueMonte(dados) {
-  var dataFmt = dados.data ? String(dados.data).split("-").reverse().join("/") : "____/____/______";
-  var valorNum = parseFloat(dados.valor) || 0;
-  var valorFmt = valorNum ? valorNum.toFixed(2).replace('.', ',') : "______,____";
-  var dataAtual = new Date().toLocaleDateString('pt-BR');
-  var nome = dados.nome || "_________________________";
-  var cpf = dados.cpf || "_________________________";
-  var endereco = dados.endereco || "_________________________";
-  var pecasDetalhadas = descricaoPecasDetalhada(dados.pecas, dados.pecasQtd);
-
-  return '<div class="pagina-contrato">' +
-    '<div class="logo-container"><img src="tralala-logo.png" class="logo-contrato"></div>' +
-    '<div class="titulo-contrato">CONTRATO DE PRESTAÇÃO DE SERVIÇOS PARA LOCAÇÃO</div>' +
-    '<div class="dados-contratada"><span class="negrito">CONTRATADA:</span> TRALALÁ DECORAÇÕES DE FESTAS CNPJ: 21.918.863/0001-12</div>' +
-    '<div class="dados-contratante"><span class="negrito">CONTRATANTE:</span> ' + nome + '</div>' +
-    '<div class="dados-contratante"><span class="negrito">CPF:</span> ' + cpf + '</div>' +
-    '<div class="dados-contratante"><span class="negrito">ENDEREÇO CLIENTE:</span> ' + endereco + '</div>' +
-    '<div class="dados-contratante"><span class="negrito">DATA DA FESTA:</span> ' + dataFmt + '</div>' +
-    '<p style="margin-top:4px;">As partes acima identificadas têm, entre si, justo e acertado o presente contrato de prestação de serviços, que se regerá pelas cláusulas seguintes e pelas condições de preço, forma e termo de pagamento descritas no presente contrato.</p>' +
-    '<div class="clausula-titulo">DO OBJETO DO CONTRATO</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 1ª.</span> É objeto do presente contrato a prestação de serviço de Aluguel de ' + pecasDetalhadas + ' à CONTRATANTE (especificado na Clausula 5ª), que a CONTRATADA declara ser de sua propriedade, para o evento que se realizará no dia ' + dataFmt + ', conforme endereço especificado abaixo:</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 2ª.</span> A CONTRATANTE não poderá, sem prévia autorização da CONTRATADA, sublocar, emprestar, ou ceder os móveis locados.</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 3ª.</span> A CONTRATANTE deverá retirar os itens no seguinte endereço QR 308 CONJUNTO 11 lote 20 - Samambaia sul, no dia anterior ao evento, munido de cópia do comprovante de residência em seu nome, cópia do CPF e RG, documentos necessários para locação.</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 4ª.</span> É dever da CONTRATADA oferecer o serviço de acordo com as especificações do contrato. É dever da CONTRATANTE entregar os itens conforme descrito na clausula 1ª no dia seguinte ao evento, até as 12h00 no mesmo local de retirada.</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 5ª.</span> O serviço contratado no presente instrumento será remunerado pela quantia de R$ ' + valorFmt + ', devendo ser pago no ato da reserva.</div>' +
-    '<div class="clausula-texto">Em dinheiro ou depósito bancário (Caixa Econômica Federal, Agencia: 2403, Op.001 Conta corrente: 21702-0 em nome de Aline Alves de Araújo do Valle, CPF: 864.331.211-87 pix) ou ( Banco Itaú, agencia 8624, conta corrente 06209-0, Aline Alves de Araújo, CPF: 864.331.211.87) ou ( Banco do Brasil, Agencia:1230-0, conta corrente 39.464-5, em nome Jorge Leonardo Sampaio do Valle, CPF: 794.883.315-34)</div>' +
-    '<div class="clausula-titulo">DA DEVOLUÇÃO</div>' +
-    '<div class="clausula-texto"><span class="negrito">Cláusula 6ª.</span> Caso Haja perda, Danos, Quebra Ou não devolução dos itens, a CONTRATANTE arcará com 50% do valor de uma peça nova (caso haja recuperação), não havendo recuperação será cobrado o valor de mercado por cada peça, em dinheiro ou outra forma que convier às PARTES. A CONTRATANTE assinará nota promissória referente ao valor real do kit alugado que será devolvido na entrega do mesmo.</div>' +
-    '<div class="paragrafo">Parágrafo primeiro: É dever da CONTRATANTE devolver as peças limpas e embaladas na caixa como foi entregue. É proibido, furar maquete, usar cola quente no painel, peças e mesas, usar confeitos coloridos, vela faísca estes itens danificam e mancham peças e mobília.</div>' +
-    '<div class="paragrafo">O tapete deverá ser devolvido limpo, caso contrário pagará multa de limpeza de R$ 40,00 (quarenta reais).</div>' +
-    '<div class="clausula-titulo">DO CANCELAMENTO</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 7ª.</span> Em caso de desistência a CONTRATANTE pagará multa de quebra de contrato de 50% do valor total do contrato.</div>' +
-    '<div class="paragrafo">Parágrafo primeiro: Em caso de força maior, a CONTRATANTE, poderá solicitar uma carta credito na quantia paga, para utilização de até um ano a partir da data da notificação. Sendo que carta crédito não poderá ser transferida para outro titular, nem prorrogada. Cabendo a CONTRATADA confirmar disponibilidade de peças e data. A CONTRATANTE deverá comprovar o fato ocorrido com documentos oficiais.</div>' +
-    '<div class="paragrafo">Parágrafo Segundo. A Parte impossibilitada de cumprir sua obrigação deverá notificar a outra, de imediato, acerca da extensão do problema e o prazo estimado para remarcação da nova data.</div>' +
-    '<div class="clausula-titulo">DO FORO</div>' +
-    '<div class="clausula-texto">As Partes elegem o foro da Circunscrição Judiciária de Brasília – DF para dirimir os conflitos que porventura venham a surgir em decorrência da execução do presente contrato, com renúncia de qualquer outro, por mais privilegiado que seja.</div>' +
-    '<div class="clausula-texto">E por assim estarem de acordo, as partes celebram o presente instrumento em 02 (duas) vias de igual teor e validade, todos assinados em presença das testemunhas abaixo nominadas e identificadas para que produza todos os efeitos legais.</div>' +
-    '<div class="assinatura"><div class="assinatura-nome">CONTRATADA:</div><div class="linha-assinatura"></div><div class="assinatura-nome">TRALALÁ DECORAÇOES DE FESTA CNPJ:21.918.863/0001-12</div></div>' +
-    '<div class="assinatura"><div class="assinatura-nome">CONTRATANTE:</div><div class="linha-assinatura"></div><div class="assinatura-nome">' + nome + ' — CPF: ' + cpf + '</div></div>' +
-    '<div style="text-align:center; margin-top:8px; font-size:10pt;">Brasília-DF, ' + dataAtual + '.</div>' +
-    '<div class="rodape-loja">TRALALÁ DECORAÇÕES DE FESTAS QR 308 CONJUNTO 14 LOTE 11, SAMAMBAIA SUL. (61) 9. 8191-9559</div>' +
-  '</div>';
-}
-
-// ============================================================
-// CONTRATO 3 — PEGUE E MONTE (LOJA)
-// ============================================================
-function gerarContratoPegueMonteLoja(dados) {
-  var dataFmt = dados.data ? String(dados.data).split("-").reverse().join("/") : "____/____/______";
-  var valorNum = parseFloat(dados.valor) || 0;
-  var valorFmt = valorNum ? valorNum.toFixed(2).replace('.', ',') : "______,____";
-  var dataAtual = new Date().toLocaleDateString('pt-BR');
-  var nome = dados.nome || "_________________________";
-  var cpf = dados.cpf || "_________________________";
-  var endereco = dados.endereco || "_________________________";
-  var telefone = dados.telefone || "(61) ________________";
-
-  var totalNum = parseFloat(dados.valor) || 0;
-  var sinalNum = parseFloat(dados.sinal) || 0;
-  var freteNum = parseFloat(dados.frete) || 0;
-  var totalComFrete = totalNum + freteNum;
-  var faltaPagar = totalComFrete - sinalNum;
-  if (faltaPagar < 0) faltaPagar = 0;
-  var valorTotalFmt = totalComFrete.toFixed(2).replace('.', ',');
-  var sinalFmt = sinalNum.toFixed(2).replace('.', ',');
-  var faltaFmt = faltaPagar.toFixed(2).replace('.', ',');
-  var freteFmt = freteNum.toFixed(2).replace('.', ',');
-
-  function valorPorExtenso(valor) {
-    if (!valor || valor === 0) return "zero reais";
-    var unidades = ["", "um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove"];
-    var especiais = ["dez", "onze", "doze", "treze", "quatorze", "quinze", "dezesseis", "dezessete", "dezoito", "dezenove"];
-    var dezenas = ["", "", "vinte", "trinta", "quarenta", "cinquenta", "sessenta", "setenta", "oitenta", "noventa"];
-    var centenas = ["", "cento", "duzentos", "trezentos", "quatrocentos", "quinhentos", "seiscentos", "setecentos", "oitocentos", "novecentos"];
-
-    function extensoAte999(n) {
-      if (n === 0) return "";
-      if (n === 100) return "cem";
-      var partes = [];
-      var c = Math.floor(n / 100);
-      var resto = n % 100;
-      if (c > 0) partes.push(centenas[c]);
-      if (resto > 0) {
-        if (resto < 10) partes.push(unidades[resto]);
-        else if (resto < 20) partes.push(especiais[resto - 10]);
-        else {
-          var d = Math.floor(resto / 10);
-          var u = resto % 10;
-          if (u > 0) partes.push(dezenas[d] + " e " + unidades[u]);
-          else partes.push(dezenas[d]);
-        }
-      }
-      return partes.join(" e ");
-    }
-
-    var reais = Math.floor(valor);
-    var centavos = Math.round((valor - reais) * 100);
-    var partes = [];
-
-    if (reais > 0) {
-      var milhoes = Math.floor(reais / 1000000);
-      var milhares = Math.floor((reais % 1000000) / 1000);
-      var resto = reais % 1000;
-      if (milhoes > 0) partes.push(extensoAte999(milhoes) + (milhoes === 1 ? " milhão" : " milhões"));
-      if (milhares > 0) partes.push(extensoAte999(milhares) + " mil");
-      if (resto > 0) partes.push(extensoAte999(resto));
-    }
-
-    var texto = partes.join(" e ");
-    if (reais > 0) texto += (reais === 1 ? " real" : " reais");
-
-    if (centavos > 0) {
-      if (reais > 0) texto += " e ";
-      var c = Math.floor(centavos / 10);
-      var u = centavos % 10;
-      var textoCentavos = "";
-      if (centavos < 10) textoCentavos = unidades[centavos];
-      else if (centavos < 20) textoCentavos = especiais[centavos - 10];
-      else {
-        if (u > 0) textoCentavos = dezenas[c] + " e " + unidades[u];
-        else textoCentavos = dezenas[c];
-      }
-      texto += textoCentavos + (centavos === 1 ? " centavo" : " centavos");
-    }
-
-    return texto;
-  }
-
-  var linhasTabela = "";
-  if (dados.pecas && dados.pecas.length > 0) {
-    dados.pecas.forEach(function(nomePeca) {
-      var item = State.estoqueMap[nomePeca];
-      var qtd = dados.pecasQtd && dados.pecasQtd[nomePeca] ? parseInt(dados.pecasQtd[nomePeca]) : 1;
-      var preco = item ? (parseFloat(item.preco) || 0) : 0;
-      var descricao = nomePeca;
-      if (item) {
-        var partes = [];
-        if (item.categoria) partes.push(item.categoria);
-        if (item.modelo) partes.push(item.modelo);
-        if (partes.length > 0) descricao += " (" + partes.join(" — ") + ")";
-      }
-      linhasTabela += '<tr>' +
-        '<td style="text-align:center;">' + qtd + '</td>' +
-        '<td>' + descricao + '</td>' +
-        '<td style="text-align:center;">R$ ' + preco.toFixed(2).replace('.', ',') + '</td>' +
-        '<td style="text-align:center;">R$ ' + (preco * qtd).toFixed(2).replace('.', ',') + '</td>' +
-        '</tr>';
-    });
-  } else {
-    for (var i = 0; i < 3; i++) {
-      linhasTabela += '<tr><td style="text-align:center; height:24px;">&nbsp;</td><td>&nbsp;</td><td style="text-align:center;">&nbsp;</td><td style="text-align:center;">&nbsp;</td></tr>';
-    }
-  }
-
-  return '<div class="pagina-contrato">' +
-    '<div class="logo-container"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT2qBAlvPlxMFaok_zho9se2IT9smgKtY9Dvg&s" class="logo-contrato"></div>' +
-    '<div class="titulo-contrato">CONTRATO DE LOCAÇÃO PEGUE & MONTE</div>' +
-    '<div class="dados-contratada"><span class="negrito">CONTRATADA:</span> TRALALÁ DECORAÇÕES DE FESTAS</div>' +
-    '<div class="dados-contratada"><span class="negrito">CNPJ:</span> 21.918.863/0001-12</div>' +
-    '<div class="dados-contratada"><span class="negrito">E-MAIL:</span> tralaladecoracoes@gmail.com</div>' +
-    '<br>' +
-    '<div class="dados-contratante"><span class="negrito">CONTRATANTE:</span> ' + nome + '</div>' +
-    '<div class="dados-contratante"><span class="negrito">CPF:</span> ' + cpf + '</div>' +
-    '<div class="dados-contratante"><span class="negrito">ENDEREÇO CLIENTE:</span> ' + endereco + '</div>' +
-    '<div class="dados-contratante"><span class="negrito">TELEFONE:</span> ' + telefone + '</div>' +
-    '<div class="dados-contratante"><span class="negrito">DATA DA FESTA:</span> ' + dataFmt + '</div>' +
-    '<div class="dados-contratante"><span class="negrito">RETIRADA DOS ITENS:</span> ____/____/______, DAS 8H00 AS 11H00 E DAS 13H00 AS 17H00</div>' +
-    '<div class="dados-contratante"><span class="negrito">DEVOLUÇÃO DOS ITENS:</span> ____/____/______, 8H00 DAS 11H00 (caso não seja entregue na data e horário combinado será cobrado o valor de uma locação para cada dia de atraso).</div>' +
-    '<p style="margin-top:6px;">As partes acima identificadas têm, entre si, justo e acertado o presente contrato de prestação de serviços, que se regerá pelas cláusulas seguintes e pelas condições de preço, forma e termo de pagamento descritas no presente contrato.</p>' +
-    '<div class="clausula-titulo">DO OBJETO DO CONTRATO</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 1ª.</span> É objeto do presente contrato a prestação de serviço de Locação de:</div>' +
-    '<table class="tabela-itens"><thead><tr><th style="width:60px;">QTDE.</th><th>DESCRIÇÃO DO PRODUTO</th><th style="width:110px;">VALOR UNITÁRIO</th><th style="width:110px;">VALOR TOTAL</th></tr></thead><tbody>' + linhasTabela + '</tbody></table>' +
-    '<div class="clausula-titulo" style="margin-top: 12px;">DO PAGAMENTO</div>' +
-    '<div class="clausula-texto">O serviço contratado no presente instrumento será remunerado pela quantia total de <b>R$ ' + valorTotalFmt + ' (' + valorPorExtenso(totalComFrete) + ')</b>, referente à locação dos itens e serviços descritos neste contrato.</div>' +
-    '<div class="resumo-pagamento">' +
-      '<div class="linha-pagamento"><span class="label-pag">Valor total do contrato:</span><span class="valor-pag">R$ ' + valorTotalFmt + '</span></div>' +
-      (freteNum > 0 ? '<div class="linha-pagamento"><span class="label-pag">— Frete incluso:</span><span class="valor-pag">R$ ' + freteFmt + '</span></div>' : '') +
-      '<div class="linha-pagamento"><span class="label-pag">Sinal pago no ato da reserva:</span><span class="valor-pag" style="color: #27ae60;">R$ ' + sinalFmt + '</span></div>' +
-      '<div class="linha-pagamento linha-total"><span class="label-pag"><b>Valor restante a pagar:</b></span><span class="valor-pag" style="color: #e74c3c; font-weight: bold;">R$ ' + faltaFmt + '</span></div>' +
-    '</div>' +
-    '<div class="clausula-texto">A CONTRATANTE declara estar ciente do valor acordado e compromete-se a efetuar o pagamento conforme as condições previamente estabelecidas entre as partes.</div>' +
-    '<div class="paragrafo">Parágrafo primeiro. A CONTRATANTE não poderá, sem prévia autorização da CONTRATADA, sublocar, emprestar, ou ceder os móveis locados.</div>' +
-    '<div class="clausula-titulo">OBRIGAÇÃO DA CONTRATADA</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 2ª.</span> O serviço contratado no presente instrumento deverá ser pago no ato da reserva.</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 3ª.</span> É dever da CONTRATADA oferecer os itens de acordo com as especificações do contrato.</div>' +
-    '<div class="clausula-texto">Em dinheiro ou depósito bancário (Caixa Econômica Federal, Agencia: 2403, Op.001 Conta corrente: 21702-0 em nome de Aline Alves de Araújo do Valle, CPF: 864.331.211-87 pix).</div>' +
-    '<div class="paragrafo">Parágrafo primeiro. Não será aceito, sob hipótese alguma, pagamento pós-festa.</div>' +
-    '<div class="clausula-texto"><span class="negrito">Cláusula 4ª.</span> O recibo do depósito da transferência bancária ou pix, referente ao valor, efetuada na conta informada pela CONTRATADA, servirá para a CONTRATANTE como comprovante de cumprimento da obrigação de pagar.</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 5ª.</span> É dever da CONTRATANTE devolver o(s) produto(s) de acordo com o que foi locado no dia informado neste contrato.</div>' +
-    '<div class="paragrafo">Parágrafo único. A CONTRATANTE deverá retirar e entregar os itens no endereço no seguinte endereço Qn 508 CONJUNTO 03 Loja 06, Samambaia Sul, munido de cópia do comprovante de residência em seu nome, cópia ou foto CPF e RG documentos necessários para a retiradas das peças.</div>' +
-    '<div class="clausula-titulo">DA DEVOLUÇÃO</div>' +
-    '<div class="clausula-texto"><span class="negrito">Cláusula 6ª.</span> Caso Haja perda, Danos, Quebra ou não devolução dos itens, a CONTRATANTE arcará com 50% do valor de uma peça nova para reposição (caso haja recuperação). NÃO havendo recuperação, será cobrado o valor de mercado por cada item, em dinheiro ou outra forma que convier às PARTES. Em caso de quebra ou extravio de peças a CONTRATANTE assinará uma nota promissória se comprometendo com o pagamento que será devolvida após a quitação do débito.</div>' +
-    '<div class="paragrafo">Parágrafo primeiro: É dever da CONTRATANTE devolver as peças como foi entregue, no dia e horário marcado. Será cobrado multa de uma diária dos itens alocados com cada dia de atraso da devolução.</div>' +
-    '<div class="paragrafo">OBS: É proibido furar o bolo cenográfico, usar cola quente no painel, peças e mesas, usar confeitos coloridos ou vela faísca. Estes itens danificam e mancham peças e mobília (uso estará sujeito, em caso de avarias, a pagar pela recuperação ou peça nova caso não seja possível recuperação).</div>' +
-    '<div class="paragrafo">O tapete deverá ser devolvido como foi entregue, sem doces e bolos. Caso contrário pagará multa de limpeza de R$ 40,00 (quarenta reais).</div>' +
-    '<div class="paragrafo">Parágrafo Segundo: É dever da CONTRATANTE devolver o kit ou itens na data informada neste contrato. Caso contrário, será cobrado o valor de uma locação por cada dia de atraso.</div>' +
-    '<div class="clausula-titulo">DO CANCELAMENTO</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 7ª.</span> Em caso de desistência a CONTRATANTE arcará com a multa de quebra de contrato de 50% do valor total do seu contrato.</div>' +
-    '<div class="paragrafo">Parágrafo primeiro: Em caso de força maior, a CONTRATANTE poderá solicitar uma carta crédito na quantia paga, para utilização de até um ano a partir da data da notificação. A carta crédito não poderá ser transferida para outro titular, nem prorrogada, cabendo a CONTRATADA confirmar disponibilidade de peças e data. A CONTRATANTE deverá comprovar o fato ocorrido com documentos oficiais.</div>' +
-    '<div class="paragrafo">Parágrafo Segundo: A Parte impossibilitada de cumprir sua obrigação deverá notificar a outra, de imediato, acerca da extensão do problema e o prazo estimado para remarcação da nova data.</div>' +
-    '<div class="clausula-titulo">DAS CONDIÇÕES GERAIS</div>' +
-    '<div class="clausula-titulo">DO FORO</div>' +
-    '<div class="clausula-texto">As Partes elegem o foro da Circunscrição Judiciária de Brasília – DF para dirimir os conflitos que porventura venham a surgir em decorrência da execução do presente contrato, com renúncia de qualquer outro, por mais privilegiado que seja.</div>' +
-    '<div class="clausula-texto">E por assim estarem de acordo, o contrato será assinado de forma digitalizada, sendo as vias compartilhadas em meio eletrônico e permitida a assinatura híbrida (física e digital).</div>' +
-    '<div id="espaco-nota-promissoria-loja"></div>' +
-    '<div style="text-align:center; margin-top:8px;">Brasília-DF, ' + dataAtual + '.</div>' +
-    '<div class="assinatura"><div class="assinatura-nome">CONTRATADA:</div><div class="linha-assinatura"></div><div class="assinatura-nome">TRALALÁ DECORAÇÕES DE FESTA — CNPJ: 21.918.863/0001-12</div><div class="assinatura-nome" style="font-size:9pt; margin-top:4px;">REPRESENTANTE LEGAL: ALINE ARAUJO DO VALLE</div></div>' +
-    '<div class="assinatura"><div class="assinatura-nome">CONTRATANTE:</div><div class="linha-assinatura"></div><div class="assinatura-nome">' + nome + ' — CPF: ' + cpf + '</div></div>' +
-    '<div class="rodape-loja">TRALALÁ DECORAÇÕES DE FESTAS — QN 508 CONJUNTO 03 LOJA 06, SAMAMBAIA SUL. (61) 9. 8191-9559</div>' +
-  '</div>';
-}
-// ============================================================
-// CONTRATO 2 — COM FRETE
-// ============================================================
-function gerarContratoComFrete(dados) {
-  var dataFmt = dados.data ? String(dados.data).split("-").reverse().join("/") : "____/____/______";
-  var valorNum = parseFloat(dados.valor) || 0;
-  var valorFmt = valorNum ? valorNum.toFixed(2).replace('.', ',') : "______,____";
-  var valorMetade = valorNum ? (valorNum/2).toFixed(2).replace('.', ',') : "______,____";
-  var dataAtual = new Date().toLocaleDateString('pt-BR');
-  var nome = dados.nome || "_________________________";
-  var cpf = dados.cpf || "_________________________";
-  var endereco = dados.endereco || "_________________________";
-  var telefone = dados.telefone || "(61) ________________";
-  var local = dados.local || "_________________________";
-  var horario = dados.horario || "____:____";
-  var pecasTexto = descricaoPecasDetalhada(dados.pecas, dados.pecasQtd);
-
-  return '<div class="pagina-contrato">' +
-    '<div class="logo-container"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT2qBAlvPlxMFaok_zho9se2IT9smgKtY9Dvg&s" class="logo-contrato"></div>' +
-    '<div class="titulo-contrato">CONTRATO DE PRESTAÇÃO DE SERVIÇOS PARA LOCAÇÃO</div>' +
-    '<div class="dados-contratada"><span class="negrito">CONTRATADA:</span> TRALALÁ DECORAÇÕES DE FESTAS — CNPJ: 21.918.863/0001-12</div>' +
-    '<div class="dados-contratante"><span class="negrito">CONTRATANTE:</span> ' + nome + '</div>' +
-    '<div class="dados-contratante"><span class="negrito">CPF:</span> ' + cpf + '</div>' +
-    '<div class="dados-contratante"><span class="negrito">ENDEREÇO:</span> ' + endereco + '</div>' +
-    '<div class="dados-contratante"><span class="negrito">TELEFONE:</span> ' + telefone + '</div>' +
-    '<div class="dados-contratante"><span class="negrito">LOCAL DO EVENTO:</span> ' + local + '</div>' +
-    '<div class="dados-contratante"><span class="negrito">DATA DA FESTA:</span> ' + dataFmt + ' às ' + horario + '</div>' +
-    '<p style="margin-top:4px;">As partes acima identificadas têm, entre si, justo e acertado o presente contrato de prestação de serviços, que se regerá pelas cláusulas seguintes e pelas condições de preço, forma e termo de pagamento descritas no presente contrato.</p>' +
-    '<div class="clausula-titulo">DO OBJETO DO CONTRATO</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 1ª.</span> É objeto do presente contrato a prestação de serviço de Locação de: ' + pecasTexto + ', à CONTRATANTE (especificado na Clausula 5ª), que a CONTRATADA declara ser de sua propriedade, para o evento que se realizará no dia ' + dataFmt + ', conforme endereço especificado abaixo:</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 2ª.</span> A CONTRATANTE deverá fornecer à CONTRATADA todas as informações necessárias para a realização do serviço, devendo especificar o material, tipo e a quantidade.</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 3ª.</span> É dever da CONTRATANTE devolver o(s) produto(s) de acordo com o que foi locado no término da festa. A CONTRATADA efetuara a retirada dos itens no dia ' + dataFmt + '.</div>' +
-    '<div class="paragrafo">Parágrafo único. A CONTRATADA deverá entregar e buscar o produto no endereço mencionado na cláusula 1ª, em caso de a CONTRATANTE optar por fazer retirada do produto no local, deverá devolvê-lo no local mencionado na cláusula 1ª conforme combinado com a CONTRATADA.</div>' +
-    '<div class="clausula-titulo">OBRIGAÇÃO DA CONTRATADA</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 4ª.</span> É dever da CONTRATADA oferecer o serviço de acordo com as especificações da CONTRATANTE, devendo o material ser entregue no dia ' + dataFmt + ' até as ' + horario + ' no endereço já especificado na Clausula 1ª.</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 5ª.</span> A CONTRATADA fornecerá as seguintes peças:</div>' +
-    '<div class="paragrafo">(X) ' + pecasTexto + '</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 6ª.</span> O serviço contratado no presente instrumento será remunerado pela quantia de R$ ' + valorFmt + ', pago no ato da reserva:</div>' +
-    '<div class="paragrafo">• R$ ' + valorMetade + ' (no ato da reserva)</div>' +
-    '<div class="paragrafo">• R$ ' + valorMetade + ' (na montagem da festa)</div>' +
-    '<div class="paragrafo">*pagamentos em cartão de credito e debito tem acréscimo da taxa da operadora do cartão.</div>' +
-    '<div class="clausula-texto">Em dinheiro ou depósito bancário (Caixa Econômica Federal, Agencia: 2403, Op.001 Conta corrente: 21702-0 em nome de Aline Alves de Araújo do Valle, CPF: 864.331.211-87) ou ( Banco Itaú, agencia 8624, conta corrente 06209-0, Aline Alves de Araújo, CPF: 864.331.211.87) ou ( Banco do Brasil, Agencia:1230-0, conta corrente 39.464-5, em nome Jorge Leonardo Sampaio do Valle, CPF: 794.883.315-34) CHAVE PIX CNPJ: 21.918.863/0001-12</div>' +
-    '<div class="paragrafo">Parágrafo primeiro. Não será aceito, sob hipótese alguma, pagamento pós-festa.</div>' +
-    '<div class="paragrafo">Parágrafo Segundo. No valor acima referido já está incluso frete.</div>' +
-    '<div class="paragrafo">Parágrafo Terceiro. O valor do frete é referente à entrega e à retirada que será realizada pela CONTRATADA no local do evento ou onde for combinado entre as PARTES.</div>' +
-    '<div class="paragrafo">Parágrafo quarto. NÃO está incluso no valor da locação de peças e mobílias, o serviço de arrumação de mesa, como colocar doces, bolo, lembrancinhas e personalizados feitos por terceiros, para esse serviço favor consultar valores com a CONTRATADA.</div>' +
-    '<div class="clausula-texto"><span class="negrito">Cláusula 7ª.</span> O recibo do depósito da transferência bancária, referente ao sinal, efetuada na conta informada para a CONTRATADA, servirá para a CONTRATANTE como comprovante de cumprimento da obrigação de pagar.</div>' +
-    '<div class="clausula-titulo">DA DEVOLUÇÃO</div>' +
-    '<div class="clausula-texto"><span class="negrito">Cláusula 8ª.</span> Caso Haja perda, Danos, Quebra Ou não devolução dos itens, a CONTRATANTE arcará com 50% do valor de uma peça nova para reposição (caso haja recuperação) NÃO Havendo recuperação, será cobrado o valor de mercado por cada item, em dinheiro ou outra forma que convier às PARTES. Em caso de quebra ou extravio de peças a CONTRATANTE assinará uma nota promissória se comprometendo-se com o pagamento que será devolvida após a quitação do debito.</div>' +
-    '<div class="paragrafo">Parágrafo Primeiro: É de responsabilidade da CONTRATANTE que na retirada da decoração, todas as peças alugadas estejam sobre a mesa, caso fique algum item, a CONTRATANTE se responsabilizará pela devolução, a recusa da devolução imediata, acarretará em multa de R$ 20,00, por diária/peça.</div>' +
-    '<div class="paragrafo">Parágrafo segundo: É dever da CONTRATANTE devolver as peças como foi entregue. É proibido, furar o bolo cenográfico, usar cola quente no painel, peças e mesas, usar confeitos coloridos, vela faísca estes itens danificam e mancham peças e mobília (uso estará sujeito em caso de avarias pagar pela recuperação ou peça nova caso não seja possível).</div>' +
-    '<div class="paragrafo">O tapete deverá ser devolvido como foi entregue sem doces e bolos, caso contrário pagará multa de limpeza de R$ 40,00 (quarenta reais).</div>' +
-    '<div class="clausula-titulo">DO CANCELAMENTO</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 9ª.</span> Em caso de desistência a CONTRATANTE arcará com a multa de quebra de contrato, 50% do valor total do seu contrato.</div>' +
-    '<div class="paragrafo">Parágrafo primeiro: Em caso de força maior, a CONTRATANTE, poderá solicitar uma carta credito na quantia paga, para utilização de até um ano a partir da data da notificação. Sendo que essa carta crédito não poderá ser transferida para outro titular, nem prorrogada. Cabendo a CONTRATADA confirmar disponibilidade de peças e data. A CONTRATANTE deverá comprovar o fato ocorrido com documentos oficiais.</div>' +
-    '<div class="paragrafo">Parágrafo Segundo. A Parte impossibilitada de cumprir sua obrigação deverá notificar a outra, de imediato, acerca da extensão do problema e o prazo estimado para remarcação da nova data.</div>' +
-    '<div class="clausula-titulo">DAS CONDIÇÕES GERAIS</div>' +
-    '<div class="clausula-texto"><span class="negrito">Cláusula 10ª.</span> O orçamento ou aceite referente ao serviço contratado, enviado por email, faz parte integrante deste contrato.</div>' +
-    '<div class="clausula-titulo">DO FORO</div>' +
-    '<div class="clausula-texto">As Partes elegem o foro da Circunscrição Judiciária de Brasília – DF para dirimir os conflitos que porventura venham a surgir em decorrência da execução do presente contrato, com renúncia de qualquer outro, por mais privilegiado que seja.</div>' +
-    '<div class="clausula-texto">E por assim estarem de acordo, o contrato será sendo assinado de forma digitalizada, sendo as vias compartilhadas em meio eletrônico e permitida a assinatura híbrida (física e digital).</div>' +
-    '<div style="text-align:center; margin-top:8px;">Brasília-DF, ' + dataAtual + '.</div>' +
-    '<div class="assinatura"><div class="assinatura-nome">CONTRATADA:</div><div class="linha-assinatura"></div><div class="assinatura-nome">TRALALÁ DECORAÇÕES DE FESTAS — CNPJ: 21.918.863/0001-12</div><div class="assinatura-nome" style="font-size:9pt; margin-top:4px;">ALINE ARAUJO DO VALLE</div></div>' +
-    '<div class="assinatura"><div class="assinatura-nome">CONTRATANTE:</div><div class="linha-assinatura"></div><div class="assinatura-nome">' + nome + ' — CPF: ' + cpf + '</div></div>' +
-    '<div class="rodape-loja">TRALALÁ DECORAÇÕES DE FESTAS Qn 508 CONJUNTO 03 LOJA 06, SAMAMBAIA SUL. (61) 9. 8191-9551</div>' +
-  '</div>';
-}
-// ============================================================
-// CONTRATO 3 — PEGUE E MONTE (LOJA)
-// ============================================================
-function gerarContratoPegueMonteLoja(dados) {
-  var dataFmt = dados.data ? String(dados.data).split("-").reverse().join("/") : "____/____/______";
-  var valorNum = parseFloat(dados.valor) || 0;
-  var valorFmt = valorNum ? valorNum.toFixed(2).replace('.', ',') : "______,____";
-  var dataAtual = new Date().toLocaleDateString('pt-BR');
-  var nome = dados.nome || "_________________________";
-  var cpf = dados.cpf || "_________________________";
-  var endereco = dados.endereco || "_________________________";
-  var telefone = dados.telefone || "(61) ________________";
-
-  var totalNum = parseFloat(dados.valor) || 0;
-  var sinalNum = parseFloat(dados.sinal) || 0;
-  var freteNum = parseFloat(dados.frete) || 0;
-  var totalComFrete = totalNum + freteNum;
-  var faltaPagar = totalComFrete - sinalNum;
-  if (faltaPagar < 0) faltaPagar = 0;
-  var valorTotalFmt = totalComFrete.toFixed(2).replace('.', ',');
-  var sinalFmt = sinalNum.toFixed(2).replace('.', ',');
-  var faltaFmt = faltaPagar.toFixed(2).replace('.', ',');
-  var freteFmt = freteNum.toFixed(2).replace('.', ',');
-
-  function valorPorExtenso(valor) {
-    if (!valor || valor === 0) return "zero reais";
-    var unidades = ["", "um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove"];
-    var especiais = ["dez", "onze", "doze", "treze", "quatorze", "quinze", "dezesseis", "dezessete", "dezoito", "dezenove"];
-    var dezenas = ["", "", "vinte", "trinta", "quarenta", "cinquenta", "sessenta", "setenta", "oitenta", "noventa"];
-    var centenas = ["", "cento", "duzentos", "trezentos", "quatrocentos", "quinhentos", "seiscentos", "setecentos", "oitocentos", "novecentos"];
-
-    function extensoAte999(n) {
-      if (n === 0) return "";
-      if (n === 100) return "cem";
-      var partes = [];
-      var c = Math.floor(n / 100);
-      var resto = n % 100;
-      if (c > 0) partes.push(centenas[c]);
-      if (resto > 0) {
-        if (resto < 10) partes.push(unidades[resto]);
-        else if (resto < 20) partes.push(especiais[resto - 10]);
-        else {
-          var d = Math.floor(resto / 10);
-          var u = resto % 10;
-          if (u > 0) partes.push(dezenas[d] + " e " + unidades[u]);
-          else partes.push(dezenas[d]);
-        }
-      }
-      return partes.join(" e ");
-    }
-
-    var reais = Math.floor(valor);
-    var centavos = Math.round((valor - reais) * 100);
-    var partes = [];
-
-    if (reais > 0) {
-      var milhoes = Math.floor(reais / 1000000);
-      var milhares = Math.floor((reais % 1000000) / 1000);
-      var resto = reais % 1000;
-      if (milhoes > 0) partes.push(extensoAte999(milhoes) + (milhoes === 1 ? " milhão" : " milhões"));
-      if (milhares > 0) partes.push(extensoAte999(milhares) + " mil");
-      if (resto > 0) partes.push(extensoAte999(resto));
-    }
-
-    var texto = partes.join(" e ");
-    if (reais > 0) texto += (reais === 1 ? " real" : " reais");
-
-    if (centavos > 0) {
-      if (reais > 0) texto += " e ";
-      var c = Math.floor(centavos / 10);
-      var u = centavos % 10;
-      var textoCentavos = "";
-      if (centavos < 10) textoCentavos = unidades[centavos];
-      else if (centavos < 20) textoCentavos = especiais[centavos - 10];
-      else {
-        if (u > 0) textoCentavos = dezenas[c] + " e " + unidades[u];
-        else textoCentavos = dezenas[c];
-      }
-      texto += textoCentavos + (centavos === 1 ? " centavo" : " centavos");
-    }
-
-    return texto;
-  }
-
-  var linhasTabela = "";
-  if (dados.pecas && dados.pecas.length > 0) {
-    dados.pecas.forEach(function(nomePeca) {
-      var item = State.estoqueMap[nomePeca];
-      var qtd = dados.pecasQtd && dados.pecasQtd[nomePeca] ? parseInt(dados.pecasQtd[nomePeca]) : 1;
-      var preco = item ? (parseFloat(item.preco) || 0) : 0;
-      var descricao = nomePeca;
-      if (item) {
-        var partes = [];
-        if (item.categoria) partes.push(item.categoria);
-        if (item.modelo) partes.push(item.modelo);
-        if (partes.length > 0) descricao += " (" + partes.join(" — ") + ")";
-      }
-      linhasTabela += '<tr>' +
-        '<td style="text-align:center;">' + qtd + '</td>' +
-        '<td>' + descricao + '</td>' +
-        '<td style="text-align:center;">R$ ' + preco.toFixed(2).replace('.', ',') + '</td>' +
-        '<td style="text-align:center;">R$ ' + (preco * qtd).toFixed(2).replace('.', ',') + '</td>' +
-        '</tr>';
-    });
-  } else {
-    for (var i = 0; i < 3; i++) {
-      linhasTabela += '<tr><td style="text-align:center; height:24px;">&nbsp;</td><td>&nbsp;</td><td style="text-align:center;">&nbsp;</td><td style="text-align:center;">&nbsp;</td></tr>';
-    }
-  }
-
-  return '<div class="pagina-contrato">' +
-    '<div class="logo-container"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT2qBAlvPlxMFaok_zho9se2IT9smgKtY9Dvg&s" class="logo-contrato"></div>' +
-    '<div class="titulo-contrato">CONTRATO DE LOCAÇÃO PEGUE & MONTE</div>' +
-    '<div class="dados-contratada"><span class="negrito">CONTRATADA:</span> TRALALÁ DECORAÇÕES DE FESTAS</div>' +
-    '<div class="dados-contratada"><span class="negrito">CNPJ:</span> 21.918.863/0001-12</div>' +
-    '<div class="dados-contratada"><span class="negrito">E-MAIL:</span> tralaladecoracoes@gmail.com</div>' +
-    '<br>' +
-    '<div class="dados-contratante"><span class="negrito">CONTRATANTE:</span> ' + nome + '</div>' +
-    '<div class="dados-contratante"><span class="negrito">CPF:</span> ' + cpf + '</div>' +
-    '<div class="dados-contratante"><span class="negrito">ENDEREÇO CLIENTE:</span> ' + endereco + '</div>' +
-    '<div class="dados-contratante"><span class="negrito">TELEFONE:</span> ' + telefone + '</div>' +
-    '<div class="dados-contratante"><span class="negrito">DATA DA FESTA:</span> ' + dataFmt + '</div>' +
-    '<div class="dados-contratante"><span class="negrito">RETIRADA DOS ITENS:</span> ____/____/______, DAS 8H00 AS 11H00 E DAS 13H00 AS 17H00</div>' +
-    '<div class="dados-contratante"><span class="negrito">DEVOLUÇÃO DOS ITENS:</span> ____/____/______, 8H00 DAS 11H00 (caso não seja entregue na data e horário combinado será cobrado o valor de uma locação para cada dia de atraso).</div>' +
-    '<p style="margin-top:6px;">As partes acima identificadas têm, entre si, justo e acertado o presente contrato de prestação de serviços, que se regerá pelas cláusulas seguintes e pelas condições de preço, forma e termo de pagamento descritas no presente contrato.</p>' +
-    '<div class="clausula-titulo">DO OBJETO DO CONTRATO</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 1ª.</span> É objeto do presente contrato a prestação de serviço de Locação de:</div>' +
-    '<table class="tabela-itens"><thead><tr><th style="width:60px;">QTDE.</th><th>DESCRIÇÃO DO PRODUTO</th><th style="width:110px;">VALOR UNITÁRIO</th><th style="width:110px;">VALOR TOTAL</th></tr></thead><tbody>' + linhasTabela + '</tbody></table>' +
-    '<div class="clausula-titulo" style="margin-top: 12px;">DO PAGAMENTO</div>' +
-    '<div class="clausula-texto">O serviço contratado no presente instrumento será remunerado pela quantia total de <b>R$ ' + valorTotalFmt + ' (' + valorPorExtenso(totalComFrete) + ')</b>, referente à locação dos itens e serviços descritos neste contrato.</div>' +
-    '<div class="resumo-pagamento">' +
-      '<div class="linha-pagamento"><span class="label-pag">Valor total do contrato:</span><span class="valor-pag">R$ ' + valorTotalFmt + '</span></div>' +
-      (freteNum > 0 ? '<div class="linha-pagamento"><span class="label-pag">— Frete incluso:</span><span class="valor-pag">R$ ' + freteFmt + '</span></div>' : '') +
-      '<div class="linha-pagamento"><span class="label-pag">Sinal pago no ato da reserva:</span><span class="valor-pag" style="color: #27ae60;">R$ ' + sinalFmt + '</span></div>' +
-      '<div class="linha-pagamento linha-total"><span class="label-pag"><b>Valor restante a pagar:</b></span><span class="valor-pag" style="color: #e74c3c; font-weight: bold;">R$ ' + faltaFmt + '</span></div>' +
-    '</div>' +
-    '<div class="clausula-texto">A CONTRATANTE declara estar ciente do valor acordado e compromete-se a efetuar o pagamento conforme as condições previamente estabelecidas entre as partes.</div>' +
-    '<div class="paragrafo">Parágrafo primeiro. A CONTRATANTE não poderá, sem prévia autorização da CONTRATADA, sublocar, emprestar, ou ceder os móveis locados.</div>' +
-    '<div class="clausula-titulo">OBRIGAÇÃO DA CONTRATADA</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 2ª.</span> O serviço contratado no presente instrumento deverá ser pago no ato da reserva.</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 3ª.</span> É dever da CONTRATADA oferecer os itens de acordo com as especificações do contrato.</div>' +
-    '<div class="clausula-texto">Em dinheiro ou depósito bancário (Caixa Econômica Federal, Agencia: 2403, Op.001 Conta corrente: 21702-0 em nome de Aline Alves de Araújo do Valle, CPF: 864.331.211-87 pix).</div>' +
-    '<div class="paragrafo">Parágrafo primeiro. Não será aceito, sob hipótese alguma, pagamento pós-festa.</div>' +
-    '<div class="clausula-texto"><span class="negrito">Cláusula 4ª.</span> O recibo do depósito da transferência bancária ou pix, referente ao valor, efetuada na conta informada pela CONTRATADA, servirá para a CONTRATANTE como comprovante de cumprimento da obrigação de pagar.</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 5ª.</span> É dever da CONTRATANTE devolver o(s) produto(s) de acordo com o que foi locado no dia informado neste contrato.</div>' +
-    '<div class="paragrafo">Parágrafo único. A CONTRATANTE deverá retirar e entregar os itens no endereço no seguinte endereço Qn 508 CONJUNTO 03 Loja 06, Samambaia Sul, munido de cópia do comprovante de residência em seu nome, cópia ou foto CPF e RG documentos necessários para a retiradas das peças.</div>' +
-    '<div class="clausula-titulo">DA DEVOLUÇÃO</div>' +
-    '<div class="clausula-texto"><span class="negrito">Cláusula 6ª.</span> Caso Haja perda, Danos, Quebra ou não devolução dos itens, a CONTRATANTE arcará com 50% do valor de uma peça nova para reposição (caso haja recuperação). NÃO havendo recuperação, será cobrado o valor de mercado por cada item, em dinheiro ou outra forma que convier às PARTES. Em caso de quebra ou extravio de peças a CONTRATANTE assinará uma nota promissória se comprometendo com o pagamento que será devolvida após a quitação do débito.</div>' +
-    '<div class="paragrafo">Parágrafo primeiro: É dever da CONTRATANTE devolver as peças como foi entregue, no dia e horário marcado. Será cobrado multa de uma diária dos itens alocados com cada dia de atraso da devolução.</div>' +
-    '<div class="paragrafo">OBS: É proibido furar o bolo cenográfico, usar cola quente no painel, peças e mesas, usar confeitos coloridos ou vela faísca. Estes itens danificam e mancham peças e mobília (uso estará sujeito, em caso de avarias, a pagar pela recuperação ou peça nova caso não seja possível recuperação).</div>' +
-    '<div class="paragrafo">O tapete deverá ser devolvido como foi entregue, sem doces e bolos. Caso contrário pagará multa de limpeza de R$ 40,00 (quarenta reais).</div>' +
-    '<div class="paragrafo">Parágrafo Segundo: É dever da CONTRATANTE devolver o kit ou itens na data informada neste contrato. Caso contrário, será cobrado o valor de uma locação por cada dia de atraso.</div>' +
-    '<div class="clausula-titulo">DO CANCELAMENTO</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 7ª.</span> Em caso de desistência a CONTRATANTE arcará com a multa de quebra de contrato de 50% do valor total do seu contrato.</div>' +
-    '<div class="paragrafo">Parágrafo primeiro: Em caso de força maior, a CONTRATANTE poderá solicitar uma carta crédito na quantia paga, para utilização de até um ano a partir da data da notificação. A carta crédito não poderá ser transferida para outro titular, nem prorrogada, cabendo a CONTRATADA confirmar disponibilidade de peças e data. A CONTRATANTE deverá comprovar o fato ocorrido com documentos oficiais.</div>' +
-    '<div class="paragrafo">Parágrafo Segundo: A Parte impossibilitada de cumprir sua obrigação deverá notificar a outra, de imediato, acerca da extensão do problema e o prazo estimado para remarcação da nova data.</div>' +
-    '<div class="clausula-titulo">DAS CONDIÇÕES GERAIS</div>' +
-    '<div class="clausula-titulo">DO FORO</div>' +
-    '<div class="clausula-texto">As Partes elegem o foro da Circunscrição Judiciária de Brasília – DF para dirimir os conflitos que porventura venham a surgir em decorrência da execução do presente contrato, com renúncia de qualquer outro, por mais privilegiado que seja.</div>' +
-    '<div class="clausula-texto">E por assim estarem de acordo, o contrato será assinado de forma digitalizada, sendo as vias compartilhadas em meio eletrônico e permitida a assinatura híbrida (física e digital).</div>' +
-    '<div id="espaco-nota-promissoria-loja"></div>' +
-    '<div style="text-align:center; margin-top:8px;">Brasília-DF, ' + dataAtual + '.</div>' +
-    '<div class="assinatura"><div class="assinatura-nome">CONTRATADA:</div><div class="linha-assinatura"></div><div class="assinatura-nome">TRALALÁ DECORAÇÕES DE FESTA — CNPJ: 21.918.863/0001-12</div><div class="assinatura-nome" style="font-size:9pt; margin-top:4px;">REPRESENTANTE LEGAL: ALINE ARAUJO DO VALLE</div></div>' +
-    '<div class="assinatura"><div class="assinatura-nome">CONTRATANTE:</div><div class="linha-assinatura"></div><div class="assinatura-nome">' + nome + ' — CPF: ' + cpf + '</div></div>' +
-    '<div class="rodape-loja">TRALALÁ DECORAÇÕES DE FESTAS — QN 508 CONJUNTO 03 LOJA 06, SAMAMBAIA SUL. (61) 9. 8191-9559</div>' +
-  '</div>';
 }
 
 // ============================================================
@@ -2672,7 +2221,6 @@ function bindTudo() {
     window.removerTema(idx);
   };
   
-  // NOVOS BOTÕES: Orçamentos em Aberto
   b = document.getElementById("btn-abrir-orcamentos-aberto");
   if (b) b.onclick = function(e) { 
     if (e) e.preventDefault(); 
@@ -2730,7 +2278,6 @@ function bindTudo() {
     }
   };
 
-  // NOVO BOTÃO: Clientes e Campanhas
   b = document.getElementById("btn-abrir-clientes-campanhas");
   if (b) b.onclick = function(e) { 
     if (e) e.preventDefault(); 
@@ -2750,7 +2297,6 @@ function bindTudo() {
   
   initModalEditar();
 
-  // Inicializa o cálculo automático dos valores do orçamento em aberto
   var inputsValores = ["oa-valor-kit", "oa-valor-adicionais", "oa-valor-frete", "oa-valor-desconto"];
   inputsValores.forEach(function(id) {
     var el = document.getElementById(id);
@@ -2768,7 +2314,7 @@ function bindTudo() {
 }
 
 // ============================================================
-// FUNÇÃO GLOBAL DE FECHAR MODAL DE PEÇAS
+// FUNÇÕES DE CONTRATO
 // ============================================================
 window.fecharModalPecas = function() {
   window.__reservaEditandoPecas = null;
@@ -2779,9 +2325,6 @@ window.fecharModalPecas = function() {
   if (modal) modal.classList.remove("ativo");
 };
 
-// ============================================================
-// EDITAR PEÇAS DA RESERVA DIRETO NO CARD
-// ============================================================
 window.EditarPecasReserva = function(idReserva) {
   var res = State.reservas.filter(function(r) { return r.id === idReserva; })[0];
   if (!res) return Utils.showToast("Reserva não encontrada.", "error");
@@ -2807,9 +2350,6 @@ window.EditarPecasReserva = function(idReserva) {
   }, 50);
 };
 
-// ============================================================
-// IMPRESSÃO — só o contrato
-// ============================================================
 window.ImprimirContrato = function() {
   var preview = document.getElementById("contrato-preview-content");
   if (!preview) return Utils.showToast("Nenhum contrato aberto.", "warning");
@@ -2823,9 +2363,6 @@ window.ImprimirContrato = function() {
   setTimeout(function() { window.print(); }, 300);
 };
 
-// ============================================================
-// PDF — com html2canvas + jsPDF puro
-// ============================================================
 window.BaixarPDFContrato = function() {
   var preview = document.getElementById("contrato-preview-content");
   if (!preview) return Utils.showToast("Nenhum contrato aberto.", "warning");
@@ -2918,9 +2455,6 @@ window.BaixarPDFContrato = function() {
 
 window.gerarContratoPDF = window.BaixarPDFContrato;
 
-// ============================================================
-// EDITAR CONTRATO MANUALMENTE
-// ============================================================
 window.EditarContrato = function() {
   var preview = document.getElementById("contrato-preview-content");
   if (!preview) return;
@@ -2959,9 +2493,6 @@ window.SalvarEdicaoContrato = function() {
   });
 };
 
-// ============================================================
-// NOTA PROMISSÓRIA
-// ============================================================
 window.AbrirNotaPromissoria = function() {
   var hoje = new Date();
   var dataEmitISO = hoje.toISOString().split("T")[0];
@@ -3020,192 +2551,6 @@ window.GerarNotaPromissoria = function() {
   Utils.showToast("✅ Nota Promissória adicionada!", "success");
 };
 
-// ============================================================
-// INICIALIZAÇÃO
-// ============================================================
-document.addEventListener('DOMContentLoaded', function() {
-  bindTudo();
-
-  var listaReservas = document.getElementById("lista-reservas-render");
-  if (listaReservas && !document.getElementById("busca-cliente-reservas")) {
-    var buscaWrapper = document.createElement("div");
-    buscaWrapper.id = "busca-cliente-wrapper";
-    buscaWrapper.style.cssText = "margin-bottom: 15px; display: flex; gap: 8px; align-items: center;";
-
-    buscaWrapper.innerHTML =
-      '<div style="flex: 1; position: relative;">' +
-        '<input type="text" id="busca-cliente-reservas" placeholder="🔍 Buscar cliente por nome..." ' +
-          'style="width: 100%; padding: 12px 16px 12px 44px; border: 1.5px solid var(--border-color); ' +
-          'border-radius: 10px; font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s;" ' +
-          'onfocus="this.style.borderColor=\'var(--primary)\'" ' +
-          'onblur="this.style.borderColor=\'var(--border-color)\'">' +
-        '<span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); ' +
-          'font-size: 16px; pointer-events: none; color: var(--text-muted);">🔍</span>' +
-      '</div>' +
-      '<button type="button" id="btn-limpar-busca-cliente" ' +
-        'style="padding: 12px 16px; background: var(--border-color); color: var(--text-main); ' +
-        'border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 13px;">✕ Limpar</button>';
-
-    listaReservas.parentNode.insertBefore(buscaWrapper, listaReservas);
-
-    var inputBusca = document.getElementById("busca-cliente-reservas");
-    inputBusca.addEventListener("input", function(e) {
-      renderReservas(e.target.value);
-    });
-
-    var btnLimpar = document.getElementById("btn-limpar-busca-cliente");
-    btnLimpar.addEventListener("click", function() {
-      inputBusca.value = "";
-      renderReservas("");
-      inputBusca.focus();
-    });
-  }
-
-  console.log("✅ Sistema Tralalá inicializado!");
-  console.log("✅ app.js COMPLETO carregado com sucesso (Auth migrado + verificação corrigida)");
-});
-// ============================================================
-// LÓGICA DE PASTAS E AGRUPAMENTO (NOVO)
-// ============================================================
-let pastasAgendamento = []; 
-
-// Escuta as pastas no Firebase
-if (typeof db !== 'undefined' && db) {
-  db.ref('pastas_agendamentos').on('value', snap => {
-    const val = snap.val() || {};
-    pastasAgendamento = Object.keys(val).map(id => ({ id, ...val[id] }));
-    if (typeof renderizarPastas === "function") renderizarPastas();
-    if (typeof renderReservas === "function") renderReservas(); 
-  });
-}
-
-function renderizarPastas() {
-  const container = document.getElementById('lista-pastas-render');
-  if (!container) return;
-
-  if (pastasAgendamento.length === 0) {
-    container.innerHTML = '';
-    return;
-  }
-
-  let html = '';
-  pastasAgendamento.forEach(pasta => {
-    const qtd = pasta.cards ? pasta.cards.length : 0;
-    html += `
-      <div class="card-pasta" onclick="window.abrirPasta('${pasta.id}')">
-        <div class="icone-pasta">📁</div>
-        <div class="nome-pasta">${pasta.nome}</div>
-        <div class="qtd-pasta">${qtd} agendamento(s)</div>
-      </div>
-    `;
-  });
-  container.innerHTML = html;
-}
-
-// Configurar os botões de criar e agrupar
-document.addEventListener('DOMContentLoaded', () => {
-  const btnNovaPasta = document.getElementById('btn-nova-pasta');
-  if (btnNovaPasta) {
-    btnNovaPasta.onclick = () => {
-      const nome = prompt("Qual o nome da nova pasta? (Ex: Festas de Outubro, Clientes VIP...)");
-      if (nome && nome.trim() !== "") {
-        if (db) db.ref('pastas_agendamentos').push({ nome: nome.trim(), cards: [], criadoEm: Date.now() });
-      }
-    };
-  }
-
-  const btnAgrupar = document.getElementById('btn-agrupar-selecionados');
-  if (btnAgrupar) {
-    btnAgrupar.onclick = () => {
-      const selecionados = [];
-      document.querySelectorAll('.checkbox-card:checked').forEach(cb => selecionados.push(cb.value));
-
-      if (selecionados.length === 0) return alert("Selecione pelo menos um card.");
-      if (!db) return alert("Sem conexão com o banco.");
-
-      const nome = prompt("Dê um nome para essa nova pasta (Ex: Grupo da Maria):");
-      if (nome && nome.trim() !== "") {
-        db.ref('pastas_agendamentos').push({ nome: nome.trim(), cards: selecionados, criadoEm: Date.now() }).then(() => {
-          document.getElementById('btn-agrupar-selecionados').style.display = 'none';
-        });
-      }
-    };
-  }
-});
-
-// Função para abrir a pasta e ver os cards
-window.abrirPasta = function(pastaId) {
-  const pasta = pastasAgendamento.find(p => p.id === pastaId);
-  if (!pasta) return;
-  
-  const nomes = pasta.cards.map(id => {
-    const res = State.reservas.find(r => r.id === id);
-    return res ? res.cliente : 'Cliente Excluído';
-  });
-
-  const acao = prompt(`📁 Pasta: ${pasta.nome}\n\nAgendamentos aqui:\n${nomes.join('\n')}\n\nO que deseja fazer?\n1 - Desagrupar todos (voltar pra lista)\n2 - Excluir pasta (os cards voltam pra lista)\n3 - Apenas fechar`);
-  
-  if (acao === '1' || acao === '2') {
-    if (db) db.ref('pastas_agendamentos/' + pastaId).remove();
-  }
-};
-
-// ============================================================
-// RENDERIZAÇÃO DOS CARDS COM PASTAS
-// ============================================================
-// Salva a função original do sistema antes de sobrescrever
-const originalRenderReservas = window.renderReservas || renderReservas;
-
-// Cria a nossa versão que adiciona os checkboxes e esconde os que estão em pastas
-window.renderReservas = function(filtro) {
-  // 1. Chama a função original do app.js (que desenha os cards e tira o "Carregando...")
-  originalRenderReservas(filtro);
-
-  // 2. Pega a lista de reservas
-  const lista = document.getElementById('lista-reservas-render');
-  if (!lista) return;
-
-  // 3. Descobre quais IDs estão guardados dentro de pastas
-  let idsEmPastas = [];
-  pastasAgendamento.forEach(p => { if (p.cards) idsEmPastas.push(...p.cards); });
-
-  // 4. Adiciona os checkboxes e esconde os que estão na pasta
-  lista.querySelectorAll('.card-reserva').forEach(card => {
-    const btnDeletar = card.querySelector('button[onclick*="DeletarReserva"]');
-    if (btnDeletar) {
-      const match = btnDeletar.getAttribute('onclick').match(/'([^']+)'/);
-      if (match) {
-        const idReserva = match[1];
-
-        if (idsEmPastas.includes(idReserva)) {
-          card.style.display = 'none'; // Esconde o card que está na pasta
-          return;
-        }
-
-        card.style.position = 'relative';
-        const chk = document.createElement('input');
-        chk.type = 'checkbox';
-        chk.className = 'checkbox-card';
-        chk.value = idReserva;
-        chk.onchange = verificarSelecaoCards;
-        card.appendChild(chk); // Adiciona o quadradinho de marcar
-      }
-    }
-  });
-};
-
-// Mostra o botão "Agrupar" só quando tem card selecionado
-function verificarSelecaoCards() {
-  const selecionados = document.querySelectorAll('.checkbox-card:checked');
-  const btn = document.getElementById('btn-agrupar-selecionados');
-  if (btn) {
-    btn.style.display = selecionados.length > 0 ? 'inline-flex' : 'none';
-    btn.innerText = `📁 Agrupar (${selecionados.length})`;
-  }
-}
-// ============================================================
-// FUNÇÕES DE CONTRATO (Recuperadas)
-// ============================================================
 function carregarTemasNoContrato() {
   var select = document.getElementById("c-pecas");
   if (!select) return;
@@ -3286,4 +2631,197 @@ function gerarContratoAvulso(gerarPdf) {
   if (modalVis) modalVis.classList.add("ativo");
   
   if (gerarPdf) setTimeout(function() { window.BaixarPDFContrato(); }, 300);
+}
+
+// ============================================================
+// INICIALIZAÇÃO
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+  bindTudo();
+
+  var listaReservas = document.getElementById("lista-reservas-render");
+  if (listaReservas && !document.getElementById("busca-cliente-reservas")) {
+    var buscaWrapper = document.createElement("div");
+    buscaWrapper.id = "busca-cliente-wrapper";
+    buscaWrapper.style.cssText = "margin-bottom: 15px; display: flex; gap: 8px; align-items: center;";
+
+    buscaWrapper.innerHTML =
+      '<div style="flex: 1; position: relative;">' +
+        '<input type="text" id="busca-cliente-reservas" placeholder="🔍 Buscar cliente por nome..." ' +
+          'style="width: 100%; padding: 12px 16px 12px 44px; border: 1.5px solid var(--border-color); ' +
+          'border-radius: 10px; font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s;" ' +
+          'onfocus="this.style.borderColor=\'var(--primary)\'" ' +
+          'onblur="this.style.borderColor=\'var(--border-color)\'">' +
+        '<span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); ' +
+          'font-size: 16px; pointer-events: none; color: var(--text-muted);">🔍</span>' +
+      '</div>' +
+      '<button type="button" id="btn-limpar-busca-cliente" ' +
+        'style="padding: 12px 16px; background: var(--border-color); color: var(--text-main); ' +
+        'border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 13px;">✕ Limpar</button>';
+
+    listaReservas.parentNode.insertBefore(buscaWrapper, listaReservas);
+
+    var inputBusca = document.getElementById("busca-cliente-reservas");
+    inputBusca.addEventListener("input", function(e) {
+      renderReservas(e.target.value);
+    });
+
+    var btnLimpar = document.getElementById("btn-limpar-busca-cliente");
+    btnLimpar.addEventListener("click", function() {
+      inputBusca.value = "";
+      renderReservas("");
+      inputBusca.focus();
+    });
+  }
+
+  console.log("✅ Sistema Tralalá inicializado!");
+  console.log("✅ app.js COMPLETO carregado com sucesso (Auth migrado + verificação corrigida)");
+});
+
+// ============================================================
+// LÓGICA DE PASTAS E AGRUPAMENTO (NOVA INTERFACE)
+// ============================================================
+let pastasAgendamento = []; 
+
+// Escuta as pastas no Firebase
+if (typeof db !== 'undefined' && db) {
+  db.ref('pastas_agendamentos').on('value', snap => {
+    const val = snap.val() || {};
+    pastasAgendamento = Object.keys(val).map(id => ({ id, ...val[id] }));
+    
+    // Se o modal estiver aberto, atualiza a lista dele
+    const modal = document.getElementById('modal-gerenciar-pastas');
+    if (modal && modal.classList.contains('ativo')) {
+      renderizarPastasNoModal();
+    }
+    if (typeof renderReservas === "function") renderReservas(); 
+  });
+}
+
+// Abre o modal de gerenciar pastas
+window.abrirModalPastas = function() {
+  const modal = document.getElementById('modal-gerenciar-pastas');
+  if (modal) {
+    modal.classList.add('ativo');
+    renderizarPastasNoModal();
+  }
+};
+
+// Renderiza a lista de pastas dentro do modal
+function renderizarPastasNoModal() {
+  const container = document.getElementById('lista-pastas-gerenciar');
+  if (!container) return;
+
+  if (pastasAgendamento.length === 0) {
+    container.innerHTML = '<p style="text-align:center; color:#999; padding: 20px;">Nenhuma pasta criada ainda. Marque os cards na tela principal e crie uma!</p>';
+    return;
+  }
+
+  let html = '';
+  pastasAgendamento.forEach(pasta => {
+    const qtd = pasta.cards ? pasta.cards.length : 0;
+    html += `
+      <div class="pasta-item-modal">
+        <div class="pasta-info">
+          <span class="pasta-nome">📁 ${pasta.nome}</span>
+          <span class="pasta-qtd">${qtd} agendamento(s) dentro</span>
+        </div>
+        <div class="pasta-acoes">
+          <button type="button" onclick="window.removerPasta('${pasta.id}')" class="btn btn-danger" style="padding:6px 12px; font-size:11px; width:auto;">🗑️ Excluir</button>
+        </div>
+      </div>
+    `;
+  });
+  container.innerHTML = html;
+}
+
+// Função para criar a pasta com os cards que estão marcados
+window.criarNovaPasta = function() {
+  const input = document.getElementById('input-nova-pasta-nome');
+  const nome = input.value.trim();
+  
+  if (!nome) return alert("Digite um nome para a pasta.");
+  if (!window.db) return alert("Sem conexão com o banco.");
+
+  // Pega os IDs dos cards que estão marcados com checkbox na tela
+  const selecionados = [];
+  document.querySelectorAll('.checkbox-card:checked').forEach(cb => selecionados.push(cb.value));
+
+  // Salva no Firebase
+  window.db.ref('pastas_agendamentos').push({ 
+    nome: nome, 
+    cards: selecionados, 
+    criadoEm: Date.now() 
+  }).then(() => {
+    input.value = "";
+    const btnAgrupar = document.getElementById('btn-agrupar-selecionados');
+    if (btnAgrupar) btnAgrupar.style.display = 'none';
+    
+    // Desmarca os checkboxes que foram agrupados
+    document.querySelectorAll('.checkbox-card:checked').forEach(cb => cb.checked = false);
+    
+    // Fecha o modal após criar
+    document.getElementById('modal-gerenciar-pastas').classList.remove('ativo');
+  });
+};
+
+// Função para excluir pasta
+window.removerPasta = function(pastaId) {
+  if (confirm("Tem certeza que deseja excluir esta pasta? Os agendamentos voltarão para a lista principal.")) {
+    if (window.db) window.db.ref('pastas_agendamentos/' + pastaId).remove();
+  }
+};
+
+// ============================================================
+// RENDERIZAÇÃO DOS CARDS COM PASTAS
+// ============================================================
+// Salva a função original do sistema antes de sobrescrever
+const originalRenderReservas = window.renderReservas || renderReservas;
+
+// Cria a nossa versão que adiciona os checkboxes e esconde os que estão em pastas
+window.renderReservas = function(filtro) {
+  // 1. Chama a função original do app.js (que desenha os cards e tira o "Carregando...")
+  originalRenderReservas(filtro);
+
+  // 2. Pega a lista de reservas
+  const lista = document.getElementById('lista-reservas-render');
+  if (!lista) return;
+
+  // 3. Descobre quais IDs estão guardados dentro de pastas
+  let idsEmPastas = [];
+  pastasAgendamento.forEach(p => { if (p.cards) idsEmPastas.push(...p.cards); });
+
+  // 4. Adiciona os checkboxes e esconde os que estão na pasta
+  lista.querySelectorAll('.card-reserva').forEach(card => {
+    const btnDeletar = card.querySelector('button[onclick*="DeletarReserva"]');
+    if (btnDeletar) {
+      const match = btnDeletar.getAttribute('onclick').match(/'([^']+)'/);
+      if (match) {
+        const idReserva = match[1];
+
+        if (idsEmPastas.includes(idReserva)) {
+          card.style.display = 'none'; // Esconde o card que está na pasta
+          return;
+        }
+
+        card.style.position = 'relative';
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.className = 'checkbox-card';
+        chk.value = idReserva;
+        chk.onchange = verificarSelecaoCards;
+        card.appendChild(chk); // Adiciona o quadradinho de marcar
+      }
+    }
+  });
+};
+
+// Mostra o botão "Agrupar" só quando tem card selecionado
+function verificarSelecaoCards() {
+  const selecionados = document.querySelectorAll('.checkbox-card:checked');
+  const btn = document.getElementById('btn-agrupar-selecionados');
+  if (btn) {
+    btn.style.display = selecionados.length > 0 ? 'inline-flex' : 'none';
+    btn.innerText = `📁 Agrupar (${selecionados.length})`;
+  }
 }
