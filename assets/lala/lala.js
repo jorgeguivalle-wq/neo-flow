@@ -1,5 +1,5 @@
 // ============================================================
-// ASSISTENTE VIRTUAL LALÁ 🌸 (VERSÃO CONSULTORA DE DADOS)
+// ASSISTENTE VIRTUAL LALÁ 🌸 (VERSÃO CONECTADA E BLINDADA)
 // ============================================================
 (function() {
   'use strict';
@@ -10,6 +10,16 @@
     totalPassos: 4,
     agendamentoPendente: null,
     aguardandoSituacaoMensagem: false, 
+
+    // Função que caça a conexão em qualquer lugar
+    obterBanco: function() {
+      if (window.db) return window.db;
+      if (typeof db !== 'undefined') return db;
+      if (typeof firebase !== 'undefined' && firebase.apps.length) {
+        return firebase.database();
+      }
+      return null;
+    },
 
     buscar: function(texto) {
       if (!texto) return null;
@@ -23,9 +33,9 @@
       const pedeFaturamento = t.includes('fatura') || t.includes('venda') || t.includes('lucro do mes') || t.includes('quanto ganhei');
       const pedeProximo = t.includes('proxim') || t.includes('quais festas') || t.includes('eventos');
       const pedeEstoque = t.includes('estoque') || t.includes('pecas') || t.includes('catalogo');
-      const pedeTutorial = t.includes('tutorial') || t.includes('refaz') || t.includes('apresent') || t.includes('o que voce') || t.includes('func');
+      const pedeTutorial = t.includes('tutorial') || t.includes('refaz') || t.includes('apresent') || t.includes('faz') || t.includes('func') || t.includes('ajud');
 
-      // 2. EXECUÇÃO DAS INTENÇÕES
+      // 2. EXECUÇÃO
       if (pedeAgendar) return this.prepararAgendamento(texto);
 
       if (pedeMensagem) {
@@ -50,9 +60,7 @@
       if (pedeBomDia) return { isBomDia: true };
       
       if (pedeFaturamento) return { isFaturamento: true };
-
       if (pedeProximo) return { isProximos: true };
-
       if (pedeEstoque) return { resposta: this.verificarEstoque() };
 
       if (pedeTutorial) {
@@ -68,78 +76,49 @@
     },
 
     // =======================================================
-    // NOVAS FUNÇÕES DE CONSULTA AO FIREBASE (VIA STATE)
+    // CONSULTAS AO BANCO
     // =======================================================
-    
     consultarFaturamentoMes: function() {
       if (!window.State || !window.State.reservas) return "Puxa, estou sem os dados das reservas no momento. 😥";
-      
-      const hoje = new Date();
-      const mesAtual = hoje.getMonth();
-      const anoAtual = hoje.getFullYear();
-      
-      let totalFaturado = 0;
-      let qtdFestas = 0;
+      const hoje = new Date(); const mesAtual = hoje.getMonth(); const anoAtual = hoje.getFullYear();
+      let totalFaturado = 0; let qtdFestas = 0;
 
       window.State.reservas.forEach(r => {
         if (!r.data) return;
         const dataReserva = new Date(r.data + "T00:00:00");
         if (dataReserva.getMonth() === mesAtual && dataReserva.getFullYear() === anoAtual) {
-          // Soma o valor total + o frete (para bater com o relatório do sistema)
           totalFaturado += (parseFloat(r.total) || 0) + (parseFloat(r.frete) || 0);
           qtdFestas++;
         }
       });
 
       const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-      const nomeMes = meses[mesAtual];
-
-      if (qtdFestas === 0) {
-        return `Ainda não tivemos nenhuma festa registrada em <b>${nomeMes}</b>. Vamos agitar as vendas! 🚀`;
-      }
-
-      return `📊 <b>Resumo de ${nomeMes}:</b><br><br>🎉 Tivemos <b>${qtdFestas} festa(s)</b> agendada(s).<br>💰 Faturamento total: <b>R$ ${totalFaturado.toFixed(2).replace('.', ',')}</b>.<br><br>Quer ver os detalhes? Clique em <b>Venda Mensal & Anual</b> no painel!`;
+      if (qtdFestas === 0) return `Ainda não tivemos nenhuma festa registrada em <b>${meses[mesAtual]}</b>. Vamos agitar as vendas! 🚀`;
+      return `📊 <b>Resumo de ${meses[mesAtual]}:</b><br><br>🎉 Tivemos <b>${qtdFestas} festa(s)</b>.<br>💰 Faturamento total: <b>R$ ${totalFaturado.toFixed(2).replace('.', ',')}</b>.<br><br>Quer ver os detalhes? Clique em <b>Venda Mensal & Anual</b>.`;
     },
 
     consultarProximosEventos: function() {
       if (!window.State || !window.State.reservas) return "Puxa, estou sem os dados das reservas no momento. 😥";
-      
-      const hoje = new Date();
-      hoje.setHours(0,0,0,0);
-
-      // Filtra apenas festas futuras e ordena pela data mais próxima
-      const futuras = window.State.reservas
-        .filter(r => r.data && new Date(r.data + "T00:00:00") >= hoje)
-        .sort((a, b) => new Date(a.data + "T00:00:00") - new Date(b.data + "T00:00:00"))
-        .slice(0, 3); // Pega apenas as 3 próximas
-
-      if (futuras.length === 0) {
-        return "Não temos nenhuma festa agendada para os próximos dias. 📅";
-      }
-
+      const hoje = new Date(); hoje.setHours(0,0,0,0);
+      const futuras = window.State.reservas.filter(r => r.data && new Date(r.data + "T00:00:00") >= hoje).sort((a, b) => new Date(a.data + "T00:00:00") - new Date(b.data + "T00:00:00")).slice(0, 3);
+      if (futuras.length === 0) return "Não temos nenhuma festa agendada para os próximos dias. 📅";
       let resposta = "📅 <b>Próximos Eventos:</b><br><br>";
       futuras.forEach(f => {
         const partesData = f.data.split('-');
-        const dataFormatada = `${partesData[2]}/${partesData[1]}`;
-        resposta += `🎉 <b>${dataFormatada}</b> - ${f.cliente}<br>🎨 Tema: ${f.tema || 'Não informado'}<br><br>`;
+        resposta += `🎉 <b>${partesData[2]}/${partesData[1]}</b> - ${f.cliente}<br>🎨 Tema: ${f.tema || 'Não informado'}<br><br>`;
       });
       return resposta;
     },
 
     verificarEstoque: function() {
-      if (!window.State || !window.State.estoqueArray) return "Puxa, não consegui acessar o catálogo agora. 😥";
-      
+      if (!window.State || !window.State.estoqueArray) return "Puxa, não consegui acessar o catálogo. 😥";
       const totalPecas = window.State.estoqueArray.length;
-      
-      if (totalPecas === 0) {
-        return "Nosso catálogo está vazio no momento. Que tal cadastrar algumas peças? 📦";
-      }
-
+      if (totalPecas === 0) return "Nosso catálogo está vazio no momento. Que tal cadastrar algumas peças? 📦";
       return `📦 Temos <b>${totalPecas} peças/temas</b> cadastrados no catálogo.<br><br>Para ver os detalhes, clique em <b>Ver Catálogo</b> no painel principal!`;
     },
 
     // =======================================================
-    // OUTRAS FUNÇÕES (Agendamento, Mensagens, Lucro)
+    // AGENDAMENTO
     // =======================================================
     prepararAgendamento: function(textoOriginal) {
       let texto = textoOriginal.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -177,14 +156,58 @@
 
     confirmarAgendamento: function() {
       if (!this.agendamentoPendente) return "Não tem nada pendente.";
-      const agendamento = this.agendamentoPendente; this.agendamentoPendente = null;
-      if (!window.db) return "Erro: Sem conexão com o banco. Verifique o app.js.";
-      return window.db.ref('reunioes').push({ cliente: agendamento.cliente, dataHora: agendamento.dataFinal, pauta: "Agendada pela Lalá", criadoEm: Date.now() })
+      const agendamento = this.agendamentoPendente; 
+      this.agendamentoPendente = null;
+      
+      const banco = this.obterBanco();
+      if (!banco) return "Erro: O banco de dados não está pronto. Verifique o app.js.";
+      
+      return banco.ref('reunioes').push({ cliente: agendamento.cliente, dataHora: agendamento.dataFinal, pauta: "Agendada pela Lalá", criadoEm: Date.now() })
         .then(() => `✅ Prontinho! Reunião com <b>${agendamento.cliente}</b> salva.`)
-        .catch(() => "Erro ao salvar. 😥");
+        .catch(() => "Erro ao salvar no banco. 😥");
     },
     cancelarAgendamento: function() { this.agendamentoPendente = null; return "Tudo bem, cancelei o agendamento. 🚫"; },
 
+    // =======================================================
+    // DAR BOM DIA (CORRIGIDO E BLINDADO)
+    // =======================================================
+    darBomDia: function() {
+      const banco = this.obterBanco();
+      
+      if (!window.State || !banco) {
+        return Promise.resolve("Puxa, ainda estou acordando o banco de dados... ☕ Tente me dar 'Bom dia' de novo em 2 segundinhos!");
+      }
+
+      const hoje = new Date(); 
+      const dataHojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+      
+      return banco.ref('reunioes').once('value').then(snap => {
+        const reunioes = snap.val() || {}; 
+        let reunioesHoje = [];
+        
+        Object.values(reunioes).forEach(r => { 
+          if (r.dataHora && r.dataHora.startsWith(dataHojeStr)) { 
+            const hora = r.dataHora.split('T')[1] || '00:00'; 
+            reunioesHoje.push(`${hora} - ${r.cliente}`); 
+          } 
+        });
+        
+        const orcamentosPendentes = window.State.orcamentosAbertos ? window.State.orcamentosAbertos.filter(o => o.status === 'aguardando').length : 0;
+        
+        let resposta = "Bom dia! ☀️ Aqui está o seu resumo:<br><br>";
+        resposta += reunioesHoje.length > 0 ? `📅 <b>Reuniões:</b><br>${reunioesHoje.join('<br>')}<br><br>` : `📅 <b>Reuniões:</b> Nenhuma agendada para hoje.<br><br>`;
+        resposta += orcamentosPendentes > 0 ? `💰 <b>Orçamentos:</b> Existem ${orcamentosPendentes} aguardando resposta.<br>` : `💰 <b>Orçamentos:</b> Nenhum pendente.<br>`;
+        
+        return resposta + `<br>Vamos arrasar hoje! 💗`;
+      }).catch(err => {
+        console.error("Erro no Firebase da Lalá:", err);
+        return "Deu um erro ao buscar a agenda. Verifique as permissões do banco. 😥";
+      });
+    },
+
+    // =======================================================
+    // OUTRAS FUNÇÕES
+    // =======================================================
     calcularLucro: function(texto) {
       const numeros = texto.match(/\d+([.,]\d+)?/g);
       if (!numeros || numeros.length < 2) return "Preciso do valor e do custo. Exemplo: <b>'Calcula lucro de 1500 com custo 400'</b>";
@@ -197,21 +220,6 @@
     gerarMensagemFinanceiro: function() { return `<i>"Olá, [Nome]! Tudo bem? Entendo. Sobre o valor, infelizmente não consigo fazer a devolução no momento, pois o valor já foi destinado aos custos. Mas posso verificar se é possível usar como crédito para uma próxima festa."</i>`; },
     gerarMensagemAtraso: function() { return `<i>"Olá, [Nome]! Passando para saber se as peças já estão prontas para devolução. Precisamos organizar o estoque. Lembrando que a diária de atraso se aplica."</i>`; },
     gerarMensagemCancelamento: function() { return `<i>"Oi, [Nome]! Que pena saber que a festa não vai mais acontecer. Conforme o contrato, o sinal é retido, mas posso verificar com a direção a possibilidade de uma carta de crédito futura."</i>`; },
-
-    darBomDia: function() {
-      if (!window.State || !window.db) return Promise.resolve("Puxa, estou sem conexão com o banco. 😥");
-      const hoje = new Date(); 
-      const dataHojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
-      return window.db.ref('reunioes').once('value').then(snap => {
-        const reunioes = snap.val() || {}; let reunioesHoje = [];
-        Object.values(reunioes).forEach(r => { if (r.dataHora && r.dataHora.startsWith(dataHojeStr)) { const hora = r.dataHora.split('T')[1] || '00:00'; reunioesHoje.push(`${hora} - ${r.cliente}`); } });
-        const orcamentosPendentes = window.State.orcamentosAbertos ? window.State.orcamentosAbertos.filter(o => o.status === 'aguardando').length : 0;
-        let resposta = "Bom dia! ☀️ Aqui está o seu resumo:<br><br>";
-        resposta += reunioesHoje.length > 0 ? `📅 <b>Reuniões:</b><br>${reunioesHoje.join('<br>')}<br><br>` : `📅 <b>Reuniões:</b> Nenhuma agendada para hoje.<br><br>`;
-        resposta += orcamentosPendentes > 0 ? `💰 <b>Orçamentos:</b> Existem ${orcamentosPendentes} aguardando resposta.<br>` : `💰 <b>Orçamentos:</b> Nenhum pendente.<br>`;
-        return resposta + `<br>Vamos arrasar hoje! 💗`;
-      }).catch(err => "Deu um erro ao buscar a agenda. 😥");
-    },
 
     iniciarAnimacao: function() {
       this.pararAnimacao();
@@ -239,18 +247,20 @@
     pular: function() {
       const balao = document.getElementById('lala-balao-tutorial'); if (balao) balao.classList.remove('ativo');
       this.pararAnimacao(); this.limparDestaques();
-      if (window.db && window.State && window.State.usuarioLogadoEmail) {
+      const banco = this.obterBanco();
+      if (banco && window.State && window.State.usuarioLogadoEmail) {
         const u = window.State.usuarioLogadoEmail.includes('aline') ? 'aline' : 'leo';
-        window.db.ref(`configuracoes/tutorial/${u}`).update({ dispensado: true });
+        banco.ref(`configuracoes/tutorial/${u}`).update({ dispensado: true });
       }
     },
     proximo: function() {
       if (this.tutorialPasso < this.totalPassos) { this.tutorialPasso++; this.atualizarBalaoTutorial(); }
       else {
         this.pular();
-        if (window.db && window.State && window.State.usuarioLogadoEmail) {
+        const banco = this.obterBanco();
+        if (banco && window.State && window.State.usuarioLogadoEmail) {
           const u = window.State.usuarioLogadoEmail.includes('aline') ? 'aline' : 'leo';
-          window.db.ref(`configuracoes/tutorial/${u}`).update({ apresentado: true, dispensado: false });
+          banco.ref(`configuracoes/tutorial/${u}`).update({ apresentado: true, dispensado: false });
         }
       }
     },
