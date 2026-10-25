@@ -1391,4 +1391,5 @@ atalhos.forEach(function(btn) {
     if (input) input.focus();
   });
 });
-
+  });
+})();
