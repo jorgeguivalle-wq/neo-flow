@@ -400,6 +400,38 @@ if (
     // ======================================================
     // CONSULTAS
     // ======================================================
+
+consultarOrcamentosPendentes: function() {
+  const banco = this.obterBanco();
+
+  if (!banco) {
+    return Promise.resolve(
+      '😥 Não consegui acessar o banco de dados.'
+    );
+  }
+
+  return banco.ref('orcamentos_abertos').once('value')
+    .then(function(snapshot) {
+      const dados = snapshot.val() || {};
+
+      const pendentes = Object.values(dados).filter(function(o) {
+        return o && o.status === 'aguardando';
+      });
+
+      if (pendentes.length === 0) {
+        return '🎉 Nenhum orçamento aguardando resposta!';
+      }
+
+      return '📨 <b>Orçamentos aguardando resposta:</b><br><br>' +
+        '📋 Total: <b>' + pendentes.length + '</b><br><br>' +
+        'Acesse Orçamentos em Aberto para consultar os detalhes.';
+    })
+    .catch(function(erro) {
+      console.error('Erro ao consultar orçamentos:', erro);
+      return '😥 Não consegui consultar os orçamentos agora.';
+    });
+},
+
     consultarFaturamentoMes: function() {
       if (!window.State || !window.State.reservas) {
         return 'Puxa, estou sem os dados das reservas no momento. 😥';
@@ -1041,6 +1073,18 @@ if (
           return;
         }
 
+if (texto.trim() === '/orcamentos') {
+  comIndicadorConsulta(
+    LALA.consultarOrcamentosPendentes()
+  ).then(function(msg) {
+    addBotMsg(msg);
+  }).catch(function(err) {
+    console.error(err);
+    addBotMsg('😥 Erro ao consultar orçamentos.');
+  });
+  return;
+}
+
         if (resposta && resposta.isFaturamento) { addBotMsg(LALA.consultarFaturamentoMes()); return; }
         if (resposta && resposta.isProximos) { addBotMsg(LALA.consultarProximosEventos()); return; }
 
@@ -1069,12 +1113,43 @@ if (
       });
     }
 
-    const atalhos = document.querySelectorAll('.lala-atalho');
-    atalhos.forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        const pergunta = btn.getAttribute('data-pergunta');
-        if (pergunta) responder(pergunta);
-      });
-    });
+    
+// ============================================
+// COMANDO LALÁ - MENU E ENVIO AUTOMÁTICO
+// ============================================
+
+const btnComando = document.getElementById('btn-comando-lala');
+const menuComando = document.getElementById('menu-comando-lala');
+
+if (btnComando && menuComando) {
+  btnComando.addEventListener('click', function() {
+    menuComando.hidden = !menuComando.hidden;
   });
-})();
+}
+
+const atalhos = document.querySelectorAll('.lala-atalho');
+
+atalhos.forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    const pergunta = btn.getAttribute('data-pergunta');
+    if (!pergunta) return;
+
+    // Abre o chat automaticamente
+    if (janela && !janela.classList.contains('ativo')) {
+      janela.classList.add('ativo');
+      fab.classList.remove('pulso');
+      LALA.iniciarSaudacaoSeNecessario();
+    }
+
+    // Fecha o menu
+    if (menuComando) {
+      menuComando.hidden = true;
+    }
+
+    // Envia a pergunta para a Lalá
+    responder(pergunta);
+
+    if (input) input.focus();
+  });
+});
+
