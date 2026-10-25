@@ -432,6 +432,220 @@ consultarOrcamentosPendentes: function() {
     });
 },
 
+    // ==============================================
+    // COMANDOS LALÁ — CONSULTAS DO NEO FLOW
+    // ==============================================
+
+    consultarComandoLala: async function(comando) {
+      const esc = this.escapeHTML;
+      const state = window.State;
+
+      const dinheiro = function(valor) {
+        return Number(valor || 0).toLocaleString('pt-BR', {
+          style: 'currency',
+          currency: 'BRL'
+        });
+      };
+
+      const dataBR = function(data) {
+        if (!data) return 'Não informada';
+        const partes = String(data).slice(0, 10).split('-');
+        return partes.length === 3
+          ? partes.reverse().join('/')
+          : String(data);
+      };
+
+      const dataISO = function(d) {
+        return d.getFullYear() + '-' +
+          String(d.getMonth() + 1).padStart(2, '0') + '-' +
+          String(d.getDate()).padStart(2, '0');
+      };
+
+      const reservas = state && Array.isArray(state.reservas)
+        ? state.reservas : [];
+
+      if (!state || state.carregando) {
+        return '⏳ Ainda estou carregando os dados. Tente novamente em instantes.';
+      }
+
+      // AGENDA DO FIM DE SEMANA
+      if (comando === '/fim-semana') {
+        const hoje = new Date();
+        const sabado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+        const diasAteSabado = (6 - hoje.getDay() + 7) % 7;
+        sabado.setDate(sabado.getDate() + diasAteSabado);
+
+        const domingo = new Date(sabado);
+        domingo.setDate(domingo.getDate() + 1);
+
+        const datas = [dataISO(sabado), dataISO(domingo)];
+        const eventos = reservas.filter(r => datas.includes(r.data));
+
+        if (!eventos.length) {
+          return '🎉 Nenhuma reserva encontrada para este fim de semana.';
+        }
+
+        let html = '🎉 <b>Agenda do fim de semana</b><br><br>';
+
+        datas.forEach(function(data, indice) {
+          const lista = eventos.filter(r => r.data === data);
+          html += '<b>' + (indice === 0 ? 'Sábado' : 'Domingo') +
+            ' — ' + dataBR(data) + '</b><br>';
+
+          if (!lista.length) html += 'Nenhuma reserva.<br>';
+
+          lista.forEach(function(r) {
+            html += '🎈 ' + esc(r.cliente || 'Cliente não informado') +
+              '<br>🎨 ' + esc(r.tema || 'Sem tema') +
+              '<br>📦 ' + esc(r.kit || 'Kit não informado') +
+              '<br>🏠 ' + (r.montarNoLocal ? 'Decoração completa' : 'Pegue e Monte') +
+              '<br><br>';
+          });
+        });
+
+        return html;
+      }
+
+      // LISTA DE SEPARAÇÃO
+      if (comando === '/separacao') {
+        const hoje = new Date();
+        const sabado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+        sabado.setDate(sabado.getDate() + (6 - hoje.getDay() + 7) % 7);
+        const domingo = new Date(sabado);
+        domingo.setDate(domingo.getDate() + 1);
+
+        const datas = [dataISO(sabado), dataISO(domingo)];
+        const eventos = reservas.filter(r => datas.includes(r.data));
+
+        if (!eventos.length) {
+          return '📋 Não encontrei reservas para separar neste fim de semana.';
+        }
+
+        let html = '📋 <b>Lista de separação</b><br><br>';
+
+        eventos.forEach(function(r) {
+          html += '<b>' + esc(r.cliente || 'Cliente') + '</b>' +
+            ' — ' + dataBR(r.data) +
+            '<br>🎨 ' + esc(r.tema || 'Sem tema') +
+            '<br>📦 ' + esc(r.kit || 'Kit não informado') + '<br>';
+
+          const pecas = Array.isArray(r.pecas) ? r.pecas : [];
+
+          if (!pecas.length) {
+            html += '⚠️ Peças não detalhadas nesta reserva.<br>';
+          } else {
+            pecas.forEach(function(nome) {
+              const qtd = r.pecasQtd && r.pecasQtd[nome]
+                ? Number(r.pecasQtd[nome]) : 1;
+              html += '• ' + qtd + 'x ' + esc(nome) + '<br>';
+            });
+          }
+
+          html += '<br>';
+        });
+
+        return html;
+      }
+
+      // PAGAMENTOS PENDENTES
+      if (comando === '/pagamentos') {
+        const pendentes = reservas.filter(function(r) {
+          return Number(r.total || 0) > Number(r.sinal || 0);
+        });
+
+        if (!pendentes.length) {
+          return '💸 Não encontrei saldos calculados em aberto nas reservas.';
+        }
+
+        let soma = 0;
+        let html = '💸 <b>Saldos a conferir</b><br><br>';
+
+        pendentes.forEach(function(r) {
+          const restante = Math.max(
+            0, Number(r.total || 0) - Number(r.sinal || 0)
+          );
+          soma += restante;
+
+          html += '👤 ' + esc(r.cliente || 'Cliente') +
+            '<br>📅 ' + dataBR(r.data) +
+            '<br>💰 Saldo calculado: <b>' + dinheiro(restante) +
+            '</b><br><br>';
+        });
+
+        html += '<b>Total calculado: ' + dinheiro(soma) + '</b>';
+        html += '<br><br>⚠️ Este cálculo usa total menos sinal. ' +
+          'Confirme pagamentos posteriores antes de cobrar.';
+
+        return html;
+      }
+
+      // ORÇAMENTOS SEM RESPOSTA
+      if (comando === '/orcamentos') {
+        const banco = this.obterBanco();
+        if (!banco) return '😥 Banco de dados indisponível.';
+
+        const snap = await banco.ref('orcamentos_abertos').once('value');
+        const todos = Object.values(snap.val() || {});
+
+        const pendentes = todos.filter(function(o) {
+          return o && o.status === 'aguardando';
+        });
+
+        if (!pendentes.length) {
+          return '📨 Nenhum orçamento com status aguardando.';
+        }
+
+        let html = '📨 <b>Orçamentos aguardando resposta</b><br><br>';
+
+        pendentes.forEach(function(o) {
+          html += '👤 ' + esc(o.cliente || 'Cliente') +
+            '<br>🎨 ' + esc(o.tema || 'Sem tema') +
+            '<br>💰 ' + dinheiro(o.valorTotal) +
+            '<br>🔔 Retorno: ' + dataBR(o.dataRetorno) +
+            '<br><br>';
+        });
+
+        return html;
+      }
+
+      // ENTREGAS E DEVOLUÇÕES
+      if (comando === '/logistica') {
+        const hoje = dataISO(new Date());
+        const eventos = reservas
+          .filter(r => r.data && r.data >= hoje)
+          .sort((a, b) => a.data.localeCompare(b.data))
+          .slice(0, 15);
+
+        if (!eventos.length) {
+          return '🚚 Nenhuma reserva futura encontrada.';
+        }
+
+        let html = '🚚 <b>Logística das próximas reservas</b><br><br>';
+
+        eventos.forEach(function(r) {
+          html += '📅 ' + dataBR(r.data) +
+            '<br>👤 ' + esc(r.cliente || 'Cliente') +
+            '<br>📦 ' + (r.montarNoLocal
+              ? 'Montagem no local'
+              : 'Pegue e Monte') +
+            '<br>📍 ' + esc(r.local || r.endereco || 'Local não informado') +
+            '<br>↩️ ' + (r.itensDevolvidos
+              ? 'Devolução registrada'
+              : 'Devolução não registrada') +
+            '<br><br>';
+        });
+
+        html += '⚠️ Os horários de entrega e retirada não estão ' +
+          'disponíveis nos campos padrão das reservas. ' +
+          'Confira os contratos antes de organizar as rotas.';
+
+        return html;
+      }
+
+      return 'Comando não reconhecido.';
+    },
+
+
     consultarFaturamentoMes: function() {
       if (!window.State || !window.State.reservas) {
         return 'Puxa, estou sem os dados das reservas no momento. 😥';
@@ -1033,6 +1247,31 @@ consultarOrcamentosPendentes: function() {
     function responder(texto) {
       if (!texto || !texto.trim()) return;
       addUserMsg(texto);
+      
+      // COMANDOS AUTOMÁTICOS DA LALÁ
+      const comandosLala = [
+        '/fim-semana',
+        '/separacao',
+        '/pagamentos',
+        '/orcamentos',
+        '/logistica'
+      ];
+
+      if (comandosLala.includes(texto.trim())) {
+        comIndicadorConsulta(
+          LALA.consultarComandoLala(texto.trim())
+        )
+          .then(function(mensagem) {
+            addBotMsg(mensagem);
+          })
+          .catch(function(erro) {
+            console.error('Comando Lalá:', erro);
+            addBotMsg('😥 Não consegui executar essa consulta.');
+          });
+
+        return;
+      }
+
 
       setTimeout(function() {
         let resposta;
