@@ -1939,6 +1939,8 @@ function gerarContratoPegueMonteLoja(dados) {
     '<div class="assinatura"><div class="assinatura-nome">CONTRATANTE:</div><div class="linha-assinatura"></div><div class="assinatura-nome">' + nome + ' — CPF: ' + cpf + '</div></div>' +
     '<div class="rodape-loja">TRALALÁ DECORAÇÕES DE FESTAS — QN 508 CONJUNTO 03 LOJA 06, SAMAMBAIA SUL. (61) 9. 8191-9559</div>' +
   '</div>';
+}
+
 // ============================================================
 // CONTRATO 2 — FRETE (LEVA E MONTA)
 // ============================================================
