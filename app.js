@@ -1308,13 +1308,25 @@ function renderReservas(filtro, opcoes) {
     arr = arr.filter(function(r) { return Utils.normalizar(r.cliente).indexOf(f) !== -1 || Utils.normalizar(r.tema).indexOf(f) !== -1; });
   }
 
- if (opcoes.ids) {
+
+if (opcoes.ids) {
   var idsPermitidos = opcoes.ids.map(String);
 
   arr = arr.filter(function(r) {
     return idsPermitidos.includes(String(r.id));
   });
+} else {
+  var idsNasPastas = new Set(
+    pastasAgendamento.flatMap(function(p) {
+      return normalizarIdsPasta(p.cards);
+    })
+  );
+
+  arr = arr.filter(function(r) {
+    return !idsNasPastas.has(String(r.id));
+  });
 }
+
   if (!arr.length) container.innerHTML = "<p style='text-align:center;color:#777'>Nenhum agendamento nesta lista.</p>";
 
   var hoje = new Date();
@@ -3230,12 +3242,23 @@ renderReservas = function(filtro, opcoes) {
   if (!opcoes || !opcoes.container) adicionarCheckboxes();
   if (pastaAbertaId && (!opcoes || !opcoes.container)) renderizarPastas();
 };
+
 if (db) db.ref('pastas_agendamentos').on('value', snap => {
   const val = snap.val() || {};
-  pastasAgendamento = Object.keys(val).map(id => ({id, ...val[id]}));
-  renderReservas((document.getElementById('busca-reservas') || {}).value || '');
+
+  pastasAgendamento = Object.keys(val).map(id => ({
+    id,
+    ...val[id]
+  }));
+
+  renderReservas(
+    (document.getElementById('busca-reservas') || {}).value || ''
+  );
+
   renderizarPastas();
+  renderizarPastasNoRelatorio();
 });
+
 window.abrirModalPastas = function() {
   pastaAbertaId = null;
   document.getElementById('modal-gerenciar-pastas').classList.add('ativo');
@@ -3281,6 +3304,38 @@ window.adicionarNaPasta = async function(idPasta) {
   try { await db.ref('pastas_agendamentos/' + idPasta + '/cards').set(ids); }
   catch(e) { Utils.showToast('Erro ao adicionar agendamento.', 'error'); }
 };
+
+function renderizarPastasNoRelatorio() {
+  const area = document.getElementById("pastas-relatorio");
+  if (!area) return;
+
+  area.innerHTML = "";
+
+  pastasAgendamento.forEach(function(pasta) {
+    const botao = document.createElement("button");
+
+    botao.type = "button";
+    botao.className = "btn btn-outline";
+
+    botao.style.cssText =
+      "padding:15px;text-align:left;" +
+      "border:1px solid #e1cbd4;" +
+      "border-radius:12px;background:#fff;";
+
+    const quantidade = normalizarIdsPasta(pasta.cards).length;
+
+    botao.textContent =
+      "📁 " + pasta.nome + " (" + quantidade + ")";
+
+    botao.onclick = function() {
+      window.abrirModalPastas();
+      window.abrirPasta(pasta.id);
+    };
+
+    area.appendChild(botao);
+  });
+}
+
 function renderizarPastas() {
   const area = document.getElementById('lista-pastas-gerenciar');
   if (!area) return;
