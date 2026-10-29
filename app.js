@@ -3430,6 +3430,7 @@ window.BaixarPDFContrato = async function() {
       );
     }
 
+  
     pdf.save("contrato-" + nome + ".pdf");
 
     Utils.showToast(
