@@ -1939,74 +1939,424 @@ function gerarContratoPegueMonteLoja(dados) {
     '<div class="assinatura"><div class="assinatura-nome">CONTRATANTE:</div><div class="linha-assinatura"></div><div class="assinatura-nome">' + nome + ' — CPF: ' + cpf + '</div></div>' +
     '<div class="rodape-loja">TRALALÁ DECORAÇÕES DE FESTAS — QN 508 CONJUNTO 03 LOJA 06, SAMAMBAIA SUL. (61) 9. 8191-9559</div>' +
   '</div>';
-}
 // ============================================================
-// CONTRATO 2 — COM FRETE
+// CONTRATO 2 — FRETE (LEVA E MONTA)
 // ============================================================
-function gerarContratoComFrete(dados) {
-  var dataFmt = dados.data ? String(dados.data).split("-").reverse().join("/") : "____/____/______";
-  var valorNum = parseFloat(dados.valor) || 0;
-  var valorFmt = valorNum ? valorNum.toFixed(2).replace('.', ',') : "______,____";
-  var valorMetade = valorNum ? (valorNum/2).toFixed(2).replace('.', ',') : "______,____";
-  var dataAtual = new Date().toLocaleDateString('pt-BR');
-  var nome = dados.nome || "_________________________";
-  var cpf = dados.cpf || "_________________________";
-  var endereco = dados.endereco || "_________________________";
-  var telefone = dados.telefone || "(61) ________________";
-  var local = dados.local || "_________________________";
-  var horario = dados.horario || "____:____";
-  var pecasTexto = descricaoPecasDetalhada(dados.pecas, dados.pecasQtd);
 
-  return '<div class="pagina-contrato">' +
-    '<div class="logo-container"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT2qBAlvPlxMFaok_zho9se2IT9smgKtY9Dvg&s" class="logo-contrato"></div>' +
-    '<div class="titulo-contrato">CONTRATO DE PRESTAÇÃO DE SERVIÇOS PARA LOCAÇÃO</div>' +
-    '<div class="dados-contratada"><span class="negrito">CONTRATADA:</span> TRALALÁ DECORAÇÕES DE FESTAS — CNPJ: 21.918.863/0001-12</div>' +
-    '<div class="dados-contratante"><span class="negrito">CONTRATANTE:</span> ' + nome + '</div>' +
-    '<div class="dados-contratante"><span class="negrito">CPF:</span> ' + cpf + '</div>' +
-    '<div class="dados-contratante"><span class="negrito">ENDEREÇO:</span> ' + endereco + '</div>' +
-    '<div class="dados-contratante"><span class="negrito">TELEFONE:</span> ' + telefone + '</div>' +
-    '<div class="dados-contratante"><span class="negrito">LOCAL DO EVENTO:</span> ' + local + '</div>' +
-    '<div class="dados-contratante"><span class="negrito">DATA DA FESTA:</span> ' + dataFmt + ' às ' + horario + '</div>' +
-    '<p style="margin-top:4px;">As partes acima identificadas têm, entre si, justo e acertado o presente contrato de prestação de serviços, que se regerá pelas cláusulas seguintes e pelas condições de preço, forma e termo de pagamento descritas no presente contrato.</p>' +
-    '<div class="clausula-titulo">DO OBJETO DO CONTRATO</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 1ª.</span> É objeto do presente contrato a prestação de serviço de Locação de: ' + pecasTexto + ', à CONTRATANTE (especificado na Clausula 5ª), que a CONTRATADA declara ser de sua propriedade, para o evento que se realizará no dia ' + dataFmt + ', conforme endereço especificado abaixo:</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 2ª.</span> A CONTRATANTE deverá fornecer à CONTRATADA todas as informações necessárias para a realização do serviço, devendo especificar o material, tipo e a quantidade.</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 3ª.</span> É dever da CONTRATANTE devolver o(s) produto(s) de acordo com o que foi locado no término da festa. A CONTRATADA efetuara a retirada dos itens no dia ' + dataFmt + '.</div>' +
-    '<div class="paragrafo">Parágrafo único. A CONTRATADA deverá entregar e buscar o produto no endereço mencionado na cláusula 1ª, em caso de a CONTRATANTE optar por fazer retirada do produto no local, deverá devolvê-lo no local mencionado na cláusula 1ª conforme combinado com a CONTRATADA.</div>' +
-    '<div class="clausula-titulo">OBRIGAÇÃO DA CONTRATADA</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 4ª.</span> É dever da CONTRATADA oferecer o serviço de acordo com as especificações da CONTRATANTE, devendo o material ser entregue no dia ' + dataFmt + ' até as ' + horario + ' no endereço já especificado na Clausula 1ª.</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 5ª.</span> A CONTRATADA fornecerá as seguintes peças:</div>' +
-    '<div class="paragrafo">(X) ' + pecasTexto + '</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 6ª.</span> O serviço contratado no presente instrumento será remunerado pela quantia de R$ ' + valorFmt + ', pago no ato da reserva:</div>' +
-    '<div class="paragrafo">• R$ ' + valorMetade + ' (no ato da reserva)</div>' +
-    '<div class="paragrafo">• R$ ' + valorMetade + ' (na montagem da festa)</div>' +
-    '<div class="paragrafo">*pagamentos em cartão de credito e debito tem acréscimo da taxa da operadora do cartão.</div>' +
-    '<div class="clausula-texto">Em dinheiro ou depósito bancário (Caixa Econômica Federal, Agencia: 2403, Op.001 Conta corrente: 21702-0 em nome de Aline Alves de Araújo do Valle, CPF: 864.331.211-87) ou ( Banco Itaú, agencia 8624, conta corrente 06209-0, Aline Alves de Araújo, CPF: 864.331.211.87) ou ( Banco do Brasil, Agencia:1230-0, conta corrente 39.464-5, em nome Jorge Leonardo Sampaio do Valle, CPF: 794.883.315-34) CHAVE PIX CNPJ: 21.918.863/0001-12</div>' +
-    '<div class="paragrafo">Parágrafo primeiro. Não será aceito, sob hipótese alguma, pagamento pós-festa.</div>' +
-    '<div class="paragrafo">Parágrafo Segundo. No valor acima referido já está incluso frete.</div>' +
-    '<div class="paragrafo">Parágrafo Terceiro. O valor do frete é referente à entrega e à retirada que será realizada pela CONTRATADA no local do evento ou onde for combinado entre as PARTES.</div>' +
-    '<div class="paragrafo">Parágrafo quarto. NÃO está incluso no valor da locação de peças e mobílias, o serviço de arrumação de mesa, como colocar doces, bolo, lembrancinhas e personalizados feitos por terceiros, para esse serviço favor consultar valores com a CONTRATADA.</div>' +
-    '<div class="clausula-texto"><span class="negrito">Cláusula 7ª.</span> O recibo do depósito da transferência bancária, referente ao sinal, efetuada na conta informada para a CONTRATADA, servirá para a CONTRATANTE como comprovante de cumprimento da obrigação de pagar.</div>' +
-    '<div class="clausula-titulo">DA DEVOLUÇÃO</div>' +
-    '<div class="clausula-texto"><span class="negrito">Cláusula 8ª.</span> Caso Haja perda, Danos, Quebra Ou não devolução dos itens, a CONTRATANTE arcará com 50% do valor de uma peça nova para reposição (caso haja recuperação) NÃO Havendo recuperação, será cobrado o valor de mercado por cada item, em dinheiro ou outra forma que convier às PARTES. Em caso de quebra ou extravio de peças a CONTRATANTE assinará uma nota promissória se comprometendo-se com o pagamento que será devolvida após a quitação do debito.</div>' +
-    '<div class="paragrafo">Parágrafo Primeiro: É de responsabilidade da CONTRATANTE que na retirada da decoração, todas as peças alugadas estejam sobre a mesa, caso fique algum item, a CONTRATANTE se responsabilizará pela devolução, a recusa da devolução imediata, acarretará em multa de R$ 20,00, por diária/peça.</div>' +
-    '<div class="paragrafo">Parágrafo segundo: É dever da CONTRATANTE devolver as peças como foi entregue. É proibido, furar o bolo cenográfico, usar cola quente no painel, peças e mesas, usar confeitos coloridos, vela faísca estes itens danificam e mancham peças e mobília (uso estará sujeito em caso de avarias pagar pela recuperação ou peça nova caso não seja possível).</div>' +
-    '<div class="paragrafo">O tapete deverá ser devolvido como foi entregue sem doces e bolos, caso contrário pagará multa de limpeza de R$ 40,00 (quarenta reais).</div>' +
-    '<div class="clausula-titulo">DO CANCELAMENTO</div>' +
-    '<div class="clausula-texto"><span class="negrito">Clausula 9ª.</span> Em caso de desistência a CONTRATANTE arcará com a multa de quebra de contrato, 50% do valor total do seu contrato.</div>' +
-    '<div class="paragrafo">Parágrafo primeiro: Em caso de força maior, a CONTRATANTE, poderá solicitar uma carta credito na quantia paga, para utilização de até um ano a partir da data da notificação. Sendo que essa carta crédito não poderá ser transferida para outro titular, nem prorrogada. Cabendo a CONTRATADA confirmar disponibilidade de peças e data. A CONTRATANTE deverá comprovar o fato ocorrido com documentos oficiais.</div>' +
-    '<div class="paragrafo">Parágrafo Segundo. A Parte impossibilitada de cumprir sua obrigação deverá notificar a outra, de imediato, acerca da extensão do problema e o prazo estimado para remarcação da nova data.</div>' +
-    '<div class="clausula-titulo">DAS CONDIÇÕES GERAIS</div>' +
-    '<div class="clausula-texto"><span class="negrito">Cláusula 10ª.</span> O orçamento ou aceite referente ao serviço contratado, enviado por email, faz parte integrante deste contrato.</div>' +
-    '<div class="clausula-titulo">DO FORO</div>' +
-    '<div class="clausula-texto">As Partes elegem o foro da Circunscrição Judiciária de Brasília – DF para dirimir os conflitos que porventura venham a surgir em decorrência da execução do presente contrato, com renúncia de qualquer outro, por mais privilegiado que seja.</div>' +
-    '<div class="clausula-texto">E por assim estarem de acordo, o contrato será sendo assinado de forma digitalizada, sendo as vias compartilhadas em meio eletrônico e permitida a assinatura híbrida (física e digital).</div>' +
-    '<div style="text-align:center; margin-top:8px;">Brasília-DF, ' + dataAtual + '.</div>' +
-    '<div class="assinatura"><div class="assinatura-nome">CONTRATADA:</div><div class="linha-assinatura"></div><div class="assinatura-nome">TRALALÁ DECORAÇÕES DE FESTAS — CNPJ: 21.918.863/0001-12</div><div class="assinatura-nome" style="font-size:9pt; margin-top:4px;">ALINE ARAUJO DO VALLE</div></div>' +
-    '<div class="assinatura"><div class="assinatura-nome">CONTRATANTE:</div><div class="linha-assinatura"></div><div class="assinatura-nome">' + nome + ' — CPF: ' + cpf + '</div></div>' +
-    '<div class="rodape-loja">TRALALÁ DECORAÇÕES DE FESTAS Qn 508 CONJUNTO 03 LOJA 06, SAMAMBAIA SUL. (61) 9. 8191-9551</div>' +
-  '</div>';
+
+function gerarContratoComFrete(dados) {
+  dados = dados || {};
+
+  // Evita que dados digitados pelo cliente alterem o HTML.
+  function esc(valor) {
+    return String(valor == null ? "" : valor)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function texto(valor, padrao) {
+    return esc(
+      valor !== undefined &&
+      valor !== null &&
+      String(valor).trim() !== ""
+        ? valor
+        : padrao
+    );
+  }
+
+  function dataBR(valor) {
+    if (!valor) return "____/____/______";
+    var s = String(valor);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      return s.split("-").reverse().join("/");
+    }
+    return esc(s);
+  }
+
+  function moeda(valor) {
+    var n = Number(valor);
+    if (!isFinite(n)) return "______,__";
+    return n.toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  function valorPorExtenso(valor) {
+    // Usa o valor por extenso informado no cadastro,
+    // sem inventar um texto para valores diferentes.
+    return texto(valor, "________________________");
+  }
+
+  var nome = texto(dados.nome, "________________________");
+  var cpf = texto(dados.cpf, "________________________");
+  var endereco = texto(dados.endereco, "________________________");
+  var telefone = texto(dados.telefone, "(61) ________________");
+  var local = texto(dados.local, "________________________");
+  var localMaiusculo = texto(
+    dados.local ? String(dados.local).toUpperCase() : "",
+    "________________________"
+  );
+
+  var dataFesta = dataBR(dados.data);
+  var dataRetirada = dataBR(dados.dataRetirada || dados.data);
+  var horarioFesta = texto(dados.horario, "____:____");
+  var horarioRetirada = texto(dados.horarioRetirada, "____:____");
+  var horarioEntrega = texto(dados.horarioEntrega, "____:____");
+
+  var tema = texto(dados.tema, "________________________");
+  var pecas = texto(
+    descricaoPecasDetalhada(dados.pecas, dados.pecasQtd),
+    "________________________"
+  );
+
+  var descricaoObjeto = texto(
+    dados.descricaoObjeto,
+    "Aluguel de KIT " + (dados.tema || "________")
+  );
+
+  var valorTotal = Number(dados.valor);
+  if (!isFinite(valorTotal)) valorTotal = 0;
+
+  var sinalInformado =
+    dados.sinal !== undefined &&
+    dados.sinal !== null &&
+    dados.sinal !== "";
+
+  var sinal = sinalInformado ? Number(dados.sinal) : NaN;
+  var restanteInformado =
+    dados.restante !== undefined &&
+    dados.restante !== null &&
+    dados.restante !== "";
+
+  var restante = restanteInformado
+    ? Number(dados.restante)
+    : (sinalInformado ? valorTotal - sinal : NaN);
+
+  var valorSinal = isFinite(sinal) ? moeda(sinal) : "______,__";
+  var valorRestante = isFinite(restante)
+    ? moeda(restante)
+    : "______,__";
+
+  var dataSinal = dataBR(dados.dataPagamentoSinal);
+  var dataRestante = dataBR(dados.dataPagamentoRestante || dados.data);
+  var dataOrcamento = dataBR(dados.dataEnvioOrcamento);
+  var dataAtual = new Date().toLocaleDateString("pt-BR");
+
+  var rodape =
+    '<div class="rodape-loja" style="text-align:center;font-weight:bold;">' +
+    'TRALALÁ DECORAÇÕES DE FESTAS<br>' +
+    'Qn 508 CONJUNTO 03 LOJA 06, SAMAMBAIA SUL.<br>' +
+    '(61) 9. 8191-9559' +
+    '</div>';
+
+  return `
+    <!-- PÁGINA 1 -->
+    <div class="pagina-contrato">
+
+      <div class="logo-container">
+        <img
+          src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT2qBAlvPlxMFaok_zho9se2IT9smgKtY9Dvg&s"
+          class="logo-contrato"
+          alt="Tralalá Decorações"
+        >
+      </div>
+
+      <div class="titulo-contrato">
+        CONTRATO DE PRESTAÇÃO DE SERVIÇOS PARA LOCAÇÃO
+      </div>
+
+      <div class="dados-contratada">
+        <b>CONTRATADA: TRALALÁ DECORAÇÕES DE FESTAS</b><br>
+        <b>CNPJ: 21.918.863/0001-12</b><br>
+        <b>E-MAIL:tralaladecoracoes@gmail.com</b>
+      </div>
+
+      <div class="dados-contratante" style="margin-top:18px;">
+        <b>CONTRATANTE:</b> ${nome}<br>
+        <b>CPF:</b> ${cpf}<br>
+        <b>ENDEREÇO CLIENTE:</b> ${endereco}<br>
+        <b>LOCAL DA FESTA:</b> ${local}<br>
+        <b>TELEFONE:</b> ${telefone}<br>
+        <b>DATA DA FESTA:</b> ${dataFesta}<br>
+        <b>HORARIO DA FESTA:</b> ${horarioFesta}
+        &nbsp;&nbsp;&nbsp;
+        <b>RETIRADA:</b> ${horarioRetirada}
+      </div>
+
+      <p>
+        As partes acima identificadas têm, entre si, justo e acertado o
+        presente contrato de prestação de serviços, que se regerá pelas
+        cláusulas seguintes e pelas condições de preço, forma e termo
+        de pagamento descritas no presente contrato.
+      </p>
+
+      <div class="clausula-titulo">DO OBJETO DO CONTRATO</div>
+
+      <div class="clausula-texto">
+        <b>Clausula 1ª.</b> É objeto do presente contrato a prestação
+        de serviço de ${descricaoObjeto} (${pecas}) de sua propriedade,
+        para o evento que se realizará no dia ${dataFesta}, conforme
+        endereço especificado abaixo:
+      </div>
+
+      <p><b>LOCAL DA FESTA: ${localMaiusculo}.</b></p>
+
+      <div class="paragrafo">
+        <b>Primeiro.</b> A alteração do local para entrega do objeto
+        deste contrato implica em prévia comunicação da CONTRATANTE
+        no prazo de 48 horas antes da entrega.
+      </div>
+
+      <div class="paragrafo">
+        <b>Parágrafo Segundo.</b> Caso haja alteração do local para
+        entrega, poderá haver alteração do valor do frete conforme
+        localidade e distância.
+      </div>
+
+      <div class="paragrafo">
+        <b>Parágrafo Terceiro.</b> A CONTRATANTE não poderá, sem
+        prévia autorização da CONTRATADA, sublocar, emprestar,
+        ou ceder os móveis locados.
+      </div>
+
+      <div class="clausula-titulo">OBRIGAÇÃO DA CONTRATANTE</div>
+
+      <div class="clausula-texto">
+        <b>Clausula 2ª.</b> A CONTRATANTE deverá fornecer à
+        CONTRATADA todas as informações necessárias para a
+        realização do serviço, devendo especificar o material,
+        tipo e a quantidade.
+      </div>
+
+      <div class="clausula-texto">
+        <b>Clausula 3ª.</b> É dever da CONTRATANTE devolver o(s)
+        produto(s) de acordo com o que foi locado no término
+        da festa. A CONTRATADA efetuara a retirada dos itens
+        no dia ${dataRetirada}.
+      </div>
+
+      ${rodape}
+    </div>
+
+    <!-- PÁGINA 2 -->
+    <div class="pagina-contrato">
+
+      <div class="paragrafo">
+        <b>Parágrafo único.</b> A CONTRATADA deverá entregar e buscar
+        o produto no endereço mencionado na cláusula 1ª, em caso
+        de a CONTRATANTE optar por fazer retirada do produto no
+        local, deverá devolvê-lo no local mencionado na cláusula
+        1ª conforme combinado com a CONTRATADA.
+      </div>
+
+      <div class="clausula-titulo">OBRIGAÇÃO DA CONTRATADA</div>
+
+      <div class="clausula-texto">
+        <b>Clausula 4ª.</b> É dever da CONTRATADA oferecer o serviço
+        de acordo com as especificações da CONTRATANTE, devendo
+        o material ser entregue no dia ${dataFesta} até
+        ${horarioEntrega} no endereço já especificado na Clausula 1ª.
+      </div>
+
+      <div class="clausula-texto">
+        <b>Clausula 5ª.</b> A CONTRATADA fornecerá as seguintes peças:
+      </div>
+
+      <div class="paragrafo">
+        (X) KIT COMEMORE (Descrito na clausula 1ª)
+      </div>
+
+      <div class="paragrafo">
+        (X) KIT DECORAÇÃO (Descrito na clausula 1ª)
+      </div>
+
+      <div class="clausula-texto">
+        <b>Clausula 6ª.</b> O serviço contratado no presente instrumento
+        será remunerado pela quantia de R$ ${moeda(valorTotal)}
+        ( ${valorPorExtenso(dados.valorExtenso)} ), devendo ser pago:
+      </div>
+
+      <div class="paragrafo">
+        ✓ ${dataSinal} - R$ ${valorSinal} ( no ato da reserva)
+      </div>
+
+      <div class="paragrafo">
+        ✓ ${dataRestante} – R$ ${valorRestante}
+        ( no ato da montagem em dinheiro ou pix ou cartão)
+      </div>
+
+      <div class="paragrafo">
+        *pagamentos em cartão de credito e debito tem acréscimo
+        da taxa da operadora do cartão.
+      </div>
+
+      <div class="clausula-texto">
+        Em dinheiro ou depósito bancário (Caixa Econômica Federal,
+        Agencia: 2403 ,Op.001 Conta corrente: 21702-0 em nome
+        de Aline Alves de Araújo do Valle, CPF: 864.331.211-87)
+        ou ( Banco Itaú, agencia 8624, conta corrente: 06209-0,
+        Aline Alves de Araújo, CPF: 864.331.211.87) ou
+        ( Banco do Brasil, Agencia:1230-0, conta corrente
+        39.464-5, em nome Jorge Leonardo Sampaio do Valle,
+        CPF: 794.883.315-34)
+        <br><b>CHAVE PIX CNPJ: 21.918.863/0001-12</b>
+      </div>
+
+      <div class="paragrafo">
+        <b>Parágrafo primeiro.</b> Não será aceito, sob hipótese
+        alguma, pagamento pós-festa.
+      </div>
+
+      <div class="paragrafo">
+        <b>Parágrafo Segundo.</b> No valor acima referido já está
+        incluso frete.
+      </div>
+
+      <div class="paragrafo">
+        <b>Parágrafo Terceiro.</b> O valor do frete é referente à
+        entrega e à retirada que será realizada pela CONTRATADA
+        no local do evento ou onde for combinado entre as PARTES.
+      </div>
+
+      <div class="paragrafo">
+        <b>Parágrafo quarto.</b> NÃO está incluso no valor da locação
+        de peças e mobílias, o serviço de arrumação de mesa,
+        como colocar doces, bolo, lembrancinhas e personalizados
+        feitos por terceiros, para esse serviço favor consultar
+        valores com a CONTRATADA.
+      </div>
+
+      <div class="clausula-texto">
+        <b>Cláusula 7ª.</b> O recibo do depósito da transferência
+        bancária, referente ao sinal, efetuada na conta informada
+        pela CONTRATADA, servirá para a CONTRATANTE como
+        comprovante de cumprimento da obrigação de pagar.
+      </div>
+
+      <div class="clausula-titulo">DA DEVOLUÇÃO</div>
+
+      <div class="clausula-texto">
+        <b>cláusula 8ª.</b> Caso Haja perda, Danos, Quebra Ou não
+        devolução dos itens, a CONTRATANTE arcará com 50% do
+        valor de uma peça nova para reposição (caso haja
+        recuperação) NÃO Havendo recuperação, será cobrado o
+        valor de mercado por cada item, em dinheiro ou outra
+        forma que convier às PARTES. Em caso de quebra ou
+        extravio de peças a CONTRATATE assinará uma nota
+        promissória se comprometendo-se com o pagamento
+        que será devolvida após a quitação do debito.
+      </div>
+
+      ${rodape}
+    </div>
+
+    <!-- PÁGINA 3 -->
+    <div class="pagina-contrato">
+
+      <div class="paragrafo">
+        <b>Parágrafo Primeiro:</b> E de responsabilidade da
+        CONTRATANTE que na retirada da decoração, todas as peças
+        alugadas estejam sobre a mesa, caso fique algum item,
+        a CONTRATANTE se responsabilizará pela devolução,
+        a recusa da devolução imediata, acarretará em multa
+        de R$ 20,00, por diária/peça.
+      </div>
+
+      <div class="paragrafo">
+        <b>Parágrafo segundo:</b> É dever da CONTRATANTE devolver
+        as peças foi entregue. É proibido, furar o bolo cenográfico,
+        usar cola quente no painel, peças e mesas, usar confeitos
+        coloridos, vela faísca estes itens danificam e mancham
+        peças e mobilha (uso estará sujeito em caso de avarias
+        pagar pela recuperação ou peça nova caso não seja possível.
+      </div>
+
+      <div class="paragrafo">
+        O tapete deverá ser devolvido com foi entregue sem doces
+        e bolos, caso contrário pagará multa de limpeza de
+        R$ 40,00 (quarenta reais).
+      </div>
+
+      <div class="clausula-titulo">DO CANCELAMENTO</div>
+
+      <div class="clausula-texto">
+        <b>Clausula 9ª.</b> Em caso de desistência a CONTRATANTE
+        acará com a multa de quebra de contrato, 50% do
+        valor total do seu contrato.
+      </div>
+
+      <div class="paragrafo">
+        <b>Parágrafo primeiro:</b> Em caso de força maior,
+        a CONTRATANTE, poderá solicitar uma carta credito
+        na quantia paga, para utilização de até um ano
+        a partir da data da notificação. Sendo que essa
+        carta crédito não poderá ser transferida para outro
+        titular, nem prorrogada. Cabendo a CONTRATADA
+        confirmar disponibilidade de peças e data.
+        A CONTRATANTE deverá comprovar o fato ocorrido
+        com documentos oficiais.
+      </div>
+
+      <div class="paragrafo">
+        <b>Parágrafo Segundo.</b> A Parte impossibilitada de cumprir
+        sua obrigação deverá notificar a outra, de imediato,
+        acerca da extensão do problema e o prazo estimado
+        para remarcação da nova data.
+      </div>
+
+      <div class="clausula-titulo">DAS CONDIÇÕES GERAIS</div>
+
+      <div class="clausula-texto">
+        <b>Cláusula 10ª.</b> O orçamento ou aceite referente ao
+        serviço contratado, enviado dia ${dataOrcamento}
+        por email, faz parte integrante deste contrato.
+      </div>
+
+      <div class="clausula-titulo">DO FORO</div>
+
+      <div class="clausula-texto">
+        As Partes elegem o foro da Circunscrição Judiciária
+        de Brasília – DF para dirimir os conflitos que
+        porventura venham a surgir em decorrência da execução
+        do presente contrato, com renúncia de qualquer outro,
+        por mais privilegiado que seja.
+      </div>
+
+      <div class="clausula-texto">
+        E por assim estarem de acordo, o contrato será sendo
+        assinado de forma digitalizada, sendo as vias
+        compartilhadas em meio eletrônico e permitida
+        a assinatura hibrida (física e digital).
+      </div>
+
+      <div style="text-align:right;margin-top:12px;">
+        Brasília-DF, ${dataAtual}.
+      </div>
+
+      <div class="assinatura">
+        <b>CONTRATADA:</b>
+        <div class="linha-assinatura"></div>
+        <b>TRALALÁ DECORAÇOES DE FESTA</b><br>
+        <b>CNPJ:21.918.863/0001-12</b><br>
+        <b>REPRESENTANTE LEGAL: ALINE ARAUJO DO VALLE</b>
+      </div>
+
+      <div class="assinatura">
+        <b>CONTRATANTE:</b>
+        <div class="linha-assinatura"></div>
+        <b>CONTRATANTE: ${nome}</b><br>
+        <b>CPF: ${cpf}</b>
+      </div>
+
+      ${rodape}
+    </div>
+  `;
 }
+
 // ============================================================
 // CONTRATO 3 — PEGUE E MONTE (LOJA)
 // ============================================================
@@ -3440,7 +3790,23 @@ function gerarContratoAvulso(gerarPdf) {
     for (var i = 0; i < selectPecas.options.length; i++) { if (selectPecas.options[i].selected) pecas.push(selectPecas.options[i].value); }
   }
   if (!nome.trim()) { Utils.showToast("Preencha o nome do contratante!", "warning"); return; }
-  var dados = { nome, cpf, data, horario, valor, endereco, telefone, local, dataRetirada: data, dataDevolucao: data, tema, pecas, obs };
+ 
+var dados = {
+  nome, cpf, data, horario, valor,
+  endereco, telefone, local,
+  dataRetirada: data,
+  dataDevolucao: data,
+  tema, pecas, obs,
+
+  sinal: (document.getElementById("c-sinal") || {}).value || "",
+  restante: (document.getElementById("c-restante") || {}).value || "",
+  horarioEntrega: (document.getElementById("c-horario-entrega") || {}).value || "",
+  horarioRetirada: (document.getElementById("c-horario-retirada") || {}).value || "",
+  dataPagamentoSinal: (document.getElementById("c-data-sinal") || {}).value || "",
+  dataPagamentoRestante: (document.getElementById("c-data-restante") || {}).value || "",
+  dataEnvioOrcamento: (document.getElementById("c-data-orcamento") || {}).value || ""
+};
+
   var html;
   if (modelo === "com-frete") html = gerarContratoComFrete(dados);
   else if (modelo === "pegue-monte-loja") html = gerarContratoPegueMonteLoja(dados);
