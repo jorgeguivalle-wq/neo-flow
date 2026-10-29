@@ -2834,94 +2834,184 @@ window.ImprimirContrato = function() {
 // ============================================================
 // PDF — com html2canvas + jsPDF puro
 // ============================================================
-window.BaixarPDFContrato = function() {
-  var preview = document.getElementById("contrato-preview-content");
-  if (!preview) return Utils.showToast("Nenhum contrato aberto.", "warning");
-  var pagina = preview.querySelector('.pagina-contrato');
-  if (!pagina) return Utils.showToast("Contrato não encontrado.", "warning");
 
-  if (typeof html2canvas === 'undefined') {
-    return Utils.showToast("Erro: html2canvas não carregou.", "error");
+window.BaixarPDFContrato = async function() {
+  const preview = document.getElementById("contrato-preview-content");
+  const original = preview?.querySelector(".pagina-contrato");
+
+  if (!original) {
+    return Utils.showToast("Contrato não encontrado.", "warning");
   }
 
-  var nome = (document.getElementById("c-nome") || {}).value
-    || (document.getElementById("nome-cliente") || {}).value
-    || "contrato";
-  nome = nome.trim().replace(/[^a-z0-9]/gi, '-').toLowerCase();
+  if (typeof html2canvas === "undefined") {
+    return Utils.showToast("html2canvas não carregou.", "error");
+  }
 
-  Utils.showToast("⏳ Gerando PDF...", "info");
+  const JsPDF = window.jspdf?.jsPDF || window.jsPDF;
 
-  var clone = pagina.cloneNode(true);
-  clone.style.width = "794px";
-  clone.style.minHeight = "auto";
-  clone.style.padding = "60px 55px";
-  clone.style.margin = "0";
-  clone.style.background = "#ffffff";
-  clone.style.boxSizing = "border-box";
-  clone.style.boxShadow = "none";
-  clone.style.borderRadius = "0";
-  clone.style.fontFamily = "'Times New Roman', Times, serif";
-  clone.style.fontSize = "11pt";
-  clone.style.lineHeight = "1.4";
-  clone.style.color = "#000000";
-  clone.style.position = "static";
-  clone.style.transform = "none";
+  if (!JsPDF) {
+    return Utils.showToast("jsPDF não carregou.", "error");
+  }
 
-  var temp = document.createElement("div");
-  temp.id = "temp-pdf-render";
-  temp.style.position = "fixed";
-  temp.style.left = "0";
-  temp.style.top = "0";
-  temp.style.width = "794px";
-  temp.style.background = "#ffffff";
-  temp.style.zIndex = "99999";
-  temp.style.overflow = "visible";
-  temp.appendChild(clone);
-  document.body.appendChild(temp);
+  const nome = (
+    document.getElementById("c-nome")?.value ||
+    document.getElementById("nome-cliente")?.value ||
+    "contrato"
+  )
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/gi, "-")
+    .toLowerCase();
 
-  setTimeout(function() {
-    html2canvas(clone, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#ffffff",
-      logging: false,
-      allowTaint: false,
-      scrollX: 0,
-      scrollY: 0,
-      windowWidth: 794,
-      width: 794,
-      height: clone.scrollHeight
-    }).then(function(canvas) {
-      if (temp.parentNode) temp.parentNode.removeChild(temp);
-      if (!canvas || canvas.width === 0) {
-        Utils.showToast("❌ Erro: canvas vazio", "error");
-        return;
+  const LARGURA = 794;
+  const ALTURA = 1123;
+  const MARGEM = 57;
+  const ALTURA_UTIL = ALTURA - MARGEM * 2;
+
+  const area = document.createElement("div");
+  area.style.cssText = `
+    position: fixed;
+    left: -10000px;
+    top: 0;
+    width: ${LARGURA}px;
+    background: white;
+    z-index: -1;
+  `;
+
+  document.body.appendChild(area);
+
+  function criarPagina() {
+    const pagina = document.createElement("div");
+
+    pagina.className = "pagina-contrato";
+    pagina.style.cssText = `
+      width: ${LARGURA}px;
+      height: ${ALTURA}px;
+      min-height: 0;
+      max-height: ${ALTURA}px;
+      padding: ${MARGEM}px;
+      margin: 0;
+      background: white;
+      box-sizing: border-box;
+      overflow: hidden;
+      box-shadow: none;
+      border-radius: 0;
+      position: relative;
+      font-family: 'Times New Roman', serif;
+      font-size: 11pt;
+      line-height: 1.4;
+      color: black;
+      break-after: auto;
+      page-break-after: auto;
+    `;
+
+    area.appendChild(pagina);
+    return pagina;
+  }
+
+  function alturaConteudo(pagina) {
+    return pagina.scrollHeight - MARGEM * 2;
+  }
+
+  const paginas = [];
+  let atual = criarPagina();
+  paginas.push(atual);
+
+  try {
+    Utils.showToast("Organizando as páginas...", "info");
+
+    const origem = original.cloneNode(true);
+
+    // Distribui os blocos do contrato entre as páginas.
+    const blocos = Array.from(origem.children);
+
+    for (const bloco of blocos) {
+      const copia = bloco.cloneNode(true);
+
+      atual.appendChild(copia);
+
+      if (alturaConteudo(atual) > ALTURA_UTIL + 2) {
+        atual.removeChild(copia);
+
+        if (paginas.length >= 3) {
+          throw new Error(
+            "O contrato não cabe em três páginas sem cortar conteúdo."
+          );
+        }
+
+        atual = criarPagina();
+        paginas.push(atual);
+        atual.appendChild(copia);
+
+        if (alturaConteudo(atual) > ALTURA_UTIL + 2) {
+          throw new Error(
+            "Um bloco do contrato é maior que uma página. " +
+            "É necessário dividir esse bloco no HTML."
+          );
+        }
       }
-      var jsPDFClass = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
-      var pdf = new jsPDFClass({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
-      var imgData = canvas.toDataURL('image/jpeg', 0.95);
-      var pdfWidth = 210;
-      var pdfHeight = 297;
-      var imgWidth = pdfWidth;
-      var imgHeight = (canvas.height * imgWidth) / canvas.width;
-      var position = 0;
-      var heightLeft = imgHeight;
-      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pdfHeight;
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pdfHeight;
-      }
-      pdf.save('contrato-' + nome + '.pdf');
-      Utils.showToast("✅ PDF baixado!", "success");
-    }).catch(function(err) {
-      if (temp.parentNode) temp.parentNode.removeChild(temp);
-      console.error("❌ Erro:", err);
-      Utils.showToast("❌ Erro: " + (err.message || err), "error");
+    }
+
+    // Mantém três páginas como padrão.
+    while (paginas.length < 3) {
+      paginas.push(criarPagina());
+    }
+
+    // Aguarda fontes e imagens.
+    if (document.fonts?.ready) {
+      await document.fonts.ready;
+    }
+
+    await Promise.all(
+      Array.from(area.querySelectorAll("img")).map(img => {
+        if (img.complete) return Promise.resolve();
+
+        return new Promise(resolve => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+      })
+    );
+
+    const pdf = new JsPDF({
+      unit: "mm",
+      format: "a4",
+      orientation: "portrait",
+      compress: true
     });
-  }, 400);
+
+    for (let i = 0; i < paginas.length; i++) {
+      if (i > 0) pdf.addPage();
+
+      const canvas = await html2canvas(paginas[i], {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: LARGURA
+      });
+
+      pdf.addImage(
+        canvas.toDataURL("image/jpeg", 0.96),
+        "JPEG",
+        0,
+        0,
+        210,
+        297
+      );
+    }
+
+    pdf.save("contrato-" + nome + ".pdf");
+    Utils.showToast("PDF gerado com três páginas!", "success");
+
+  } catch (erro) {
+    console.error("Erro na paginação:", erro);
+    Utils.showToast(erro.message || "Erro ao gerar PDF.", "error");
+  } finally {
+    area.remove();
+  }
 };
 
 window.gerarContratoPDF = window.BaixarPDFContrato;
