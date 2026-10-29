@@ -3197,11 +3197,14 @@ window.ImprimirContrato = function() {
 // PDF — com html2canvas + jsPDF puro
 // ============================================================
 
+
 window.BaixarPDFContrato = async function() {
   const preview = document.getElementById("contrato-preview-content");
-  const original = preview?.querySelector(".pagina-contrato");
+  const originais = preview
+    ? Array.from(preview.querySelectorAll(".pagina-contrato"))
+    : [];
 
-  if (!original) {
+  if (!originais.length) {
     return Utils.showToast("Contrato não encontrado.", "warning");
   }
 
@@ -3227,10 +3230,11 @@ window.BaixarPDFContrato = async function() {
 
   const LARGURA = 794;
   const ALTURA = 1123;
-  const MARGEM = 57;
-  const ALTURA_UTIL = ALTURA - MARGEM * 2;
+  const MARGEM = 48;
+  const MAX_PAGINAS = 3;
 
   const area = document.createElement("div");
+
   area.style.cssText = `
     position: fixed;
     left: -10000px;
@@ -3238,6 +3242,7 @@ window.BaixarPDFContrato = async function() {
     width: ${LARGURA}px;
     background: white;
     z-index: -1;
+    pointer-events: none;
   `;
 
   document.body.appendChild(area);
@@ -3246,80 +3251,56 @@ window.BaixarPDFContrato = async function() {
     const pagina = document.createElement("div");
 
     pagina.className = "pagina-contrato";
+
     pagina.style.cssText = `
       width: ${LARGURA}px;
       height: ${ALTURA}px;
-      min-height: 0;
+      min-height: ${ALTURA}px;
       max-height: ${ALTURA}px;
       padding: ${MARGEM}px;
       margin: 0;
       background: white;
       box-sizing: border-box;
-      overflow: hidden;
+      overflow: visible;
       box-shadow: none;
+      border: none;
       border-radius: 0;
       position: relative;
       font-family: 'Times New Roman', serif;
       font-size: 11pt;
       line-height: 1.4;
       color: black;
-      break-after: auto;
-      page-break-after: auto;
     `;
 
     area.appendChild(pagina);
     return pagina;
   }
 
-  function alturaConteudo(pagina) {
-    return pagina.scrollHeight - MARGEM * 2;
-  }
+  function cabeNaPagina(pagina) {
+    const limite = pagina.getBoundingClientRect().bottom - MARGEM;
+    const elementos = Array.from(pagina.querySelectorAll("*"));
 
-  const paginas = [];
-  let atual = criarPagina();
-  paginas.push(atual);
+    for (const elemento of elementos) {
+      const estilo = getComputedStyle(elemento);
 
-  try {
-    Utils.showToast("Organizando as páginas...", "info");
+      if (
+        estilo.position === "absolute" ||
+        estilo.position === "fixed"
+      ) {
+        continue;
+      }
 
-    const origem = original.cloneNode(true);
+      const rect = elemento.getBoundingClientRect();
 
-    // Distribui os blocos do contrato entre as páginas.
-    const blocos = Array.from(origem.children);
-
-    for (const bloco of blocos) {
-      const copia = bloco.cloneNode(true);
-
-      atual.appendChild(copia);
-
-      if (alturaConteudo(atual) > ALTURA_UTIL + 2) {
-        atual.removeChild(copia);
-
-        if (paginas.length >= 3) {
-          throw new Error(
-            "O contrato não cabe em três páginas sem cortar conteúdo."
-          );
-        }
-
-        atual = criarPagina();
-        paginas.push(atual);
-        atual.appendChild(copia);
-
-        if (alturaConteudo(atual) > ALTURA_UTIL + 2) {
-          throw new Error(
-            "Um bloco do contrato é maior que uma página. " +
-            "É necessário dividir esse bloco no HTML."
-          );
-        }
+      if (rect.height > 0 && rect.bottom > limite + 2) {
+        return false;
       }
     }
 
-    // Mantém três páginas como padrão.
-    while (paginas.length < 3) {
-      paginas.push(criarPagina());
-    }
+    return true;
+  }
 
-    // Aguarda fontes e imagens.
+  async function aguardarImagens() {
     if (document.fonts?.ready) {
       await document.fonts.ready;
     }
@@ -3334,6 +3315,88 @@ window.BaixarPDFContrato = async function() {
         });
       })
     );
+  }
+
+  const paginas = [];
+
+  try {
+    Utils.showToast("Preparando as páginas do contrato...", "info");
+
+    if (originais.length > 1) {
+      // Contratos já divididos em páginas, como o novo
+      // contrato de Locação de Festa com montagem.
+      if (originais.length > MAX_PAGINAS) {
+        throw new Error(
+          "O contrato possui mais de três páginas."
+        );
+      }
+
+      for (const original of originais) {
+        const pagina = criarPagina();
+
+        pagina.innerHTML = original.innerHTML;
+        paginas.push(pagina);
+      }
+
+      await aguardarImagens();
+
+      for (let i = 0; i < paginas.length; i++) {
+        if (!cabeNaPagina(paginas[i])) {
+          throw new Error(
+            "O conteúdo da página " + (i + 1) +
+            " ultrapassou a folha A4. " +
+            "Ajuste o tamanho ou os espaçamentos antes de gerar."
+          );
+        }
+      }
+
+    } else {
+      // Compatibilidade com os modelos antigos,
+      // que possuem somente uma .pagina-contrato.
+      const original = originais[0];
+
+      let atual = criarPagina();
+      paginas.push(atual);
+
+      const blocos = Array.from(original.children);
+
+      for (const bloco of blocos) {
+        const copia = bloco.cloneNode(true);
+
+        atual.appendChild(copia);
+        await aguardarImagens();
+
+        if (!cabeNaPagina(atual)) {
+          atual.removeChild(copia);
+
+          if (paginas.length >= MAX_PAGINAS) {
+            throw new Error(
+              "O contrato não cabe em três páginas A4."
+            );
+          }
+
+          atual = criarPagina();
+          paginas.push(atual);
+
+          atual.appendChild(copia);
+          await aguardarImagens();
+
+          if (!cabeNaPagina(atual)) {
+            throw new Error(
+              "Um bloco do contrato é maior que uma página."
+            );
+          }
+        }
+      }
+    }
+
+    // Completa até três páginas, mantendo o padrão
+    // usado anteriormente pelo sistema.
+    while (paginas.length < MAX_PAGINAS) {
+      paginas.push(criarPagina());
+    }
+
+    await aguardarImagens();
 
     const pdf = new JsPDF({
       unit: "mm",
@@ -3343,7 +3406,9 @@ window.BaixarPDFContrato = async function() {
     });
 
     for (let i = 0; i < paginas.length; i++) {
-      if (i > 0) pdf.addPage();
+      if (i > 0) {
+        pdf.addPage();
+      }
 
       const canvas = await html2canvas(paginas[i], {
         scale: 2,
@@ -3366,11 +3431,20 @@ window.BaixarPDFContrato = async function() {
     }
 
     pdf.save("contrato-" + nome + ".pdf");
-    Utils.showToast("PDF gerado com três páginas!", "success");
+
+    Utils.showToast(
+      "PDF gerado com três páginas!",
+      "success"
+    );
 
   } catch (erro) {
-    console.error("Erro na paginação:", erro);
-    Utils.showToast(erro.message || "Erro ao gerar PDF.", "error");
+    console.error("Erro ao gerar PDF:", erro);
+
+    Utils.showToast(
+      erro.message || "Erro ao gerar PDF.",
+      "error"
+    );
+
   } finally {
     area.remove();
   }
