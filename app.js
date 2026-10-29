@@ -1524,7 +1524,7 @@ window.GerarContratoReserva = function(idReserva) {
   }
   document.getElementById("btn-editar-contrato").style.display = "inline-flex";
   document.getElementById("btn-salvar-edicao-contrato").style.display = "none";
-  document.getElementById("btn-add-nota-promissoria").style.display = (tipoModelo === "pegue-monte-loja") ? "inline-flex" : "none";
+  document.getElementById("btn-add-nota-promissoria").style.display = "inline-flex";
   window.__contratoTipo = tipoModelo;
   var modalVis = document.getElementById("modal-visualizar-contrato");
   if (modalVis) modalVis.classList.add("ativo");
@@ -3111,12 +3111,36 @@ window.GerarNotaPromissoria = function() {
       '<div>ENDEREÇO CLIENTE:</div>' +
     '</div>' +
   '</div>';
-  var espaco = document.getElementById("espaco-nota-promissoria-loja");
-  if (!espaco) { Utils.showToast("Contrato Loja não está aberto.", "warning"); return; }
+ 
+  var preview = document.getElementById("contrato-preview-content");
+
+  if (!preview) {
+    Utils.showToast("Prévia do contrato não encontrada.", "warning");
+    return;
+  }
+
+  var pagina = preview.querySelector(".pagina-contrato");
+
+  if (!pagina) {
+    Utils.showToast("Abra um contrato primeiro.", "warning");
+    return;
+  }
+
+  var espaco = pagina.querySelector("#espaco-nota-promissoria-loja");
+
+  if (!espaco) {
+    espaco = document.createElement("div");
+    espaco.id = "espaco-nota-promissoria-loja";
+    pagina.appendChild(espaco);
+  }
+
   espaco.innerHTML = notaHTML;
+
   document.getElementById("modal-nota-promissoria").classList.remove("ativo");
+
   Utils.showToast("✅ Nota Promissória adicionada!", "success");
 };
+
 
 // ============================================================
 // INICIALIZAÇÃO
@@ -3377,7 +3401,7 @@ function gerarContratoAvulso(gerarPdf) {
   }
   document.getElementById("btn-editar-contrato").style.display = "inline-flex";
   document.getElementById("btn-salvar-edicao-contrato").style.display = "none";
-  document.getElementById("btn-add-nota-promissoria").style.display = (modelo === "pegue-monte-loja") ? "inline-flex" : "none";
+  document.getElementById("btn-add-nota-promissoria").style.display = "inline-flex"
   window.__contratoTipo = modelo;
   var modalVis = document.getElementById("modal-visualizar-contrato");
   if (modalVis) modalVis.classList.add("ativo");
