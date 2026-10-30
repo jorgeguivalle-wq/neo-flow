@@ -1862,7 +1862,7 @@ function gerarContratoPegueMonteLoja(dados) {
     dados.pecas.forEach(function(nomePeca) {
       var item = State.estoqueMap[nomePeca];
       var qtd = dados.pecasQtd && dados.pecasQtd[nomePeca] ? parseInt(dados.pecasQtd[nomePeca]) : 1;
-      var preco = item ? (parseFloat(item.preco) || 0) : 0;
+      var preco = item ? (parseFloat(item.precoReposicao) || 0) : 0;
       var descricao = nomePeca;
       if (item) {
         var partes = [];
