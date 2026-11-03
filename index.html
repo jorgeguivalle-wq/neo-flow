@@ -68,6 +68,101 @@
     <!-- ... outras coisas do topo ... -->
       <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="assets/lala/lala-animacao.css">
+  
+<style>
+  #tralala-financeiro-extra {
+    background: #fff;
+    border: 1px solid #e1cbd4;
+    border-radius: 14px;
+    padding: 18px;
+    margin: 20px 0;
+  }
+
+  .tf-botoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+  }
+
+  .tf-botoes button {
+    border: none;
+    border-radius: 8px;
+    padding: 11px 15px;
+    background: #a3536a;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .tf-botoes button:hover {
+    background: #8e5868;
+  }
+
+  .tf-conteudo {
+    display: none;
+    margin-top: 15px;
+  }
+
+  .tf-conteudo.ativo {
+    display: block;
+  }
+
+  .tf-tabela-wrap {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 12px;
+  }
+
+  #tf-tabela {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  #tf-tabela th,
+  #tf-tabela td {
+    border: 1px solid #ddd;
+    padding: 8px;
+  }
+
+  #tf-tabela th {
+    background: #f8e8ed;
+  }
+
+  #tf-tabela input {
+    width: 140px;
+    padding: 9px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+  }
+
+  .tf-campo {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    max-width: 100%;
+  }
+
+  .tf-lista-item {
+    padding: 12px;
+    border: 1px solid #e1cbd4;
+    border-radius: 8px;
+    margin: 8px 0;
+  }
+
+  .tf-resumo {
+    background: #f8f0f2;
+    padding: 14px;
+    border-radius: 10px;
+    margin: 12px 0;
+  }
+
+  #tf-status {
+    font-size: 13px;
+    margin-top: 12px;
+  }
+</style>
+
 </head>
 <body>
   <div class="site-container">
@@ -617,6 +712,143 @@
       style="font-size:12px;color:#666;"></p>
   </div>
 </div>
+
+<!-- NOVO FINANCEIRO TRALALÁ -->
+<section id="tralala-financeiro-extra">
+
+  <h3>📊 Central Financeira</h3>
+
+  <div class="tf-botoes">
+    <button type="button" onclick="TF.abrir('planilhas')">
+      📑 Minhas Planilhas
+    </button>
+
+    <button type="button" onclick="TF.abrir('metas')">
+      🎯 Metas Financeiras
+    </button>
+
+    <button type="button" onclick="TF.abrir('graficos')">
+      📊 Gráficos
+    </button>
+  </div>
+
+  <!-- PLANILHAS -->
+  <div id="tf-planilhas" class="tf-conteudo">
+
+    <h4>📑 Minhas Planilhas</h4>
+
+    <div class="tf-botoes">
+      <button type="button" onclick="TF.criar()">
+        ➕ Nova Planilha
+      </button>
+
+      <button type="button"
+        onclick="document.getElementById('tf-importar').click()">
+        📥 Importar Excel/CSV
+      </button>
+
+      <input id="tf-importar" type="file"
+        accept=".xlsx,.csv" hidden>
+    </div>
+
+    <div id="tf-lista"></div>
+
+    <div id="tf-editor" style="display:none">
+
+      <label>Nome da planilha</label>
+      <input id="tf-nome" class="tf-campo"
+        placeholder="Nome da planilha">
+
+      <div class="tf-botoes">
+        <button type="button" onclick="TF.linha()">
+          ➕ Linha
+        </button>
+
+        <button type="button" onclick="TF.coluna()">
+          ➕ Coluna
+        </button>
+
+        <button type="button" onclick="TF.salvar()">
+          💾 Salvar
+        </button>
+      </div>
+
+      <div class="tf-tabela-wrap">
+        <table id="tf-tabela"></table>
+      </div>
+
+      <div id="tf-resumo" class="tf-resumo"></div>
+
+      <div class="tf-botoes">
+        <button type="button" onclick="TF.csv()">
+          ⬇ Exportar CSV
+        </button>
+
+        <button type="button" onclick="TF.excel()">
+          ⬇ Exportar Excel
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- METAS -->
+  <div id="tf-metas" class="tf-conteudo">
+
+    <h4>🎯 Metas Financeiras</h4>
+
+    <p>Acompanhe sua meta de faturamento mensal.</p>
+
+    <label>Ano</label>
+    <input id="tf-ano-meta" class="tf-campo"
+      type="number" min="2000" max="2100">
+
+    <label>Mês</label>
+    <select id="tf-mes-meta" class="tf-campo"></select>
+
+    <label>Meta mensal (R$)</label>
+    <input id="tf-valor-meta" class="tf-campo"
+      type="number" min="0" step="0.01">
+
+    <div class="tf-botoes">
+      <button type="button" onclick="TF.salvarMeta()">
+        💾 Salvar Meta
+      </button>
+
+      <button type="button" onclick="TF.carregarMeta()">
+        🔄 Consultar
+      </button>
+    </div>
+
+    <div id="tf-resumo-meta" class="tf-resumo"></div>
+  </div>
+
+  <!-- GRÁFICOS -->
+  <div id="tf-graficos" class="tf-conteudo">
+
+    <h4>📊 Gráfico de Vendas</h4>
+
+    <label>Ano</label>
+    <input id="tf-ano-grafico"
+      class="tf-campo"
+      type="number" min="2000" max="2100">
+
+    <div class="tf-botoes">
+      <button type="button" onclick="TF.grafico()">
+        🔄 Atualizar Gráfico
+      </button>
+    </div>
+
+    <div style="height:300px">
+      <canvas id="tf-grafico-vendas"></canvas>
+    </div>
+
+    <div id="tf-resumo-grafico" class="tf-resumo"></div>
+  </div>
+
+  <p id="tf-status"></p>
+
+</section>
 
         <div id="painel-grafico-faturamento" class="grafico-wrapper" style="display: none;">
           <h4 style="margin: 0 0 10px 0; color: #2c3e50;">📈 Desempenho Anual</h4>
@@ -1254,6 +1486,650 @@
 
   <!-- SCRIPTS -->
   <script src="app.js"></script>
+      
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<script>
+window.TF = (function () {
+  let atual = null;
+  let graficoAtual = null;
+  let alterado = false;
+
+  const $ = id => document.getElementById(id);
+  const dinheiro = v => Number(v || 0).toLocaleString(
+    "pt-BR", {style:"currency", currency:"BRL"}
+  );
+
+  function numero(v) {
+    let s = String(v ?? "").trim().replace(/[R$\s]/g,"");
+    if (s.includes(",")) s = s.replace(/\./g,"").replace(",",".");
+    const n = Number(s);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function banco(tipo) {
+    if (!window.State?.usuarioUID || typeof db === "undefined" || !db) {
+      throw new Error("Faça login para acessar o financeiro.");
+    }
+    return db.ref(tipo + "/" + State.usuarioUID);
+  }
+
+  function aviso(msg) {
+    $("tf-status").textContent = msg;
+  }
+
+  function erro(e) {
+    console.error(e);
+    aviso("❌ " + (e.message || "Erro na operação"));
+  }
+
+  function confirmarSaida() {
+    return !alterado || confirm(
+      "Existem alterações não salvas. Deseja continuar?"
+    );
+  }
+
+  function mudou() {
+    alterado = true;
+    aviso("✏️ Alterações não salvas.");
+  }
+
+  function abrir(nome) {
+    if (!confirmarSaida()) return;
+
+    document.querySelectorAll(".tf-conteudo").forEach(el => {
+      el.classList.remove("ativo");
+    });
+
+    $("tf-" + nome).classList.add("ativo");
+
+    if (nome === "planilhas") listar();
+    if (nome === "metas") carregarMeta();
+    if (nome === "graficos") grafico();
+  }
+
+  function criar() {
+    if (!confirmarSaida()) return;
+
+    const nome = prompt("Nome da nova planilha:", "Nova Planilha");
+    if (!nome?.trim()) return;
+
+    atual = {
+      id: null,
+      nome: nome.trim(),
+      colunas: [
+        {nome:"Descrição", tipo:"texto"},
+        {nome:"Valor", tipo:"moeda"}
+      ],
+      linhas: []
+    };
+
+    alterado = true;
+    desenhar();
+  }
+
+  function desenhar() {
+    if (!atual) return;
+
+    $("tf-editor").style.display = "block";
+    $("tf-nome").value = atual.nome;
+
+    const tabela = $("tf-tabela");
+    tabela.replaceChildren();
+
+    const thead = tabela.createTHead();
+    const cab = thead.insertRow();
+
+    atual.colunas.forEach((col,j) => {
+      const th = document.createElement("th");
+
+      const titulo = document.createElement("span");
+      titulo.textContent = col.nome;
+      th.appendChild(titulo);
+
+      const editar = document.createElement("button");
+      editar.textContent = " ✏️";
+      editar.type = "button";
+      editar.onclick = () => {
+        const nome = prompt("Novo nome:", col.nome);
+        if (!nome?.trim()) return;
+        col.nome = nome.trim();
+        mudou();
+        desenhar();
+      };
+      th.appendChild(editar);
+
+      const excluir = document.createElement("button");
+      excluir.textContent = " ×";
+      excluir.type = "button";
+      excluir.onclick = () => {
+        if (atual.colunas.length === 1) {
+          return alert("Mantenha pelo menos uma coluna.");
+        }
+        if (!confirm("Excluir coluna e seus dados?")) return;
+        atual.colunas.splice(j,1);
+        atual.linhas.forEach(l => l.splice(j,1));
+        mudou();
+        desenhar();
+      };
+      th.appendChild(excluir);
+      cab.appendChild(th);
+    });
+
+    const acoes = document.createElement("th");
+    acoes.textContent = "Ações";
+    cab.appendChild(acoes);
+
+    const tbody = tabela.createTBody();
+
+    atual.linhas.forEach((linha,i) => {
+      const tr = tbody.insertRow();
+
+      atual.colunas.forEach((col,j) => {
+        const td = tr.insertCell();
+        const input = document.createElement("input");
+
+        input.type = col.tipo === "data" ? "date" :
+                     col.tipo === "numero" ? "number" : "text";
+
+        input.value = linha[j] ?? "";
+        input.placeholder = col.nome;
+
+        input.oninput = () => {
+          atual.linhas[i][j] = input.value;
+          mudou();
+          resumo();
+        };
+
+        td.appendChild(input);
+      });
+
+      const td = tr.insertCell();
+      const btn = document.createElement("button");
+
+      btn.type = "button";
+      btn.textContent = "🗑️";
+      btn.title = "Excluir linha";
+      btn.onclick = () => {
+        if (!confirm("Excluir esta linha?")) return;
+        atual.linhas.splice(i,1);
+        mudou();
+        desenhar();
+      };
+
+      td.appendChild(btn);
+    });
+
+    resumo();
+  }
+
+  function linha() {
+    if (!atual) return;
+    if (atual.linhas.length >= 1000) {
+      return alert("Limite de 1.000 linhas por planilha.");
+    }
+    atual.linhas.push(atual.colunas.map(() => ""));
+    mudou();
+    desenhar();
+  }
+
+  function coluna() {
+    if (!atual) return;
+    if (atual.colunas.length >= 20) {
+      return alert("Limite de 20 colunas.");
+    }
+
+    const nome = prompt("Nome da coluna:");
+    if (!nome?.trim()) return;
+
+    const tipo = prompt(
+      "Tipo da coluna: texto, moeda, numero ou data",
+      "texto"
+    );
+    if (tipo === null) return;
+
+    const t = tipo.trim().toLowerCase();
+
+    if (!["texto","moeda","numero","data"].includes(t)) {
+      return alert("Tipo inválido.");
+    }
+
+    atual.colunas.push({nome:nome.trim(),tipo:t});
+    atual.linhas.forEach(l => l.push(""));
+    mudou();
+    desenhar();
+  }
+
+  function resumo() {
+    const el = $("tf-resumo");
+    el.replaceChildren();
+    if (!atual) return;
+
+    atual.colunas.forEach((col,j) => {
+      if (!["moeda","numero"].includes(col.tipo)) return;
+
+      const total = atual.linhas.reduce(
+        (s,l) => s + numero(l[j]), 0
+      );
+
+      const p = document.createElement("p");
+      p.textContent = "Total de " + col.nome + ": " +
+        (col.tipo === "moeda" ? dinheiro(total) : total);
+
+      el.appendChild(p);
+    });
+  }
+
+  async function salvar() {
+    if (!atual) return;
+
+    try {
+      atual.nome = $("tf-nome").value.trim();
+      if (!atual.nome) return alert("Informe o nome da planilha.");
+
+      const ref = atual.id
+        ? banco("planilhas_manuais").child(atual.id)
+        : banco("planilhas_manuais").push();
+
+      await ref.set({
+        nome: atual.nome,
+        colunas: atual.colunas,
+        linhas: atual.linhas,
+        atualizadoEm: Date.now()
+      });
+
+      atual.id = ref.key;
+      alterado = false;
+      aviso("✅ Planilha salva com sucesso!");
+      await listar();
+    } catch(e) {
+      erro(e);
+    }
+  }
+
+  async function listar() {
+    const el = $("tf-lista");
+    el.replaceChildren();
+
+    try {
+      const snap = await banco("planilhas_manuais").once("value");
+
+      if (!snap.exists()) {
+        el.textContent = "Nenhuma planilha salva ainda.";
+        return;
+      }
+
+      snap.forEach(item => {
+        const p = item.val();
+        const card = document.createElement("div");
+        card.className = "tf-lista-item";
+
+        const nome = document.createElement("strong");
+        nome.textContent = "📄 " + (p.nome || "Sem nome");
+        card.appendChild(nome);
+
+        const acoes = document.createElement("div");
+        acoes.className = "tf-botoes";
+
+        const botoes = [
+          ["Abrir", () => {
+            if (!confirmarSaida()) return;
+            atual = {
+              id:item.key,
+              nome:p.nome,
+              colunas:p.colunas || [],
+              linhas:p.linhas || []
+            };
+            alterado = false;
+            desenhar();
+          }],
+          ["Duplicar", async () => {
+            try {
+              await banco("planilhas_manuais").push().set({
+                nome:p.nome + " (cópia)",
+                colunas:p.colunas || [],
+                linhas:p.linhas || [],
+                atualizadoEm:Date.now()
+              });
+              await listar();
+            } catch(e) { erro(e); }
+          }],
+          ["Excluir", async () => {
+            if (!confirm("Excluir definitivamente esta planilha?")) return;
+            try {
+              await banco("planilhas_manuais").child(item.key).remove();
+              if (atual?.id === item.key) {
+                atual = null;
+                alterado = false;
+                $("tf-editor").style.display = "none";
+              }
+              await listar();
+            } catch(e) { erro(e); }
+          }]
+        ];
+
+        botoes.forEach(([rotulo,funcao]) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.textContent = rotulo;
+          btn.onclick = funcao;
+          acoes.appendChild(btn);
+        });
+
+        card.appendChild(acoes);
+        el.appendChild(card);
+      });
+    } catch(e) {
+      erro(e);
+    }
+  }
+
+  function dadosTabela() {
+    if (!atual) throw new Error("Abra uma planilha.");
+
+    return [
+      atual.colunas.map(c => c.nome),
+      ...atual.linhas.map(l =>
+        atual.colunas.map((_,j) => l[j] ?? "")
+      )
+    ];
+  }
+
+  function baixar(conteudo,nome,tipo) {
+    const url = URL.createObjectURL(
+      new Blob([conteudo],{type:tipo})
+    );
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nome;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url),1000);
+  }
+
+  function csv() {
+    try {
+      const escapar = v => {
+        let s = String(v ?? "");
+        if (/^\s*[=+@-]/.test(s)) s = "'" + s;
+        return '"' + s.replace(/"/g,'""') + '"';
+      };
+      const conteudo = "\ufeff" + dadosTabela()
+        .map(l => l.map(escapar).join(";")).join("\r\n");
+
+      baixar(conteudo,"tralala-planilha.csv","text/csv;charset=utf-8");
+    } catch(e) { erro(e); }
+  }
+
+  function excel() {
+    try {
+      if (typeof XLSX === "undefined") {
+        return alert("Biblioteca Excel não carregou.");
+      }
+      const ws = XLSX.utils.aoa_to_sheet(dadosTabela());
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb,ws,"Planilha");
+      XLSX.writeFile(wb,"tralala-planilha.xlsx");
+    } catch(e) { erro(e); }
+  }
+
+  function lerCSV(textoCSV) {
+    const primeira = textoCSV.split(/\r?\n/)[0];
+    const separador =
+      (primeira.match(/;/g)||[]).length >=
+      (primeira.match(/,/g)||[]).length ? ";" : ",";
+
+    const linhas = [];
+    let linha = [], campo = "", aspas = false;
+
+    for (let i=0;i<textoCSV.length;i++) {
+      const c = textoCSV[i];
+
+      if (aspas) {
+        if (c === '"' && textoCSV[i+1] === '"') {
+          campo += '"'; i++;
+        } else if (c === '"') {
+          aspas = false;
+        } else {
+          campo += c;
+        }
+      } else if (c === '"') {
+        aspas = true;
+      } else if (c === separador) {
+        linha.push(campo); campo = "";
+      } else if (c === "\n") {
+        linha.push(campo.replace(/\r$/,""));
+        linhas.push(linha);
+        linha = []; campo = "";
+      } else {
+        campo += c;
+      }
+    }
+
+    if (campo || linha.length) {
+      linha.push(campo);
+      linhas.push(linha);
+    }
+
+    return linhas;
+  }
+
+  async function importar(arquivo) {
+    if (!arquivo || !confirmarSaida()) return;
+
+    try {
+      if (arquivo.size > 2 * 1024 * 1024) {
+        return alert("Escolha uma planilha de até 2 MB.");
+      }
+
+      let dados;
+
+      if (/\.csv$/i.test(arquivo.name)) {
+        dados = lerCSV(
+          (await arquivo.text()).replace(/^\ufeff/,"")
+        );
+      } else if (/\.xlsx$/i.test(arquivo.name)) {
+        if (typeof XLSX === "undefined") {
+          throw new Error("Biblioteca Excel indisponível.");
+        }
+
+        const wb = XLSX.read(
+          await arquivo.arrayBuffer(),{type:"array"}
+        );
+
+        dados = XLSX.utils.sheet_to_json(
+          wb.Sheets[wb.SheetNames[0]],
+          {header:1,defval:"",raw:false}
+        );
+      } else {
+        return alert("Use Excel XLSX ou CSV.");
+      }
+
+      if (!dados.length || !dados[0].length) {
+        return alert("Planilha vazia.");
+      }
+
+      if (dados[0].length > 20 || dados.length > 1001) {
+        return alert("Limite: 20 colunas e 1.000 linhas.");
+      }
+
+      if (!confirm("Importar como uma NOVA planilha?")) return;
+
+      atual = {
+        id:null,
+        nome:arquivo.name.replace(/\.[^.]+$/,""),
+        colunas:dados[0].map((v,i) => ({
+          nome:String(v || "Coluna " + (i+1)),
+          tipo:"texto"
+        })),
+        linhas:dados.slice(1).map(l =>
+          dados[0].map((_,i) => String(l[i] ?? ""))
+        )
+      };
+
+      alterado = true;
+      desenhar();
+      aviso("✅ Importado! Confira e clique em Salvar.");
+    } catch(e) {
+      erro(e);
+    }
+  }
+
+  function valorVenda(r) {
+    // Mesma fórmula do relatório atual.
+    return numero(r.total) + numero(r.frete);
+  }
+
+  function vendas() {
+    return Array.isArray(window.State?.reservas)
+      ? State.reservas : [];
+  }
+
+  function faturamento(ano,mes) {
+    return vendas().filter(r =>
+      String(r.data || "").startsWith(
+        ano + "-" + String(mes).padStart(2,"0")
+      )
+    ).reduce((s,r) => s + valorVenda(r),0);
+  }
+
+  async function carregarMeta() {
+    try {
+      const ano = $("tf-ano-meta").value;
+      const mes = $("tf-mes-meta").value;
+      const chave = ano + "-" + String(mes).padStart(2,"0");
+
+      const snap = await banco("metas_financeiras")
+        .child(chave).once("value");
+
+      $("tf-valor-meta").value = snap.val()?.valor ?? 20000;
+      atualizarMeta();
+    } catch(e) { erro(e); }
+  }
+
+  function atualizarMeta() {
+    const ano = Number($("tf-ano-meta").value);
+    const mes = Number($("tf-mes-meta").value);
+    const meta = numero($("tf-valor-meta").value);
+    const vendido = faturamento(ano,mes);
+    const falta = Math.max(0,meta-vendido);
+    const percentual = meta ? vendido/meta*100 : 0;
+
+    $("tf-resumo-meta").textContent =
+      "🎯 Meta: " + dinheiro(meta) +
+      " | 📊 Reservas: " + dinheiro(vendido) +
+      " | 💰 Falta: " + dinheiro(falta) +
+      " | Progresso: " + percentual.toFixed(1) + "%";
+  }
+
+  async function salvarMeta() {
+    try {
+      const ano = Number($("tf-ano-meta").value);
+      const mes = Number($("tf-mes-meta").value);
+      const valor = numero($("tf-valor-meta").value);
+
+      if (ano < 2000 || ano > 2100 || mes < 1 || mes > 12) {
+        return alert("Confira o ano e o mês.");
+      }
+
+      const chave = ano + "-" + String(mes).padStart(2,"0");
+
+      await banco("metas_financeiras").child(chave).set({
+        valor, atualizadoEm:Date.now()
+      });
+
+      atualizarMeta();
+      aviso("✅ Meta salva com sucesso!");
+    } catch(e) { erro(e); }
+  }
+
+  function grafico() {
+    if (typeof Chart === "undefined") {
+      return aviso("Biblioteca de gráficos indisponível.");
+    }
+
+    const ano = Number($("tf-ano-grafico").value);
+    const valores = Array.from({length:12},(_,i) =>
+      faturamento(ano,i+1)
+    );
+
+    if (graficoAtual) graficoAtual.destroy();
+
+    graficoAtual = new Chart($("tf-grafico-vendas"),{
+      type:"bar",
+      data:{
+        labels:["Jan","Fev","Mar","Abr","Mai","Jun",
+                "Jul","Ago","Set","Out","Nov","Dez"],
+        datasets:[{
+          label:"Vendas (R$)",
+          data:valores,
+          backgroundColor:"#a3536a"
+        }]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false
+      }
+    });
+
+    $("tf-resumo-grafico").textContent =
+      "Total do ano: " +
+      dinheiro(valores.reduce((a,b)=>a+b,0));
+  }
+
+  function iniciar() {
+    const hoje = new Date();
+
+    $("tf-ano-meta").value = hoje.getFullYear();
+    $("tf-ano-grafico").value = hoje.getFullYear();
+
+    const nomes = ["Janeiro","Fevereiro","Março","Abril",
+      "Maio","Junho","Julho","Agosto","Setembro",
+      "Outubro","Novembro","Dezembro"];
+
+    nomes.forEach((nome,i) => {
+      const opt = document.createElement("option");
+      opt.value = i+1;
+      opt.textContent = nome;
+      $("tf-mes-meta").appendChild(opt);
+    });
+
+    $("tf-mes-meta").value = hoje.getMonth()+1;
+    $("tf-importar").onchange = e => {
+      importar(e.target.files[0]);
+      e.target.value = "";
+    };
+
+    $("tf-mes-meta").onchange = carregarMeta;
+    $("tf-ano-meta").onchange = carregarMeta;
+    $("tf-valor-meta").oninput = atualizarMeta;
+    $("tf-nome").oninput = () => {
+      if (atual) {
+        atual.nome = $("tf-nome").value;
+        mudou();
+      }
+    };
+
+    window.addEventListener("beforeunload", e => {
+      if (alterado) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded",iniciar);
+  } else {
+    iniciar();
+  }
+
+  return {
+    abrir,criar,linha,coluna,salvar,
+    csv,excel,carregarMeta,salvarMeta,grafico
+  };
+})();
+</script>
+
   <script src="assets/lala/lala.js"></script>
   <script src="campanhas.js"></script>
 </body>
