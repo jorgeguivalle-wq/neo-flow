@@ -557,6 +557,67 @@
             <button type="button" id="btn-toggle-grafico" class="btn btn-outline" style="border-color: #3498db; color: #3498db; font-size: 11px; padding: 8px;">📈 Anual</button>
           </div>
         </div>
+        
+<!-- CENTRAL DE PLANILHAS TRALALÁ -->
+<div style="margin:15px 0;">
+  <button type="button"
+    id="btn-minhas-planilhas"
+    class="btn btn-primary"
+    style="background:#27ae60;">
+    📑 Minhas Planilhas
+  </button>
+</div>
+
+<div id="central-planilhas"
+  style="display:none; padding:15px; border:1px solid #e1cbd4; border-radius:12px; margin-bottom:20px; background:#fff;">
+
+  <h3>📑 Minhas Planilhas</h3>
+  <p style="font-size:13px;">
+    Crie e organize suas planilhas de forma simples.
+  </p>
+
+  <button type="button"
+    id="btn-nova-planilha"
+    class="btn btn-primary">
+    ➕ Criar Planilha
+  </button>
+
+  <div id="lista-minhas-planilhas"
+    style="margin:15px 0;"></div>
+
+  <div id="editor-minha-planilha"
+    style="display:none; margin-top:20px;">
+
+    <h4 id="titulo-minha-planilha"></h4>
+
+    <div style="overflow-x:auto;">
+      <table class="planilha-festa-simulada"
+        id="tabela-minha-planilha">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:15px;">
+      <button type="button"
+        id="btn-adicionar-linha-planilha"
+        class="btn btn-outline">
+        ➕ Adicionar Linha
+      </button>
+
+      <button type="button"
+        id="btn-salvar-minha-planilha"
+        class="btn btn-primary"
+        style="background:#27ae60;">
+        💾 Salvar Planilha
+      </button>
+    </div>
+
+    <p id="status-minha-planilha"
+      style="font-size:12px;color:#666;"></p>
+  </div>
+</div>
+
         <div id="painel-grafico-faturamento" class="grafico-wrapper" style="display: none;">
           <h4 style="margin: 0 0 10px 0; color: #2c3e50;">📈 Desempenho Anual</h4>
           <canvas id="graficoAnual" style="max-height: 250px; width: 100%;"></canvas>
