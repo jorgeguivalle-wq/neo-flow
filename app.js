@@ -2830,8 +2830,257 @@ function handleSalvarOrcamento() {
 // ============================================================
 // BIND EVENTOS
 // ============================================================
+
+/* =====================================================
+   MINHAS PLANILHAS - TRALALÁ FESTAS
+   ===================================================== */
+
+let minhaPlanilhaAtual = null;
+
+function abrirCentralPlanilhas() {
+  const painel = document.getElementById("central-planilhas");
+
+  if (!painel) return;
+
+  painel.style.display =
+    painel.style.display === "none" ? "block" : "none";
+
+  if (painel.style.display === "block") {
+    listarMinhasPlanilhas();
+  }
+}
+
+function criarMinhaPlanilha() {
+  if (!db || !State.usuarioUID) {
+    return Utils.showToast("Faça login primeiro.", "warning");
+  }
+
+  const nome = prompt("Qual será o nome da planilha?");
+
+  if (!nome || !nome.trim()) return;
+
+  const resposta = prompt(
+    "Digite os nomes das colunas, separados por vírgula:",
+    "Data, Descrição, Valor"
+  );
+
+  if (!resposta) return;
+
+  const colunas = resposta.split(",")
+    .map(c => c.trim())
+    .filter(Boolean);
+
+  if (!colunas.length || colunas.length > 20) {
+    return alert("Escolha entre 1 e 20 colunas.");
+  }
+
+  minhaPlanilhaAtual = {
+    id: null,
+    nome: nome.trim(),
+    colunas: colunas,
+    linhas: []
+  };
+
+  mostrarEditorPlanilha();
+}
+
+function mostrarEditorPlanilha() {
+  const planilha = minhaPlanilhaAtual;
+  if (!planilha) return;
+
+  document.getElementById("editor-minha-planilha")
+    .style.display = "block";
+
+  document.getElementById("titulo-minha-planilha")
+    .textContent = planilha.nome;
+
+  const tabela = document.getElementById("tabela-minha-planilha");
+  const thead = tabela.querySelector("thead");
+  const tbody = tabela.querySelector("tbody");
+
+  thead.innerHTML = "";
+  tbody.innerHTML = "";
+
+  const cabecalho = document.createElement("tr");
+
+  planilha.colunas.forEach(coluna => {
+    const th = document.createElement("th");
+    th.textContent = coluna;
+    cabecalho.appendChild(th);
+  });
+
+  const thAcoes = document.createElement("th");
+  thAcoes.textContent = "Ação";
+  cabecalho.appendChild(thAcoes);
+  thead.appendChild(cabecalho);
+
+  planilha.linhas.forEach((linha, indice) => {
+    const tr = document.createElement("tr");
+
+    planilha.colunas.forEach((coluna, posicao) => {
+      const td = document.createElement("td");
+      const input = document.createElement("input");
+
+      input.type = "text";
+      input.value = linha[posicao] || "";
+      input.placeholder = coluna;
+      input.style.cssText =
+        "width:150px;max-width:none;padding:8px;" +
+        "border:1px solid #ddd;border-radius:6px;";
+
+      input.oninput = function() {
+        planilha.linhas[indice][posicao] = input.value;
+        document.getElementById("status-minha-planilha")
+          .textContent = "Alterações ainda não salvas";
+      };
+
+      td.appendChild(input);
+      tr.appendChild(td);
+    });
+
+    const tdExcluir = document.createElement("td");
+    const btnExcluir = document.createElement("button");
+
+    btnExcluir.type = "button";
+    btnExcluir.textContent = "🗑️";
+    btnExcluir.title = "Excluir linha";
+    btnExcluir.style.cssText =
+      "padding:8px;border:none;cursor:pointer;";
+
+    btnExcluir.onclick = function() {
+      if (!confirm("Excluir esta linha?")) return;
+      planilha.linhas.splice(indice, 1);
+      mostrarEditorPlanilha();
+    };
+
+    tdExcluir.appendChild(btnExcluir);
+    tr.appendChild(tdExcluir);
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById("status-minha-planilha")
+    .textContent = "Clique em Salvar para guardar suas alterações.";
+}
+
+function adicionarLinhaMinhaPlanilha() {
+  if (!minhaPlanilhaAtual) return;
+
+  minhaPlanilhaAtual.linhas.push(
+    minhaPlanilhaAtual.colunas.map(() => "")
+  );
+
+  mostrarEditorPlanilha();
+}
+
+async function salvarMinhaPlanilha() {
+  if (!db || !State.usuarioUID || !minhaPlanilhaAtual) return;
+
+  const btn = document.getElementById("btn-salvar-minha-planilha");
+  btn.disabled = true;
+
+  try {
+    const p = minhaPlanilhaAtual;
+    const base = db.ref(
+      "planilhas_manuais/" + State.usuarioUID
+    );
+
+    const referencia = p.id
+      ? base.child(p.id)
+      : base.push();
+
+    const dados = {
+      nome: p.nome,
+      colunas: p.colunas,
+      linhas: p.linhas,
+      atualizadoEm: Date.now()
+    };
+
+    await referencia.set(dados);
+
+    p.id = referencia.key;
+
+    Utils.showToast("Planilha salva com sucesso!", "success");
+
+    document.getElementById("status-minha-planilha")
+      .textContent = "✅ Planilha salva!";
+
+    listarMinhasPlanilhas();
+
+  } catch (erro) {
+    console.error(erro);
+    Utils.showToast("Erro ao salvar planilha.", "error");
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function listarMinhasPlanilhas() {
+  const lista = document.getElementById("lista-minhas-planilhas");
+  if (!lista || !db || !State.usuarioUID) return;
+
+  lista.textContent = "Carregando planilhas...";
+
+  try {
+    const snapshot = await db.ref(
+      "planilhas_manuais/" + State.usuarioUID
+    ).once("value");
+
+    lista.innerHTML = "";
+
+    if (!snapshot.exists()) {
+      lista.textContent = "Nenhuma planilha salva ainda.";
+      return;
+    }
+
+    snapshot.forEach(item => {
+      const dados = item.val();
+
+      const botao = document.createElement("button");
+      botao.type = "button";
+      botao.className = "btn btn-outline";
+      botao.style.cssText =
+        "display:block;width:100%;margin-bottom:8px;" +
+        "text-align:left;";
+
+      botao.textContent = "📄 " + (dados.nome || "Sem nome");
+
+      botao.onclick = function() {
+        minhaPlanilhaAtual = {
+          id: item.key,
+          nome: dados.nome || "Sem nome",
+          colunas: dados.colunas || [],
+          linhas: dados.linhas || []
+        };
+
+        mostrarEditorPlanilha();
+      };
+
+      lista.appendChild(botao);
+    });
+
+  } catch (erro) {
+    console.error(erro);
+    lista.textContent =
+      "Não foi possível carregar as planilhas.";
+  }
+}
+
 function bindTudo() {
   var b;
+  
+  // BOTÕES DA CENTRAL DE PLANILHAS
+  b = document.getElementById("btn-minhas-planilhas");
+  if (b) b.onclick = abrirCentralPlanilhas;
+
+  b = document.getElementById("btn-nova-planilha");
+  if (b) b.onclick = criarMinhaPlanilha;
+
+  b = document.getElementById("btn-adicionar-linha-planilha");
+  if (b) b.onclick = adicionarLinhaMinhaPlanilha;
+
+  b = document.getElementById("btn-salvar-minha-planilha");
+  if (b) b.onclick = salvarMinhaPlanilha;
+
   b = document.getElementById("btn-login-direto");
   if (b) b.onclick = function(e) { if (e) e.preventDefault(); handleLogin(); };
   b = document.getElementById("btn-logout-direto");
