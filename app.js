@@ -2448,7 +2448,8 @@ function gerarContratoPegueMonteLoja(dados) {
     dados.pecas.forEach(function(nomePeca) {
       var item = State.estoqueMap[nomePeca];
       var qtd = dados.pecasQtd && dados.pecasQtd[nomePeca] ? parseInt(dados.pecasQtd[nomePeca]) : 1;
-      var preco = item ? (parseFloat(item.preco) || 0) : 0;
+            var preco = item ? (parseFloat(item.preco) || 0) : 0;
+      var precoReposicao = item ? (parseFloat(item.precoReposicao) || 0) : 0;
       var descricao = nomePeca;
       if (item) {
         var partes = [];
@@ -2459,8 +2460,8 @@ function gerarContratoPegueMonteLoja(dados) {
       linhasTabela += '<tr>' +
         '<td style="text-align:center;">' + qtd + '</td>' +
         '<td>' + descricao + '</td>' +
-        '<td style="text-align:center;">R$ ' + preco.toFixed(2).replace('.', ',') + '</td>' +
-        '<td style="text-align:center;">R$ ' + (preco * qtd).toFixed(2).replace('.', ',') + '</td>' +
+                '<td style="text-align:center;">R$ ' + preco.toFixed(2).replace('.', ',') + '</td>' +
+        '<td style="text-align:center;">R$ ' + precoReposicao.toFixed(2).replace('.', ',') + '</td>' +
         '</tr>';
     });
   } else {
@@ -2486,7 +2487,7 @@ function gerarContratoPegueMonteLoja(dados) {
     '<p style="margin-top:6px;">As partes acima identificadas têm, entre si, justo e acertado o presente contrato de prestação de serviços, que se regerá pelas cláusulas seguintes e pelas condições de preço, forma e termo de pagamento descritas no presente contrato.</p>' +
     '<div class="clausula-titulo">DO OBJETO DO CONTRATO</div>' +
     '<div class="clausula-texto"><span class="negrito">Clausula 1ª.</span> É objeto do presente contrato a prestação de serviço de Locação de:</div>' +
-    '<table class="tabela-itens"><thead><tr><th style="width:60px;">QTDE.</th><th>DESCRIÇÃO DO PRODUTO</th><th style="width:110px;">VALOR UNITÁRIO</th><th style="width:110px;">VALOR REPOSIÇÃO</th></tr></thead><tbody>' + linhasTabela + '</tbody></table>' +
+    '<table class="tabela-itens"><thead><tr><th style="width:60px;">QTDE.</th><th>DESCRIÇÃO DO PRODUTO</th><th style="width:110px;">VALOR LOCAÇÃO</th><th style="width:110px;">VALOR REPOSIÇÃO</th></tr></thead><tbody>' + linhasTabela + '</tbody></table>' +
     '<div class="clausula-titulo" style="margin-top: 12px;">DO PAGAMENTO</div>' +
     '<div class="clausula-texto">O serviço contratado no presente instrumento será remunerado pela quantia total de <b>R$ ' + valorTotalFmt + ' (' + valorPorExtenso(totalComFrete) + ')</b>, referente à locação dos itens e serviços descritos neste contrato.</div>' +
     '<div class="resumo-pagamento">' +
