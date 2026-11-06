@@ -566,7 +566,23 @@
             <button type="button" id="btn-remover-tema-admin" class="btn btn-danger" style="padding:10px 20px; width:auto; font-size:14px;">🗑️ Remover</button>
           </div>
         </div>
+<div class="input-group" style="margin-top:15px;">
+  <label for="busca-catalogo-nome">
+    🔍 Pesquisar no Catálogo
+  </label>
 
+  <input
+    type="search"
+    id="busca-catalogo-nome"
+    placeholder="Digite o nome da peça ou tema..."
+    autocomplete="off"
+    style="width:100%; padding:12px; border:1.5px solid #d8b4e2; border-radius:8px;"
+  >
+
+  <small id="resultado-busca-catalogo"
+    style="display:block; margin-top:6px; color:#777;">
+  </small>
+</div>
         <div style="overflow-x: auto; max-height: 500px; margin-top: 15px;">
           <table class="tabela-pontos">
             <thead>
