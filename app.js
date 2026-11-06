@@ -683,14 +683,34 @@ window.excluirOrcamentoAberto = function(id) {
 function renderizarTemas() {
   const corpo = document.getElementById("lista-temas-gerenciados-corpo");
   const contador = document.getElementById("contador-catalogo-total");
+  const campoBusca = document.getElementById("busca-catalogo-nome");
+
+const termoBusca = Utils.normalizar(
+  campoBusca ? campoBusca.value.trim() : ""
+);
+
+const itensFiltrados = State.estoqueArray.filter(function(item) {
+  return Utils.normalizar(item.nome || "").includes(termoBusca);
+});
+
+const resultadoBusca = document.getElementById("resultado-busca-catalogo");
+
+if (resultadoBusca) {
+  resultadoBusca.textContent = termoBusca
+    ? itensFiltrados.length + " item(ns) encontrado(s)"
+    : "";
+}
   if (contador) contador.textContent = State.estoqueArray.length + " itens";
   if (!corpo) return;
-  if (State.estoqueArray.length === 0) {
-    corpo.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#999; padding:15px;">Nenhum tema ou peça cadastrada.</td></tr>';
-    return;
+  if (itensFiltrados.length === 0) {
+   corpo.innerHTML =
+  '<tr><td colspan="3" style="text-align:center; padding:15px;">' +
+  (termoBusca ? 'Nenhum item encontrado para essa pesquisa.' : 'Nenhum tema ou peça cadastrada.') +
+  '</td></tr>';
+return;
   }
   const grupos = {};
-  State.estoqueArray.forEach(function(item) {
+ itensFiltrados.forEach(function(item) {
     var cat = (item.categoria && String(item.categoria).trim()) || "Sem Categoria";
     if (!grupos[cat]) grupos[cat] = [];
     grupos[cat].push(item);
@@ -4178,3 +4198,8 @@ var dados = {
   
   if (gerarPdf) setTimeout(function() { window.BaixarPDFContrato(); }, 300);
 }
+document.addEventListener("input", function(event) {
+  if (event.target.id === "busca-catalogo-nome") {
+    renderizarTemas();
+  }
+});
