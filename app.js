@@ -2766,8 +2766,13 @@ function salvarReservaFinal(pecasQtd) {
     if (kitBox) kitBox.classList.remove("ativo");
     var painelMontagem = document.getElementById("painel-montagem-local");
     if (painelMontagem) painelMontagem.style.display = "none";
-    var chk = document.getElementById("chk-montar-local");
-    if (chk) chk.checked = false;
+   var btnMontar = document.getElementById("btn-montar-local");
+
+if (btnMontar) {
+  btnMontar.classList.remove("ativo");
+  btnMontar.setAttribute("aria-pressed", "false");
+  btnMontar.textContent = "🛠️ Montar no Local";
+}
     var resumo = document.getElementById("resumo-selecao");
     if (resumo) resumo.style.display = "none";
     var detalhes = document.getElementById("detalhes-soma");
@@ -3215,14 +3220,31 @@ function bindTudo() {
   if (b) b.onclick = function() { confirmarModalTema(); };
   var filtroTemaModal = document.getElementById("filtro-tema-modal");
   if (filtroTemaModal) filtroTemaModal.oninput = function(e) { renderizarListaTemasModal(e.target.value); };
-  var chkMontar = document.getElementById("chk-montar-local");
-  if (chkMontar) {
-    chkMontar.onchange = function() {
-      State.montarNoLocal = !!chkMontar.checked;
-      var painel = document.getElementById("painel-montagem-local");
-      if (painel) painel.style.display = chkMontar.checked ? "block" : "none";
-    };
-  }
+ var btnMontar = document.getElementById("btn-montar-local");
+
+if (btnMontar) {
+  btnMontar.onclick = function() {
+    State.montarNoLocal = !State.montarNoLocal;
+
+    btnMontar.classList.toggle("ativo", State.montarNoLocal);
+    btnMontar.setAttribute(
+      "aria-pressed",
+      String(State.montarNoLocal)
+    );
+
+    btnMontar.textContent = State.montarNoLocal
+      ? "✅ Montagem no Local Ativada"
+      : "🛠️ Montar no Local";
+
+    var painel = document.getElementById("painel-montagem-local");
+
+    if (painel) {
+      painel.style.display = State.montarNoLocal
+        ? "block"
+        : "none";
+    }
+  };
+}
   var kmEl = document.getElementById("calc-km");
   var precoEl = document.getElementById("calc-valor-litro");
   var chkSegunda = document.getElementById("chk-segunda-viagem");
