@@ -1212,16 +1212,32 @@ function confirmarModalTema() {
 
 function atualizarInfoKitFesta() {
   var info = document.getElementById("kit-acoes-info");
-  if (!info) return;
-  if (!State.kitAtual) { info.textContent = "Nenhuma peça selecionada ainda"; return; }
-  var pecas = State.pecasSelecionadasKit[State.kitAtual] || [];
-  var tema = State.temasSelecionadosKit[State.kitAtual] || "";
-  var partes = [];
-  if (pecas.length > 0) partes.push(pecas.length + " peça(s)");
-  if (tema) partes.push("Tema: " + tema);
-  info.textContent = partes.length > 0 ? partes.join(" | ") : "Nenhuma peça selecionada ainda";
-}
+  var infoMontagem = document.getElementById("montagem-acoes-info");
 
+  var mensagem = "Nenhuma peça selecionada ainda";
+
+  if (State.kitAtual) {
+    var pecas = State.pecasSelecionadasKit[State.kitAtual] || [];
+    var tema = State.temasSelecionadosKit[State.kitAtual] || "";
+
+    var partes = [];
+
+    if (pecas.length > 0) {
+      partes.push("📦 " + pecas.length + " peça(s)");
+    }
+
+    if (tema) {
+      partes.push("🎨 Tema: " + tema);
+    }
+
+    if (partes.length > 0) {
+      mensagem = partes.join(" | ");
+    }
+  }
+
+  if (info) info.textContent = mensagem;
+  if (infoMontagem) infoMontagem.textContent = mensagem;
+}
 function atualizarInfoKitCriando() {
   var info = document.getElementById("kit-info-selecao");
   if (!info) return;
@@ -3220,10 +3236,63 @@ function bindTudo() {
       Utils.showToast('Kit "' + nomeKit + '" selecionado!', "success");
     };
   });
+ 
+  // ESCOLHER PEÇAS - KIT NORMAL
   b = document.getElementById("btn-esc-pecas");
-  if (b) b.onclick = function(e) { if (e) e.preventDefault(); if (!State.kitAtual) return Utils.showToast("Selecione um kit.", "warning"); abrirModalPecas("kit-festa"); };
+  if (b) {
+    b.onclick = function(e) {
+      e.preventDefault();
+
+      if (!State.kitAtual) {
+        return Utils.showToast("Selecione um kit.", "warning");
+      }
+
+      abrirModalPecas("kit-festa");
+    };
+  }
+
+  // ESCOLHER TEMA - KIT NORMAL
   b = document.getElementById("btn-esc-tema");
-  if (b) b.onclick = function(e) { if (e) e.preventDefault(); if (!State.kitAtual) return Utils.showToast("Selecione um kit.", "warning"); abrirModalTema("kit-festa"); };
+  if (b) {
+    b.onclick = function(e) {
+      e.preventDefault();
+
+      if (!State.kitAtual) {
+        return Utils.showToast("Selecione um kit.", "warning");
+      }
+
+      abrirModalTema("kit-festa");
+    };
+  }
+
+  // ESCOLHER PEÇAS - MONTAGEM NO LOCAL
+  b = document.getElementById("btn-montagem-pecas");
+  if (b) {
+    b.onclick = function(e) {
+      e.preventDefault();
+
+      if (!State.kitAtual) {
+        return Utils.showToast("Selecione um kit.", "warning");
+      }
+
+      abrirModalPecas("kit-festa");
+    };
+  }
+
+  // ESCOLHER TEMA - MONTAGEM NO LOCAL
+  b = document.getElementById("btn-montagem-tema");
+  if (b) {
+    b.onclick = function(e) {
+      e.preventDefault();
+
+      if (!State.kitAtual) {
+        return Utils.showToast("Selecione um kit.", "warning");
+      }
+
+      abrirModalTema("kit-festa");
+    };
+  }
+
   b = document.getElementById("btn-fechar-modal-pecas");
   if (b) b.onclick = function() { window.fecharModalPecas(); };
   b = document.getElementById("btn-cancelar-pecas");
