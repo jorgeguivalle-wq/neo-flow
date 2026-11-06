@@ -956,19 +956,36 @@
   style="width:100%; margin-bottom:12px;">
   🛠️ Montar no Local
 </button>
-          <div id="painel-montagem-local" class="montagem-local-container">
-            <div class="grid-2">
-              <div class="input-group" style="margin-bottom: 10px;">
-                <label style="font-size:12px;">Quantas peças vão?</label>
-                <input type="number" id="ml-qtd-pecas" value="0" min="0">
-              </div>
-              <div class="input-group" style="margin-bottom: 10px;">
-                <label style="font-size:12px;">Vai LED?</label>
-                <select id="ml-led"><option value="Não">Não</option><option value="Sim">Sim</option></select>
-              </div>
-            </div>
-          </div>
-        </div>
+        <div id="painel-montagem-local"
+     class="montagem-local-container"
+     style="display:none;">
+
+  <div class="kit-acoes-titulo">
+    📋 Personalizar Montagem no Local
+  </div>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:15px;">
+
+    <button type="button"
+            id="btn-montagem-pecas"
+            class="btn-pecas-tema">
+      🍽️ Escolher Peças
+    </button>
+
+    <button type="button"
+            id="btn-montagem-tema"
+            class="btn-pecas-tema">
+      🎨 Escolher Tema
+    </button>
+
+  </div>
+
+  <div class="kit-acoes-info"
+       id="montagem-acoes-info">
+    Nenhuma peça selecionada ainda
+  </div>
+
+</div>
 
         <div id="resumo-selecao" style="background: #f8f4ff; border: 1.5px solid #d8b4e2; padding: 15px; border-radius: 10px; margin-top: 20px; display: none;">
           <h4 style="margin: 0 0 10px 0; color: #9b59b6; font-size: 14px;">📋 Itens Selecionados</h4>
