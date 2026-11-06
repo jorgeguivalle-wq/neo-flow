@@ -3375,8 +3375,30 @@ function bindTudo() {
     };
   }
 
+  
   // ==========================================
-  // ESCOLHER TEMA - MONTAR NO LOCAL
+  // MONTAR NO LOCAL - ESCOLHER PEÇAS
+  // ==========================================
+  b = document.getElementById("btn-montagem-pecas");
+
+  if (b) {
+    b.onclick = function(e) {
+      e.preventDefault();
+
+      if (!State.montarNoLocal) {
+        return Utils.showToast(
+          "Ative Montar no Local primeiro.",
+          "warning"
+        );
+      }
+
+      State.kitAtual = "Montar no Local";
+      abrirModalPecas("kit-festa");
+    };
+  }
+
+  // ==========================================
+  // MONTAR NO LOCAL - ESCOLHER TEMA
   // ==========================================
   b = document.getElementById("btn-montagem-tema");
 
@@ -3396,146 +3418,106 @@ function bindTudo() {
     };
   }
 
-
-  // ESCOLHER PEÇAS - MONTAGEM NO LOCAL
-  b = document.getElementById("btn-montagem-pecas");
-  if (b) {
-    b.onclick = function(e) {
-      e.preventDefault();
-
-      if (!State.kitAtual) {
-        return Utils.showToast("Selecione um kit.", "warning");
-      }
-
-      abrirModalPecas("kit-festa");
-    };
-  }
-
-  // ESCOLHER TEMA - MONTAGEM NO LOCAL
-  b = document.getElementById("btn-montagem-tema");
-  if (b) {
-    b.onclick = function(e) {
-      e.preventDefault();
-
-      if (!State.kitAtual) {
-        return Utils.showToast("Selecione um kit.", "warning");
-      }
-
-      abrirModalTema("kit-festa");
-    };
-  }
-
+  // ==========================================
+  // EVENTOS DOS MODAIS DE PEÇAS E TEMAS
+  // ==========================================
   b = document.getElementById("btn-fechar-modal-pecas");
   if (b) b.onclick = function() { window.fecharModalPecas(); };
+
   b = document.getElementById("btn-cancelar-pecas");
   if (b) b.onclick = function() { window.fecharModalPecas(); };
+
   b = document.getElementById("btn-confirmar-pecas");
   if (b) b.onclick = function() { confirmarModalPecas(); };
+
   var filtroPecas = document.getElementById("filtro-pecas");
-  if (filtroPecas) filtroPecas.oninput = function(e) { renderizarListaPecasModal(modalPecasContexto, e.target.value); };
+  if (filtroPecas) {
+    filtroPecas.oninput = function(e) {
+      renderizarListaPecasModal(modalPecasContexto, e.target.value);
+    };
+  }
+
   b = document.getElementById("btn-fechar-modal-tema");
-  if (b) b.onclick = function() { document.getElementById("modal-tema-reserva").classList.remove("ativo"); };
+  if (b) {
+    b.onclick = function() {
+      document.getElementById("modal-tema-reserva").classList.remove("ativo");
+    };
+  }
+
   b = document.getElementById("btn-cancelar-tema");
-  if (b) b.onclick = function() { document.getElementById("modal-tema-reserva").classList.remove("ativo"); };
+  if (b) {
+    b.onclick = function() {
+      document.getElementById("modal-tema-reserva").classList.remove("ativo");
+    };
+  }
+
   b = document.getElementById("btn-confirmar-tema");
   if (b) b.onclick = function() { confirmarModalTema(); };
+
   var filtroTemaModal = document.getElementById("filtro-tema-modal");
-  if (filtroTemaModal) filtroTemaModal.oninput = function(e) { renderizarListaTemasModal(e.target.value); };
- var btnMontar = document.getElementById("btn-montar-local");
 
-if (btnMontar) {
-  btnMontar.onclick = function() {
-    State.montarNoLocal = !State.montarNoLocal;
-
-    btnMontar.classList.toggle("ativo", State.montarNoLocal);
-    btnMontar.setAttribute(
-      "aria-pressed",
-      String(State.montarNoLocal)
-    );
-
-    btnMontar.textContent = State.montarNoLocal
-      ? "✅ Montagem no Local Ativada"
-      : "🛠️ Montar no Local";
-
-    var painel = document.getElementById("painel-montagem-local");
-
-    if (painel) {
-      painel.style.display = State.montarNoLocal
-        ? "block"
-        : "none";
-    }
-  };
-}
-  var kmEl = document.getElementById("calc-km");
-  var precoEl = document.getElementById("calc-valor-litro");
-  var chkSegunda = document.getElementById("chk-segunda-viagem");
-  if (kmEl) { kmEl.oninput = function() { FreteCalc.renderizar(); }; kmEl.onchange = function() { FreteCalc.renderizar(); }; }
-  if (precoEl) { precoEl.oninput = function() { FreteCalc.renderizar(); }; precoEl.onchange = function() { FreteCalc.renderizar(); }; }
-  if (chkSegunda) { chkSegunda.onchange = function() { FreteCalc.renderizar(); }; }
-  var vfEl = document.getElementById("valor-festa");
-  if (vfEl) vfEl.oninput = function() { recalcularTotais(); };
-  var sinalEl = document.getElementById("valor-sinal");
-  if (sinalEl) sinalEl.oninput = function() { recalcularTotais(); };
-  b = document.getElementById("btn-soma-automatica");
-  if (b) b.onclick = function(e) { if (e) e.preventDefault(); calcularSomaAutomatica(); };
-  b = document.getElementById("btn-aplicar-desconto");
-  if (b) b.onclick = function(e) { if (e) e.preventDefault(); aplicarDesconto(); };
-  b = document.getElementById("btn-confirmar-agendamento");
-  if (b) b.onclick = function(e) { if (e) e.preventDefault(); handleSalvarFesta(); };
-  b = document.getElementById("btn-salvar-como-orcamento");
-  if (b) b.onclick = function(e) { if (e) e.preventDefault(); handleSalvarOrcamento(); };
-  b = document.getElementById("btn-adicionar-peca");
-  if (b) b.onclick = function(e) {
-    if (e) e.preventDefault();
-    var nome = (document.getElementById("catalogo-peca-nome") || {}).value || "";
-    var qtd = parseInt((document.getElementById("catalogo-peca-qtd") || {}).value) || 1;
-    var categoria = (document.getElementById("catalogo-peca-categoria") || {}).value || "Outros";
-    var modelo = (document.getElementById("catalogo-peca-modelo") || {}).value || "";
-    var preco = parseFloat((document.getElementById("catalogo-peca-preco") || {}).value) || 0;
-    var precoRep = parseFloat((document.getElementById("catalogo-peca-preco-reposicao") || {}).value) || 0;
-    var fileInput = document.getElementById("catalogo-peca-imagem");
-    nome = nome.trim();
-    if (!nome) return Utils.showToast("Preencha o nome do tema/peça!", "warning");
-    var executar = function(img) {
-      Database.salvarPecaNuvem({ nome, quantidade: qtd, categoria, modelo, preco, precoReposicao: precoRep, imagem: img || "" }).then(function() {
-        var nEl = document.getElementById("catalogo-peca-nome"); if (nEl) nEl.value = "";
-        var qEl = document.getElementById("catalogo-peca-qtd"); if (qEl) qEl.value = "1";
-        var mEl = document.getElementById("catalogo-peca-modelo"); if (mEl) mEl.value = "";
-        var pEl = document.getElementById("catalogo-peca-preco"); if (pEl) pEl.value = "0";
-        var prEl = document.getElementById("catalogo-peca-preco-reposicao"); if (prEl) prEl.value = "0";
-        var iEl = document.getElementById("catalogo-peca-imagem"); if (iEl) iEl.value = "";
-      });
+  if (filtroTemaModal) {
+    filtroTemaModal.oninput = function(e) {
+      renderizarListaTemasModal(e.target.value);
     };
-    if (fileInput && fileInput.files && fileInput.files[0]) {
-      reduzirImagem(fileInput.files[0], 900, 0.82).then(executar).catch(function() { executar(""); });
-    } else { executar(""); }
-  };
-  b = document.getElementById("btn-adicionar-categoria");
-  if (b) b.onclick = function(e) {
-    if (e) e.preventDefault();
-    var input = document.getElementById("input-nova-categoria");
-    var nome = input ? input.value.trim() : "";
-    if (!nome) return Utils.showToast("Digite um nome.", "warning");
-    window.adicionarCategoria(nome).then(function() { Utils.showToast("Categoria adicionada!", "success"); if (input) { input.value = ""; input.focus(); } })
-      .catch(function(err) { Utils.showToast(String(err), "warning"); });
-  };
-  var inputCat = document.getElementById("input-nova-categoria");
-  if (inputCat) inputCat.onkeypress = function(e) { if (e.key === "Enter") { var bt = document.getElementById("btn-adicionar-categoria"); if (bt) bt.click(); } };
-  b = document.getElementById("btn-remover-categoria");
-  if (b) b.onclick = function(e) {
-    if (e) e.preventDefault();
-    var s = document.getElementById("select-remover-categoria"); var cat = s ? s.value : "";
-    if (!cat) return Utils.showToast("Selecione uma categoria.", "warning");
-    window.removerCategoria(cat).then(function() { Utils.showToast("Categoria removida!", "success"); })
-      .catch(function(err) { Utils.showToast(String(err), "warning"); });
-  };
-  b = document.getElementById("btn-remover-tema-admin");
-  if (b) b.onclick = function(e) {
-    if (e) e.preventDefault();
-    var s = document.getElementById("select-remover-tema"); var idx = s ? parseInt(s.value) : NaN;
-    if (isNaN(idx)) return Utils.showToast("Selecione um tema válido!", "warning");
-    window.removerTema(idx);
-  };
+  }
+
+  // ==========================================
+  // MONTAR NO LOCAL - MODELO INDEPENDENTE
+  // ==========================================
+  var btnMontar = document.getElementById("btn-montar-local");
+
+  if (btnMontar) {
+    btnMontar.onclick = function(e) {
+      e.preventDefault();
+
+      State.montarNoLocal = !State.montarNoLocal;
+
+      var painel = document.getElementById("painel-montagem-local");
+      var kitBox = document.getElementById("kit-acoes-box");
+
+      if (State.montarNoLocal) {
+
+        State.kitAtual = "Montar no Local";
+
+        document.querySelectorAll(".btn-kit-opcao").forEach(function(btn) {
+          btn.classList.remove("ativo");
+        });
+
+        if (kitBox) {
+          kitBox.classList.remove("ativo");
+          kitBox.style.display = "none";
+        }
+
+        if (painel) painel.style.display = "block";
+
+        btnMontar.classList.add("ativo");
+        btnMontar.setAttribute("aria-pressed", "true");
+        btnMontar.textContent = "✅ Montagem no Local Ativada";
+
+      } else {
+
+        if (State.kitAtual === "Montar no Local") {
+          State.kitAtual = "";
+        }
+
+        if (painel) painel.style.display = "none";
+
+        btnMontar.classList.remove("ativo");
+        btnMontar.setAttribute("aria-pressed", "false");
+        btnMontar.textContent = "🛠️ Montar no Local";
+      }
+
+      if (typeof atualizarInfoKitFesta === "function") {
+        atualizarInfoKitFesta();
+      }
+
+      if (typeof atualizarResumoSelecao === "function") {
+        atualizarResumoSelecao();
+      }
+    };
+  }
+
   
   // NOVOS BOTÕES: Orçamentos em Aberto
   b = document.getElementById("btn-abrir-orcamentos-aberto");
