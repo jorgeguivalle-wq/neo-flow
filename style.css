@@ -508,3 +508,32 @@ h4 { color: var(--primary-dark); font-size: 15px; font-weight: 600; }
   }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 }
+#painel-montagem-local {
+  background: #f0f4ff;
+  border: 1px dashed #3498db;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 12px;
+}
+
+#painel-montagem-local .kit-acoes-titulo {
+  color: #3498db;
+  font-weight: 700;
+  text-align: center;
+}
+
+#painel-montagem-local .btn-pecas-tema {
+  border: 1px solid #3498db;
+  color: #3498db;
+  background: #e6efff;
+  border-radius: 10px;
+  padding: 12px 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+#painel-montagem-local .kit-acoes-info {
+  text-align: center;
+  margin-top: 14px;
+  font-size: 13px;
+}
