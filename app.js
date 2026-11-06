@@ -2802,47 +2802,87 @@ function salvarReservaFinal(pecasQtd) {
     if (kitBox) kitBox.classList.remove("ativo");
     var painelMontagem = document.getElementById("painel-montagem-local");
     if (painelMontagem) painelMontagem.style.display = "none";
-   var btnMontar = document.getElementById("btn-montar-local");
+   
+    // LIMPAR BOTÃO MONTAR NO LOCAL
+    State.montarNoLocal = false;
 
-if (btnMontar) {
-  btnMontar.classList.remove("ativo");
-  btnMontar.setAttribute("aria-pressed", "false");
-  btnMontar.textContent = "🛠️ Montar no Local";
-}
+    var btnMontar = document.getElementById("btn-montar-local");
+
+    if (btnMontar) {
+      btnMontar.classList.remove("ativo");
+      btnMontar.setAttribute("aria-pressed", "false");
+      btnMontar.textContent = "🛠️ Montar no Local";
+    }
+
+    // ESCONDER PAINEL DE MONTAGEM
+    var painelMontagem = document.getElementById("painel-montagem-local");
+
+    if (painelMontagem) {
+      painelMontagem.style.display = "none";
+    }
+
+    // LIMPAR RESUMO DA RESERVA
     var resumo = document.getElementById("resumo-selecao");
     if (resumo) resumo.style.display = "none";
+
     var detalhes = document.getElementById("detalhes-soma");
     if (detalhes) detalhes.innerHTML = "";
+
     var resultadoDesc = document.getElementById("resultado-desconto");
     if (resultadoDesc) resultadoDesc.innerHTML = "";
+
     var descValor = document.getElementById("desconto-valor");
     if (descValor) descValor.value = "";
+
     FreteCalc.limpar();
+
   }).catch(function(err) {
     console.error(err);
     ModalStatus.erro("Erro ao salvar reserva.");
   });
 }
 
+// ============================================================
+// CONFIRMAR QUANTIDADE DE PEÇAS
+// ============================================================
 window.ConfirmarQtdPecas = function() {
   var inputs = document.querySelectorAll(".input-qtd-peca");
   var pecasQtd = {};
   var valido = true;
+
   inputs.forEach(function(input) {
     var nome = input.getAttribute("data-peca");
     var qtd = parseInt(input.value) || 0;
     var max = parseInt(input.max) || 0;
+
     if (qtd > max) {
-      Utils.showToast("❌ " + nome + ": você pediu " + qtd + " mas só tem " + max + " disponível.", "error");
+      Utils.showToast(
+        "❌ " + nome + ": você pediu " + qtd +
+        " mas só tem " + max + " disponível.",
+        "error"
+      );
       valido = false;
     }
-    if (qtd > 0) pecasQtd[nome] = qtd;
+
+    if (qtd > 0) {
+      pecasQtd[nome] = qtd;
+    }
   });
+
   if (!valido) return;
-  document.getElementById("modal-qtd-pecas").classList.remove("ativo");
+
+  var modalQtd = document.getElementById("modal-qtd-pecas");
+
+  if (modalQtd) {
+    modalQtd.classList.remove("ativo");
+  }
+
   salvarReservaFinal(pecasQtd);
 };
 
+// ============================================================
+// SALVAR ORÇAMENTO
+// ============================================================
 function handleSalvarOrcamento() {
   var clienteEl = document.getElementById("nome-cliente");
   var cpfEl = document.getElementById("cliente-cpf");
@@ -2850,22 +2890,64 @@ function handleSalvarOrcamento() {
   var dataEl = document.getElementById("data");
   var obsEl = document.getElementById("adicionais-festa");
   var vfEl = document.getElementById("valor-festa");
+
   var nomeCliente = clienteEl ? clienteEl.value.trim() : "";
-  if (!nomeCliente) return Utils.showToast("Preencha o nome do cliente.", "warning");
+
+  if (!nomeCliente) {
+    return Utils.showToast(
+      "Preencha o nome do cliente.",
+      "warning"
+    );
+  }
+
   var f = FreteCalc.calcular();
+
   Database.salvarOrcamentoNuvem({
-    cliente: safe(nomeCliente), cpf: safe(cpfEl ? cpfEl.value.trim() : ""),
-    tema: safe(State.temaAtual) || "Não selecionado", kit: safe(State.kitAtual),
-    pecas: Array.isArray(State.pecasSelecionadasKit[State.kitAtual]) ? State.pecasSelecionadasKit[State.kitAtual] : [],
-    montarNoLocal: !!State.montarNoLocal, total: safe(totalEl ? totalEl.value : "0"),
-    valorFesta: vfEl ? (parseFloat(vfEl.value) || 0) : 0,
-    frete: f.freteTotal || 0, freteKmIda: f.kmIda || 0, freteKmTotal: f.kmTotal || 0, freteSegundaViagem: !!f.segundaViagem,
-    fretePrecoCombustivel: f.precoCombustivel || 0, freteLitros: f.litros || 0,
-    freteCustoCombustivel: f.custoCombustivel || 0, freteManutencao: f.manutencao || 0, freteTotal: f.freteTotal || 0,
-    dataFesta: safe(dataEl ? dataEl.value : ""), obs: safe(obsEl ? obsEl.value.trim() : ""),
-    desconto: State.descontoAplicado, dataCriacao: Utils.getHojeDataString(), horaCriacao: Utils.getHoraString()
-  }).then(function() { Utils.showToast("Orçamento salvo!", "success"); })
-    .catch(function() { Utils.showToast("Erro ao salvar orçamento.", "error"); });
+    cliente: safe(nomeCliente),
+
+    cpf: safe(cpfEl ? cpfEl.value.trim() : ""),
+
+    tema: safe(State.temaAtual) || "Não selecionado",
+
+    kit: safe(State.kitAtual),
+
+    pecas: Array.isArray(State.pecasSelecionadasKit[State.kitAtual])
+      ? State.pecasSelecionadasKit[State.kitAtual]
+      : [],
+
+    montarNoLocal: !!State.montarNoLocal,
+
+    total: safe(totalEl ? totalEl.value : "0"),
+
+    valorFesta: vfEl
+      ? (parseFloat(vfEl.value) || 0)
+      : 0,
+
+    frete: f.freteTotal || 0,
+    freteKmIda: f.kmIda || 0,
+    freteKmTotal: f.kmTotal || 0,
+    freteSegundaViagem: !!f.segundaViagem,
+    fretePrecoCombustivel: f.precoCombustivel || 0,
+    freteLitros: f.litros || 0,
+    freteCustoCombustivel: f.custoCombustivel || 0,
+    freteManutencao: f.manutencao || 0,
+    freteTotal: f.freteTotal || 0,
+
+    dataFesta: safe(dataEl ? dataEl.value : ""),
+
+    obs: safe(obsEl ? obsEl.value.trim() : ""),
+
+    desconto: State.descontoAplicado,
+
+    dataCriacao: Utils.getHojeDataString(),
+    horaCriacao: Utils.getHoraString()
+
+  }).then(function() {
+    Utils.showToast("Orçamento salvo!", "success");
+  }).catch(function(err) {
+    console.error(err);
+    Utils.showToast("Erro ao salvar orçamento.", "error");
+  });
 }
 
 // ============================================================
@@ -3237,8 +3319,12 @@ function bindTudo() {
     };
   });
  
+ 
+  // ==========================================
   // ESCOLHER PEÇAS - KIT NORMAL
+  // ==========================================
   b = document.getElementById("btn-esc-pecas");
+
   if (b) {
     b.onclick = function(e) {
       e.preventDefault();
@@ -3251,8 +3337,11 @@ function bindTudo() {
     };
   }
 
+  // ==========================================
   // ESCOLHER TEMA - KIT NORMAL
+  // ==========================================
   b = document.getElementById("btn-esc-tema");
+
   if (b) {
     b.onclick = function(e) {
       e.preventDefault();
@@ -3264,6 +3353,49 @@ function bindTudo() {
       abrirModalTema("kit-festa");
     };
   }
+
+  // ==========================================
+  // ESCOLHER PEÇAS - MONTAR NO LOCAL
+  // ==========================================
+  b = document.getElementById("btn-montagem-pecas");
+
+  if (b) {
+    b.onclick = function(e) {
+      e.preventDefault();
+
+      if (!State.montarNoLocal) {
+        return Utils.showToast(
+          "Ative Montar no Local primeiro.",
+          "warning"
+        );
+      }
+
+      State.kitAtual = "Montar no Local";
+      abrirModalPecas("kit-festa");
+    };
+  }
+
+  // ==========================================
+  // ESCOLHER TEMA - MONTAR NO LOCAL
+  // ==========================================
+  b = document.getElementById("btn-montagem-tema");
+
+  if (b) {
+    b.onclick = function(e) {
+      e.preventDefault();
+
+      if (!State.montarNoLocal) {
+        return Utils.showToast(
+          "Ative Montar no Local primeiro.",
+          "warning"
+        );
+      }
+
+      State.kitAtual = "Montar no Local";
+      abrirModalTema("kit-festa");
+    };
+  }
+
 
   // ESCOLHER PEÇAS - MONTAGEM NO LOCAL
   b = document.getElementById("btn-montagem-pecas");
