@@ -373,7 +373,7 @@ if (auth) {
 // ============================================================
 // DATABASE (Realtime)
 // ============================================================
-
+const Database = {
 salvarPecaNuvem: async function(peca) {
   if (State.salvandoPeca) return false;
 
