@@ -532,7 +532,32 @@
           </div>
           <div class="input-group" style="margin-bottom: 10px;">
             <label style="font-size: 11px;">Foto da Peça / Upload:</label>
-            <input type="file" id="catalogo-peca-imagem" accept="image/*" capture="environment" style="padding: 10px;">
+            
+<div style="display:flex; gap:10px; flex-wrap:wrap;">
+
+  <button type="button" class="btn btn-outline"
+    onclick="document.getElementById('catalogo-peca-camera').click()">
+    📷 Tirar Foto
+  </button>
+
+  <button type="button" class="btn btn-outline"
+    onclick="document.getElementById('catalogo-peca-imagem').click()">
+    🖼️ Buscar na Galeria
+  </button>
+
+</div>
+
+<input type="file"
+  id="catalogo-peca-camera"
+  accept="image/*"
+  capture="environment"
+  hidden>
+
+<input type="file"
+  id="catalogo-peca-imagem"
+  accept="image/*"
+  hidden>
+
           </div>
           <button type="button" id="btn-adicionar-peca" class="btn btn-primary" style="margin-top: 5px;">Salvar Peça no Acervo</button>
         </div>
