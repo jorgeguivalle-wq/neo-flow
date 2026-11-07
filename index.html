@@ -645,6 +645,29 @@
           <span>📊 Relatório de Vendas & Faturamento</span>
           <button type="button" id="btn-fechar-central-relatorios" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">✕ Fechar</button>
         </h3>
+        
+<div style="display:flex; gap:10px; flex-wrap:wrap; margin:15px 0;">
+
+  <button type="button"
+    class="btn btn-primary"
+    onclick="exportarVendasMesExcel()">
+    📤 Exportar Planilha
+  </button>
+
+  <button type="button"
+    class="btn btn-outline"
+    onclick="TF.abrir('planilhas'); document.getElementById('tf-importar').click();">
+    📥 Importar Planilha
+  </button>
+
+  <button type="button"
+    class="btn btn-outline"
+    onclick="TF.abrir('planilhas'); document.getElementById('tralala-financeiro-extra').scrollIntoView({behavior:'smooth'});">
+    📊 Ferramentas Excel
+  </button>
+
+</div>
+
         <div class="grid-2" style="margin-bottom: 15px; align-items: flex-end;">
           <div class="input-group" style="margin-bottom: 0;">
             <label>Mês:</label>
