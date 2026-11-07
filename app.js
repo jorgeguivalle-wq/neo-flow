@@ -373,36 +373,63 @@ if (auth) {
 // ============================================================
 // DATABASE (Realtime)
 // ============================================================
-const Database = {
-  salvarPecaNuvem: async function(peca) {
-    if (State.salvandoPeca) return;
-    State.salvandoPeca = true;
-    const btnSalvar = document.getElementById("btn-adicionar-peca");
-    if (btnSalvar) btnSalvar.disabled = true;
-    ModalStatus.exibir("LANÇANDO PEÇA...", "Salvando no acervo, aguarde.");
-    try {
-      if (db) {
-        const refEstoque = db.ref("estoque");
-        const newRef = peca.idFirebase ? db.ref("estoque/" + peca.idFirebase) : refEstoque.push();
-        const pecaId = peca.idFirebase || newRef.key;
-        const payload = {
-          idFirebase: pecaId, nome: safe(peca.nome),
-          quantidade: parseInt(peca.quantidade) || 1,
-          categoria: safe(peca.categoria) || "Outros",
-          modelo: safe(peca.modelo),
-          preco: parseFloat(peca.preco) || 0,
-          precoReposicao: parseFloat(peca.precoReposicao) || 0,
-          imagem: safe(peca.imagem), atualizadoEm: Date.now()
-        };
-        await newRef.set(payload);
-      }
-      ModalStatus.sucesso("✓ PEÇA LANÇADA COM SUCESSO");
-    } catch (error) {
-      ModalStatus.erro("Não foi possível salvar a peça.");
-    } finally {
-      State.salvandoPeca = false;
-      if (btnSalvar) btnSalvar.disabled = false;
+
+salvarPecaNuvem: async function(peca) {
+  if (State.salvandoPeca) return false;
+
+  State.salvandoPeca = true;
+
+  const botao = document.getElementById("btn-adicionar-peca");
+  if (botao) botao.disabled = true;
+
+  ModalStatus.exibir(
+    "SALVANDO PEÇA...",
+    "Registrando no acervo."
+  );
+
+  try {
+    if (!db) {
+      throw new Error("Firebase não está conectado.");
     }
+
+    if (!auth || !auth.currentUser) {
+      throw new Error("Faça login novamente.");
+    }
+
+    const novaRef = peca.idFirebase
+      ? db.ref("estoque/" + peca.idFirebase)
+      : db.ref("estoque").push();
+
+    const payload = {
+      idFirebase: novaRef.key,
+      nome: peca.nome,
+      quantidade: Number(peca.quantidade),
+      categoria: peca.categoria || "Outros",
+      modelo: peca.modelo || "",
+      preco: Number(peca.preco) || 0,
+      precoReposicao: Number(peca.precoReposicao) || 0,
+      imagem: peca.imagem || "",
+      atualizadoEm: Date.now()
+    };
+
+    await novaRef.set(payload);
+
+    ModalStatus.sucesso("Peça salva no acervo!");
+    return true;
+
+  } catch (erro) {
+    console.error("Erro Firebase ao salvar peça:", erro);
+    ModalStatus.erro(
+      "Não foi possível salvar: " + erro.message
+    );
+    return false;
+
+  } finally {
+    State.salvandoPeca = false;
+    if (botao) botao.disabled = false;
+  }
+},
+
   },
   atualizarPecaNuvem: async function(idFirebase, dados) {
     if (!db) return false;
@@ -3191,6 +3218,91 @@ async function listarMinhasPlanilhas() {
 function bindTudo() {
   var b;
   
+  // ==========================================
+  // SALVAR PEÇA NO ACERVO
+  // ==========================================
+  b = document.getElementById("btn-adicionar-peca");
+
+  if (b) {
+    b.onclick = async function(e) {
+      e.preventDefault();
+
+      if (State.salvandoPeca) return;
+
+      const campo = id => document.getElementById(id);
+
+      const nome = campo("catalogo-peca-nome").value.trim();
+      const quantidade = Number(campo("catalogo-peca-qtd").value);
+      const categoria = campo("catalogo-peca-categoria").value;
+      const modelo = campo("catalogo-peca-modelo").value.trim();
+      const preco = Number(campo("catalogo-peca-preco").value);
+      const precoReposicao = Number(
+        campo("catalogo-peca-preco-reposicao").value
+      );
+      const campoFoto = campo("catalogo-peca-imagem");
+
+      if (!nome) {
+        return Utils.showToast(
+          "Informe o nome da peça ou tema.",
+          "warning"
+        );
+      }
+
+      if (!Number.isInteger(quantidade) || quantidade < 0) {
+        return Utils.showToast(
+          "Informe uma quantidade válida.",
+          "warning"
+        );
+      }
+
+      if (!Number.isFinite(preco) || preco < 0 ||
+          !Number.isFinite(precoReposicao) || precoReposicao < 0) {
+        return Utils.showToast(
+          "Confira os valores informados.",
+          "warning"
+        );
+      }
+
+      try {
+        let imagem = "";
+
+        if (campoFoto.files && campoFoto.files[0]) {
+          imagem = await reduzirImagem(
+            campoFoto.files[0],
+            900,
+            0.82
+          );
+        }
+
+        const salvo = await Database.salvarPecaNuvem({
+          nome,
+          quantidade,
+          categoria,
+          modelo,
+          preco,
+          precoReposicao,
+          imagem
+        });
+
+        if (salvo) {
+          campo("catalogo-peca-nome").value = "";
+          campo("catalogo-peca-qtd").value = "1";
+          campo("catalogo-peca-modelo").value = "";
+          campo("catalogo-peca-preco").value = "0";
+          campo("catalogo-peca-preco-reposicao").value = "0";
+          campoFoto.value = "";
+        }
+
+      } catch (erro) {
+        console.error("Erro ao preparar peça:", erro);
+        Utils.showToast(
+          "Erro ao preparar o cadastro: " + erro.message,
+          "error"
+        );
+      }
+    };
+  }
+
   // BOTÕES DA CENTRAL DE PLANILHAS
   b = document.getElementById("btn-minhas-planilhas");
   if (b) b.onclick = abrirCentralPlanilhas;
