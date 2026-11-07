@@ -429,7 +429,6 @@ salvarPecaNuvem: async function(peca) {
     if (botao) botao.disabled = false;
   }
 },
-
   },
   atualizarPecaNuvem: async function(idFirebase, dados) {
     if (!db) return false;
