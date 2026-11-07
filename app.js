@@ -424,20 +424,36 @@ salvarPecaNuvem: async function(peca) {
     );
     return false;
 
+ 
   } finally {
     State.salvandoPeca = false;
     if (botao) botao.disabled = false;
   }
 },
-  },
-  atualizarPecaNuvem: async function(idFirebase, dados) {
-    if (!db) return false;
-    try { await db.ref("estoque/" + idFirebase).update(dados); return true; } catch (e) { return false; }
-  },
-  removerPecaNuvem: async function(idFirebase) {
-    if (!db) return false;
-    try { await db.ref("estoque/" + idFirebase).remove(); return true; } catch (e) { return false; }
-  },
+
+atualizarPecaNuvem: async function(idFirebase, dados) {
+  if (!db) return false;
+
+  try {
+    await db.ref("estoque/" + idFirebase).update(dados);
+    return true;
+  } catch (e) {
+    console.error("Erro ao atualizar peça:", e);
+    return false;
+  }
+},
+
+removerPecaNuvem: async function(idFirebase) {
+  if (!db) return false;
+
+  try {
+    await db.ref("estoque/" + idFirebase).remove();
+    return true;
+  } catch (e) {
+    console.error("Erro ao remover peça:", e);
+    return false;
+  }
+},
   salvarCategoriaNuvem: function(nome) {
     if (!db) return Promise.reject("Sem conexão");
     nome = (nome || "").trim();
