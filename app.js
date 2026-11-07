@@ -3255,6 +3255,10 @@ function bindTudo() {
         campo("catalogo-peca-preco-reposicao").value
       );
       const campoFoto = campo("catalogo-peca-imagem");
+const campoCamera = campo("catalogo-peca-camera");
+const arquivoFoto =
+  (campoCamera.files && campoCamera.files[0]) ||
+  (campoFoto.files && campoFoto.files[0]);
 
       if (!nome) {
         return Utils.showToast(
@@ -3281,13 +3285,13 @@ function bindTudo() {
       try {
         let imagem = "";
 
-        if (campoFoto.files && campoFoto.files[0]) {
-          imagem = await reduzirImagem(
-            campoFoto.files[0],
-            900,
-            0.82
-          );
-        }
+       if (arquivoFoto) {
+  imagem = await reduzirImagem(
+    arquivoFoto,
+    900,
+    0.82
+  );
+}
 
         const salvo = await Database.salvarPecaNuvem({
           nome,
@@ -3306,6 +3310,7 @@ function bindTudo() {
           campo("catalogo-peca-preco").value = "0";
           campo("catalogo-peca-preco-reposicao").value = "0";
           campoFoto.value = "";
+          campoCamera.value = "";
         }
 
       } catch (erro) {
@@ -4563,3 +4568,16 @@ window.exportarVendasMesExcel = function() {
     "Tralala_Vendas_" + mes + ".xlsx"
   );
 };
+
+document.addEventListener("change", function(e) {
+  var camera = document.getElementById("catalogo-peca-camera");
+  var galeria = document.getElementById("catalogo-peca-imagem");
+
+  if (e.target === camera && camera.files.length && galeria) {
+    galeria.value = "";
+  }
+
+  if (e.target === galeria && galeria.files.length && camera) {
+    camera.value = "";
+  }
+});
