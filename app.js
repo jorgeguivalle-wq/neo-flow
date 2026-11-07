@@ -4513,3 +4513,53 @@ document.addEventListener("input", function(event) {
     renderizarTemas();
   }
 });
+
+// ============================================
+// EXPORTAR VENDAS MENSAIS PARA EXCEL
+// ============================================
+window.exportarVendasMesExcel = function() {
+  if (typeof XLSX === "undefined") {
+    return Utils.showToast(
+      "Biblioteca Excel não carregada.",
+      "error"
+    );
+  }
+
+  var seletor = document.getElementById("seletor-mes-planilha");
+  var mes = seletor ? seletor.value : "";
+  var indice = mesesAno.indexOf(mes);
+
+  if (indice === -1) {
+    return Utils.showToast("Selecione um mês válido.", "warning");
+  }
+
+  var vendas = State.reservas.filter(function(r) {
+    var partes = String(r.data || "").split("-");
+    return partes.length === 3 && Number(partes[1]) === indice + 1;
+  });
+
+  if (!vendas.length) {
+    return Utils.showToast("Nenhuma venda encontrada.", "warning");
+  }
+
+  var dados = vendas.map(function(r) {
+    return {
+      "Data": r.data || "",
+      "Cliente": r.cliente || "",
+      "Kit": r.kit || "",
+      "Tema": r.tema || "",
+      "Valor registrado (R$)": Number(r.total) || 0,
+      "Frete registrado (R$)": Number(r.frete) || 0
+    };
+  });
+
+  var planilha = XLSX.utils.json_to_sheet(dados);
+  var arquivo = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(arquivo, planilha, "Vendas");
+
+  XLSX.writeFile(
+    arquivo,
+    "Tralala_Vendas_" + mes + ".xlsx"
+  );
+};
