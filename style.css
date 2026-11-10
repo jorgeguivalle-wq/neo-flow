@@ -1172,3 +1172,72 @@ h4 { color: var(--primary-dark); font-size: 15px; font-weight: 600; }
   display: none !important;
 }
 
+/* SEGURANÇA - CONFIGURAÇÕES */
+
+.tp-seguranca-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: linear-gradient(120deg, #fff, #fff1f5);
+  border: 1px solid #f1cbd8;
+  border-radius: 17px;
+  padding: 22px;
+  margin-bottom: 22px;
+}
+
+.tp-seguranca-icone {
+  background: #f8dce5;
+  border-radius: 14px;
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  font-size: 25px;
+  flex-shrink: 0;
+}
+
+.tp-seguranca-info {
+  flex: 1;
+}
+
+.tp-seguranca-info strong {
+  color: #91455d;
+  font-size: 16px;
+}
+
+.tp-seguranca-info p {
+  font-size: 12px;
+  color: #64748b;
+  margin: 5px 0;
+}
+
+#tp-seguranca-status {
+  font-size: 11px;
+  color: #a3536a;
+}
+
+#tp-configurar-senha {
+  background: #a3536a;
+  border: none;
+  color: white;
+  border-radius: 10px;
+  padding: 12px 17px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#tp-configurar-senha:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 650px) {
+  .tp-seguranca-banner {
+    flex-wrap: wrap;
+  }
+
+  #tp-configurar-senha {
+    width: 100%;
+  }
+}
+
