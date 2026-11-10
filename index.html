@@ -185,6 +185,106 @@
     </section>
 
     <section id="secao-verificador" style="display: none;">
+      
+<!-- TRALALÁ PRO - MENU LATERAL -->
+<aside id="tp-sidebar">
+  <div class="tp-marca">
+    <img src="tralala-logo (1).png"
+         alt="Logo Tralalá"
+         class="tp-logo">
+    <div>
+      <strong>Tralalá Pro</strong>
+      <small>Gestão de festas</small>
+    </div>
+  </div>
+
+  <nav class="tp-menu">
+    <button type="button" class="tp-nav ativo"
+      data-pagina="inicio">🏠 Início</button>
+
+    <button type="button" class="tp-nav"
+      data-pagina="reservas">📅 Reservas</button>
+
+    <button type="button" class="tp-nav"
+      data-pagina="estoque">📦 Estoque</button>
+
+    <button type="button" class="tp-nav"
+      data-pagina="orcamentos">📋 Orçamentos</button>
+
+    <button type="button" class="tp-nav"
+      data-pagina="contratos">📄 Contratos</button>
+
+    <button type="button" class="tp-nav"
+      data-pagina="financeiro">📊 Financeiro</button>
+  </nav>
+
+  <div class="tp-menu-rodape">
+    <button type="button" class="tp-nav"
+      data-pagina="configuracoes">⚙️ Configurações</button>
+  </div>
+</aside>
+
+<!-- TRALALÁ PRO - TELA INÍCIO -->
+<div id="tp-home">
+  <div class="tp-cabecalho">
+    <div>
+      <h2>🏠 Início</h2>
+      <p>Bem-vindo ao painel da Tralalá Festas!</p>
+    </div>
+    <span class="tp-etiqueta">🌸 Tralalá Pro</span>
+  </div>
+
+  <div class="tp-cards">
+    <article class="tp-card">
+      <span class="tp-card-emoji">🎉</span>
+      <strong id="tp-total-reservas">—</strong>
+      <span>Festas agendadas</span>
+    </article>
+
+    <article class="tp-card">
+      <span class="tp-card-emoji">📦</span>
+      <strong id="tp-total-estoque">—</strong>
+      <span>Unidades no estoque</span>
+    </article>
+
+    <article class="tp-card">
+      <span class="tp-card-emoji">💰</span>
+      <strong id="tp-total-vendas">—</strong>
+      <span>Valor das reservas do mês</span>
+    </article>
+
+    <article class="tp-card">
+      <span class="tp-card-emoji">📋</span>
+      <strong id="tp-total-orcamentos">—</strong>
+      <span>Orçamentos aguardando resposta</span>
+    </article>
+  </div>
+
+  <section class="tp-painel">
+    <div class="tp-painel-titulo">
+      <h3>📅 Próximas festas</h3>
+      <button type="button" id="tp-ver-reservas">
+        Ver reservas
+      </button>
+    </div>
+
+    <div id="tp-lista-festas">
+      Carregando informações...
+    </div>
+  </section>
+
+  <section class="tp-painel tp-lala-card">
+    <h3>🌸 Lalá, sua assistente</h3>
+    <p>
+      Consulte festas, estoque, orçamentos e outras
+      informações com a Lalá.
+    </p>
+    <button type="button" id="tp-abrir-lala">
+      Conversar com a Lalá
+    </button>
+  </section>
+</div>
+
       <div class="usuario-logado">
         <span id="nome-usuario"> 👤 Administrador (Tralalá)</span>
         <button type="button" id="btn-logout-direto" class="btn btn-outline">Sair</button>
