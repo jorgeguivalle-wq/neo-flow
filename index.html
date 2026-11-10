@@ -255,6 +255,49 @@
   </button>
 </div>
 
+<!-- MODAL DE SEGURANÇA -->
+<div id="tp-modal-seguranca" class="tp-seg-overlay" hidden>
+  <div class="tp-seg-modal">
+
+    <div class="tp-seg-icone" id="tp-seg-icone">🔐</div>
+
+    <h2 id="tp-seg-titulo">Área protegida</h2>
+    <p id="tp-seg-descricao">
+      Confirme sua senha de segurança.
+    </p>
+
+    <form id="tp-seg-form">
+      <input
+        id="tp-seg-email"
+        type="email"
+        placeholder="E-mail da conta de segurança"
+        autocomplete="username"
+        required>
+
+      <input
+        id="tp-seg-senha"
+        type="password"
+        placeholder="Senha de segurança"
+        autocomplete="current-password"
+        required>
+
+      <p id="tp-seg-mensagem" role="status"></p>
+
+      <button id="tp-seg-confirmar" type="submit">
+        🔓 Desbloquear acesso
+      </button>
+    </form>
+
+    <button id="tp-seg-recuperar" type="button">
+      Esqueci minha senha
+    </button>
+
+    <button id="tp-seg-fechar" type="button">
+      Cancelar
+    </button>
+  </div>
+</div>
+
   <div id="tp-config-cards" class="tp-config-grid">
 
     <button type="button" class="tp-config-card"
@@ -2429,14 +2472,16 @@ window.TF = (function () {
     });
   }
 
-  function formatarData(data) {
-    if (!data) return "Data não informada";
-    function navegar(pagina) {
-    const p = String(data).slice(0, 10).split("-");
-    return p.length === 3
-      ? p[2] + "/" + p[1] + "/" + p[0]
-      : String(data);
-  }
+ 
+function formatarData(data) {
+  if (!data) return "Data não informada";
+
+  const p = String(data).slice(0, 10).split("-");
+
+  return p.length === 3
+    ? p[2] + "/" + p[1] + "/" + p[0]
+    : String(data);
+}
 
  function navegar(pagina) {
 if (pagina === "configuracoes") {
@@ -2824,10 +2869,213 @@ if (nomeCampo === "tema") {
   conteudo.appendChild(status);
 }
 
+/* ==========================================
+   SEGUNDA AUTENTICAÇÃO - TRALALÁ PRO
+   Firebase Authentication secundário
+   ========================================== */
+
+let tpSegurancaPendente = null;
+let tpSegurancaOcupada = false;
+
+const tpModal = document.getElementById(
+  "tp-modal-seguranca"
+);
+
+const tpSeg = id => document.getElementById(id);
+
+// Uma instância separada preserva o login principal.
+function tpAuthSeguranca() {
+  if (!window.firebase?.auth || !window.firebase?.app) {
+    throw new Error("Firebase Authentication indisponível.");
+  }
+
+  let app;
+
+  try {
+    app = firebase.app("tralala-seguranca");
+  } catch (_) {
+    app = firebase.initializeApp(
+      firebase.app().options,
+      "tralala-seguranca"
+    );
+  }
+
+  return {
+    auth: app.auth(),
+    db: app.database()
+  };
+}
+
+function tpAbrirSeguranca(categoria) {
+  if (!["conta", "dados"].includes(categoria)) return;
+
+  tpSegurancaPendente = categoria;
+  tpModal.hidden = false;
+
+  tpSeg("tp-seg-form").hidden = false;
+  tpSeg("tp-seg-recuperar").hidden = false;
+
+  tpSeg("tp-seg-icone").textContent = "🔐";
+  tpSeg("tp-seg-titulo").textContent =
+    "Verificação de segurança";
+
+  tpSeg("tp-seg-descricao").textContent =
+    "Digite sua segunda senha para acessar " +
+    (categoria === "conta"
+      ? "Minha conta."
+      : "Dados e backups.");
+
+  tpSeg("tp-seg-mensagem").textContent = "";
+  tpSeg("tp-seg-senha").value = "";
+
+  tpSeg("tp-seg-confirmar").disabled = false;
+  tpSeg("tp-seg-confirmar").textContent =
+    "🔓 Desbloquear acesso";
+
+  tpSeg("tp-seg-email").focus();
+}
+
+function tpFecharSeguranca() {
+  if (tpSegurancaOcupada) return;
+
+  tpModal.hidden = true;
+  tpSeg("tp-seg-senha").value = "";
+  tpSegurancaPendente = null;
+}
+
+tpSeg("tp-seg-fechar").addEventListener(
+  "click",
+  tpFecharSeguranca
+);
+
+tpSeg("tp-seg-form").addEventListener(
+  "submit",
+  async function(evento) {
+    evento.preventDefault();
+
+    if (tpSegurancaOcupada) return;
+
+    const categoria = tpSegurancaPendente;
+    const email = tpSeg("tp-seg-email").value.trim();
+    const senha = tpSeg("tp-seg-senha").value;
+
+    if (!categoria || !email || !senha) return;
+
+    tpSegurancaOcupada = true;
+
+    const botao = tpSeg("tp-seg-confirmar");
+    botao.disabled = true;
+    botao.textContent = "🔄 Verificando...";
+
+    tpSeg("tp-seg-mensagem").textContent = "";
+
+    try {
+      const { auth, db } = tpAuthSeguranca();
+
+      // Não reutilizar uma sessão secundária antiga.
+      await auth.signOut();
+
+      const resultado =
+        await auth.signInWithEmailAndPassword(
+          email,
+          senha
+        );
+
+      if (!resultado.user) {
+        throw new Error("Credencial inválida.");
+      }
+
+      // Somente o UID liberado nas regras consegue
+      // consultar este caminho.
+      await db.ref("segurancaPrivada").once("value");
+
+      // Encerra a sessão secundária após a verificação.
+      await auth.signOut();
+
+      tpSeg("tp-seg-senha").value = "";
+      tpSeg("tp-seg-form").hidden = true;
+      tpSeg("tp-seg-recuperar").hidden = true;
+
+      tpSeg("tp-seg-icone").textContent = "✅";
+      tpSeg("tp-seg-titulo").textContent =
+        "Acesso concedido!";
+
+      tpSeg("tp-seg-descricao").textContent =
+        "Identidade de segurança confirmada.";
+
+      tpSeg("tp-seg-mensagem").textContent = "";
+
+      // Abre a área solicitada após a confirmação.
+      const abrir = document.createElement("button");
+      abrir.type = "button";
+      abrir.className = "tp-seg-continuar";
+      abrir.textContent = "Continuar →";
+
+      abrir.onclick = () => {
+        abrir.remove();
+        tpModal.hidden = true;
+        tpSegurancaPendente = null;
+        abrirCardConfiguracoes(categoria);
+      };
+
+      tpSeg("tp-seg-mensagem").appendChild(abrir);
+
+    } catch (erro) {
+      console.error("Verificação de segurança:", erro);
+
+      tpSeg("tp-seg-mensagem").textContent =
+        "❌ Não foi possível autorizar o acesso. " +
+        "Confira a credencial e as permissões.";
+    } finally {
+      tpSeg("tp-seg-senha").value = "";
+      tpSegurancaOcupada = false;
+      botao.disabled = false;
+      botao.textContent = "🔓 Desbloquear acesso";
+    }
+  }
+);
+
+tpSeg("tp-seg-recuperar").addEventListener(
+  "click",
+  async () => {
+    const email = tpSeg("tp-seg-email").value.trim();
+
+    if (!email) {
+      tpSeg("tp-seg-mensagem").textContent =
+        "Informe primeiro o e-mail de segurança.";
+      return;
+    }
+
+    try {
+      const { auth } = tpAuthSeguranca();
+
+      await auth.sendPasswordResetEmail(email);
+
+      tpSeg("tp-seg-mensagem").textContent =
+        "📧 Se a conta estiver cadastrada, " +
+        "verifique a caixa de entrada do e-mail.";
+    } catch (erro) {
+      console.error(erro);
+
+      tpSeg("tp-seg-mensagem").textContent =
+        "Não foi possível solicitar a recuperação.";
+    }
+  }
+);
+
+
 document.querySelectorAll(".tp-config-card")
   .forEach(card => {
     card.addEventListener("click", () => {
-      abrirCardConfiguracoes(card.dataset.config);
+      const categoria = card.dataset.config;
+
+      if (categoria === "conta" ||
+          categoria === "dados") {
+        tpAbrirSeguranca(categoria);
+        return;
+      }
+
+      abrirCardConfiguracoes(categoria);
     });
   });
 
