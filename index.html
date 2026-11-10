@@ -232,6 +232,29 @@
     <p>Personalize sua experiência na Tralalá Pro.</p>
   </header>
 
+<!-- SEGURANÇA DAS CONFIGURAÇÕES -->
+<div class="tp-seguranca-banner">
+  <div class="tp-seguranca-icone">🔐</div>
+
+  <div class="tp-seguranca-info">
+    <strong>Senha de segurança</strong>
+    <p>
+      Uma proteção adicional para sua conta
+      e para os backups da Tralalá Pro.
+    </p>
+    <span id="tp-seguranca-status">
+      Verificando proteção...
+    </span>
+  </div>
+
+  <button
+    type="button"
+    id="tp-configurar-senha"
+    disabled>
+    🔒 Configurar senha
+  </button>
+</div>
+
   <div id="tp-config-cards" class="tp-config-grid">
 
     <button type="button" class="tp-config-card"
@@ -2408,6 +2431,7 @@ window.TF = (function () {
 
   function formatarData(data) {
     if (!data) return "Data não informada";
+    function navegar(pagina) {
     const p = String(data).slice(0, 10).split("-");
     return p.length === 3
       ? p[2] + "/" + p[1] + "/" + p[0]
