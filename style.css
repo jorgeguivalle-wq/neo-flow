@@ -1065,4 +1065,110 @@ h4 { color: var(--primary-dark); font-size: 15px; font-weight: 600; }
   }
 }
 
+/* =========================================
+   TRALALÁ PRO - TEMA ESCURO
+   Não altera o login nem a impressão
+   ========================================= */
+
+@media screen {
+  body.tp-logado.tp-tema-escuro {
+    --primary: #da8ca5;
+    --primary-light: #a8667f;
+    --primary-dark: #f2b7ca;
+    --bg-color: #101827;
+    --bg-panel: #1e293b;
+    --text-main: #f1f5f9;
+    --text-muted: #a5b4c7;
+    --border-color: #334155;
+
+    background: #101827;
+    color: #f1f5f9;
+  }
+
+  body.tp-logado.tp-tema-escuro .site-container {
+    background: #101827;
+    border-color: #334155;
+  }
+
+  body.tp-logado.tp-tema-escuro #tp-sidebar,
+  body.tp-logado.tp-tema-escuro .tp-card,
+  body.tp-logado.tp-tema-escuro .tp-painel,
+  body.tp-logado.tp-tema-escuro .tp-config-card,
+  body.tp-logado.tp-tema-escuro .tp-config-painel {
+    background: #1e293b;
+    border-color: #334155;
+    box-shadow: none;
+  }
+
+  body.tp-logado.tp-tema-escuro
+  :is(
+    .tp-marca strong,
+    .tp-card strong,
+    .tp-config-card strong,
+    .tp-config-header h2,
+    .tp-cabecalho h2,
+    .tp-painel h3,
+    .tp-config-painel h3,
+    .tp-festa-item strong
+  ) {
+    color: #f8fafc;
+  }
+
+  body.tp-logado.tp-tema-escuro
+  :is(
+    .tp-marca small,
+    .tp-card > span:last-child,
+    .tp-config-card small,
+    .tp-config-header p,
+    .tp-cabecalho p,
+    .tp-festa-item small,
+    .tp-lala-card p,
+    .tp-config-painel > p
+  ) {
+    color: #a5b4c7;
+  }
+
+  body.tp-logado.tp-tema-escuro .tp-nav {
+    color: #cbd5e1;
+  }
+
+  body.tp-logado.tp-tema-escuro .tp-nav:hover,
+  body.tp-logado.tp-tema-escuro .tp-nav.ativo {
+    color: #ffd2e0;
+    background: #493044;
+  }
+
+  body.tp-logado.tp-tema-escuro
+  :is(.tp-card-emoji, .tp-config-emoji) {
+    background: #493044;
+  }
+
+  body.tp-logado.tp-tema-escuro
+  :is(.tp-config-opcao, .tp-config-aviso) {
+    background: #273449;
+    color: #e2e8f0;
+    border-color: #475569;
+  }
+
+  body.tp-logado.tp-tema-escuro
+  :is(.tp-painel button, .tp-etiqueta) {
+    background: #273449;
+    color: #f3b8ca;
+    border-color: #674158;
+  }
+
+  body.tp-logado.tp-tema-escuro
+  :is(.tp-festa-item, .tp-marca, .tp-menu-rodape) {
+    border-color: #334155;
+  }
+
+  body.tp-logado.tp-tema-escuro
+  .tp-config-opcao input {
+    accent-color: #da8ca5;
+  }
+}
+#tp-config-cards[hidden],
+#tp-config-detalhes[hidden] {
+  display: none !important;
+}
 
