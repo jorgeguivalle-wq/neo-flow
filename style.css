@@ -537,3 +537,253 @@ h4 { color: var(--primary-dark); font-size: 15px; font-weight: 600; }
   margin-top: 14px;
   font-size: 13px;
 }
+
+/* =====================================================
+   TRALALÁ PRO — REDESIGN MINIMALISTA
+   TEMA BRANCO + ROSA
+   CSS PURO — SEM ALTERAR HTML OU JAVASCRIPT
+   ===================================================== */
+
+@media screen {
+
+  :root {
+    --primary: #a3536a;
+    --primary-light: #d9a3b2;
+    --primary-dark: #843e54;
+
+    --bg-color: #f5f6f8;
+    --bg-panel: #ffffff;
+
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+
+    --shadow: 0 4px 24px rgba(15, 23, 42, 0.05);
+    --radius: 14px;
+  }
+
+  /* FUNDO GERAL */
+  body {
+    background: var(--bg-color);
+    color: var(--text-main);
+    padding: 24px;
+    display: block;
+  }
+
+  /* ÁREA PRINCIPAL */
+  .site-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px;
+    background: #ffffff;
+    border: 1px solid #e9edf2;
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+  }
+
+  /* LOGO NO TOPO ESQUERDO */
+  .fachada {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: left;
+    padding-bottom: 20px;
+    margin-bottom: 25px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .logo-imagem {
+    max-width: 155px;
+    max-height: 90px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    margin: 0;
+  }
+
+  /* TÍTULOS */
+  h2 {
+    color: #172033;
+    font-size: 24px;
+    font-weight: 700;
+  }
+
+  h3 {
+    color: #253247;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  h4 {
+    color: #334155;
+    font-weight: 600;
+  }
+
+  /* USUÁRIO LOGADO */
+  .usuario-logado {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    color: #334155;
+    border-radius: 12px;
+    padding: 16px 20px;
+    box-shadow: none;
+  }
+
+  /* CAMPOS */
+  .input-group input,
+  .input-group select,
+  .input-group textarea {
+    background: #ffffff;
+    border: 1px solid #dbe2ea;
+    border-radius: 9px;
+    padding: 12px 14px;
+    color: #1e293b;
+    transition: border-color .2s, box-shadow .2s;
+  }
+
+  .input-group input:focus,
+  .input-group select:focus,
+  .input-group textarea:focus {
+    border-color: var(--primary);
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(163, 83, 106, .10);
+    outline: none;
+  }
+
+  .input-group label {
+    color: #475569;
+    font-weight: 500;
+    font-size: 13px;
+  }
+
+  /* BOTÕES */
+  .btn {
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 12px 16px;
+    box-shadow: none;
+    transition: background .2s, border-color .2s;
+  }
+
+  .btn-primary {
+    background: var(--primary);
+    color: white;
+    box-shadow: none;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: var(--primary-dark);
+    transform: none;
+  }
+
+  .btn-outline {
+    background: #ffffff;
+    color: #475569;
+    border: 1px solid #dbe2ea;
+  }
+
+  .btn-outline:hover:not(:disabled) {
+    background: #f8fafc;
+    color: var(--primary);
+    border-color: var(--primary-light);
+  }
+
+  .btn:focus-visible {
+    outline: 3px solid rgba(163, 83, 106, .25);
+    outline-offset: 2px;
+  }
+
+  /* PAINÉIS */
+  .painel-ponto,
+  .painel-kits,
+  .painel-central-relatorios,
+  .grafico-wrapper {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    box-shadow: none;
+    padding: 22px;
+  }
+
+  /* CARDS */
+  .card-reserva,
+  .card-reuniao,
+  .card-contrato,
+  .card-kit {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--primary);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, .03);
+  }
+
+  /* TABELAS */
+  .planilha-festa-simulada,
+  .tabela-pontos {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .planilha-festa-simulada th,
+  .tabela-pontos th {
+    background: #f1f5f9;
+    color: #334155;
+    padding: 12px;
+    font-weight: 600;
+    text-align: left;
+  }
+
+  .planilha-festa-simulada td,
+  .tabela-pontos td {
+    border-bottom: 1px solid var(--border-color);
+    color: #475569;
+    padding: 12px;
+  }
+
+  /* MODAIS — APENAS VISUAL */
+  .modal-conteudo,
+  .modal-visualizar-conteudo,
+  .modal-pecas-conteudo,
+  .modal-tema-reserva-conteudo,
+  .modal-editar-conteudo {
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+  }
+
+  /* CELULAR */
+  @media (max-width: 600px) {
+    body {
+      padding: 10px;
+    }
+
+    .site-container {
+      padding: 20px 14px;
+      border-radius: 12px;
+    }
+
+    .fachada {
+      justify-content: center;
+    }
+
+    .logo-imagem {
+      max-width: 135px;
+      margin: 0 auto;
+    }
+
+    .grid-2,
+    .grid-3,
+    .grid-4,
+    .grid-kits {
+      grid-template-columns: 1fr;
+    }
+
+    .painel-ponto,
+    .painel-kits,
+    .painel-central-relatorios {
+      padding: 15px;
+    }
+  }
+}
