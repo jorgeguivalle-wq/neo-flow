@@ -2317,5 +2317,239 @@ window.TF = (function () {
 
   <script src="assets/lala/lala.js"></script>
   <script src="campanhas.js"></script>
+        
+<script>
+/* =========================================
+   TRALALÁ PRO - INÍCIO E NAVEGAÇÃO
+   ========================================= */
+(function () {
+  "use strict";
+
+  const secao = document.getElementById("secao-verificador");
+  const menu = document.getElementById("tp-sidebar");
+
+  if (!secao || !menu) return;
+
+  let paginaAtual = "inicio";
+
+  const $ = id => document.getElementById(id);
+
+  function formatarMoeda(valor) {
+    return Number(valor || 0).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL"
+    });
+  }
+
+  function formatarData(data) {
+    if (!data) return "Data não informada";
+    const p = String(data).slice(0, 10).split("-");
+    return p.length === 3
+      ? p[2] + "/" + p[1] + "/" + p[0]
+      : String(data);
+  }
+
+  function navegar(pagina) {
+    if (pagina === "configuracoes") {
+      alert("⚙️ Configurações serão adicionadas na próxima etapa!");
+      return;
+    }
+
+    paginaAtual = pagina;
+
+    secao.classList.toggle("tp-inicio", pagina === "inicio");
+
+    document.querySelectorAll("#tp-sidebar .tp-nav")
+      .forEach(btn => {
+        btn.classList.toggle(
+          "ativo",
+          btn.dataset.pagina === pagina
+        );
+      });
+
+    document.body.classList.add("tp-logado");
+
+    if (pagina === "inicio") {
+      atualizarResumo();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    const destinos = {
+      reservas: "titulo-form-reserva",
+      estoque: "painel-catalogo-temas",
+      orcamentos: "painel-orcamentos-aberto",
+      financeiro: "secao-central-relatorios"
+    };
+
+    const botoesOriginais = {
+      estoque: "btn-abrir-catalogo-temas",
+      orcamentos: "btn-abrir-orcamentos-aberto",
+      financeiro: "btn-abrir-central-relatorios",
+      contratos: "btn-abrir-gerador-contrato"
+    };
+
+    if (pagina === "contratos") {
+      const botao = $(botoesOriginais.contratos);
+      if (botao) botao.click();
+      return;
+    }
+
+    const destino = $(destinos[pagina]);
+
+    if (destino && getComputedStyle(destino).display === "none") {
+      const botao = $(botoesOriginais[pagina]);
+      if (botao) botao.click();
+    }
+
+    setTimeout(() => {
+      const el = $(destinos[pagina]);
+      if (el) {
+        el.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+      }
+    }, 100);
+  }
+
+  function atualizarResumo() {
+    if (!secao.classList.contains("tp-inicio")) return;
+
+    const state = window.State;
+    if (!state || state.carregando) return;
+
+    const reservas = Array.isArray(state.reservas)
+      ? state.reservas : [];
+
+    const estoque = Array.isArray(state.estoqueArray)
+      ? state.estoqueArray : [];
+
+    const orcamentos = Array.isArray(state.orcamentosAbertos)
+      ? state.orcamentosAbertos : [];
+
+    const hoje = new Date();
+    const anoMes = hoje.getFullYear() + "-" +
+      String(hoje.getMonth() + 1).padStart(2, "0");
+
+    const hojeISO = hoje.getFullYear() + "-" +
+      String(hoje.getMonth() + 1).padStart(2, "0") +
+      "-" + String(hoje.getDate()).padStart(2, "0");
+
+    const futuras = reservas
+      .filter(r => r.data && r.data >= hojeISO)
+      .sort((a, b) => a.data.localeCompare(b.data));
+
+    const unidades = estoque.reduce((total, p) => {
+      return total + Math.max(0, Number(p.quantidade) || 0);
+    }, 0);
+
+    const vendasMes = reservas
+      .filter(r => String(r.data || "").startsWith(anoMes))
+      .reduce((total, r) => {
+        return total + (Number(r.total) || 0);
+      }, 0);
+
+    const pendentes = orcamentos.filter(o =>
+      o.status === "aguardando"
+    );
+
+    $("tp-total-reservas").textContent = futuras.length;
+    $("tp-total-estoque").textContent = unidades;
+    $("tp-total-vendas").textContent = formatarMoeda(vendasMes);
+    $("tp-total-orcamentos").textContent = pendentes.length;
+
+    const lista = $("tp-lista-festas");
+    lista.replaceChildren();
+
+    if (!futuras.length) {
+      const vazio = document.createElement("p");
+      vazio.textContent = "🎉 Nenhuma festa futura cadastrada.";
+      lista.appendChild(vazio);
+      return;
+    }
+
+    futuras.slice(0, 5).forEach(reserva => {
+      const linha = document.createElement("div");
+      linha.className = "tp-festa-item";
+
+      const detalhes = document.createElement("div");
+      const nome = document.createElement("strong");
+      const informacoes = document.createElement("small");
+      const data = document.createElement("span");
+
+      nome.textContent = "🎈 " +
+        (reserva.cliente || "Cliente não informado");
+
+      informacoes.textContent =
+        (reserva.tema || "Tema não informado") +
+        " • " +
+        (reserva.kit || "Kit não informado");
+
+      data.className = "tp-festa-data";
+      data.textContent = formatarData(reserva.data);
+
+      detalhes.appendChild(nome);
+      detalhes.appendChild(informacoes);
+
+      linha.appendChild(detalhes);
+      linha.appendChild(data);
+
+      lista.appendChild(linha);
+    });
+  }
+
+  // Botões do menu
+  menu.querySelectorAll("[data-pagina]")
+    .forEach(botao => {
+      botao.addEventListener("click", () => {
+        navegar(botao.dataset.pagina);
+      });
+    });
+
+  $("tp-ver-reservas")?.addEventListener("click", () => {
+    navegar("reservas");
+  });
+
+  $("tp-abrir-lala")?.addEventListener("click", () => {
+    // Deixa os elementos originais da Lalá acessíveis.
+    navegar("reservas");
+    $("lala-fab")?.click();
+  });
+
+  // Detecta quando o login foi concluído.
+  function verificarLogin() {
+    const logado =
+      secao.style.display !== "none" &&
+      !!window.State?.usuarioUID;
+
+    document.body.classList.toggle("tp-logado", logado);
+
+    if (logado) {
+      if (!secao.dataset.tpInicializado) {
+        secao.dataset.tpInicializado = "1";
+        navegar("inicio");
+      }
+      atualizarResumo();
+    } else {
+      secao.classList.remove("tp-inicio");
+      delete secao.dataset.tpInicializado;
+    }
+  }
+
+  const observador = new MutationObserver(verificarLogin);
+  observador.observe(secao, {
+    attributes: true,
+    attributeFilter: ["style"]
+  });
+
+  // O State já recebe os dados dos listeners do app.js.
+  // Só atualizamos a apresentação, sem novas leituras Firebase.
+  setInterval(verificarLogin, 2000);
+
+  verificarLogin();
+
+})();
+</script>
 </body>
 </html>
