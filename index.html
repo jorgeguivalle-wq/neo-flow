@@ -2414,13 +2414,30 @@ window.TF = (function () {
       : String(data);
   }
 
-  function navegar(pagina) {
-    if (pagina === "configuracoes") {
-      alert("⚙️ Configurações serão adicionadas na próxima etapa!");
-      return;
-    }
+ 
+if (pagina === "configuracoes") {
+  paginaAtual = pagina;
+
+  secao.classList.remove("tp-inicio");
+  secao.classList.add("tp-configuracoes");
+
+  menu.querySelectorAll(".tp-nav").forEach(btn => {
+    btn.classList.toggle(
+      "ativo",
+      btn.dataset.pagina === "configuracoes"
+    );
+  });
+
+  abrirListaConfiguracoes();
+  window.scrollTo({top: 0, behavior: "smooth"});
+  return;
+}
+
 
     paginaAtual = pagina;
+  secao.classList.remove("tp-configuracoes");
+
+secao.classList.toggle("tp-inicio", pagina === "inicio");
 
     secao.classList.toggle("tp-inicio", pagina === "inicio");
 
@@ -2563,6 +2580,170 @@ window.TF = (function () {
       lista.appendChild(linha);
     });
   }
+
+/* ==========================================
+   CARDS DE CONFIGURAÇÕES
+   ========================================== */
+
+function abrirListaConfiguracoes() {
+  document.getElementById("tp-config-cards").hidden = false;
+  document.getElementById("tp-config-detalhes").hidden = true;
+}
+
+const categoriasConfiguracoes = {
+  aparencia: {
+    titulo: "🎨 Aparência",
+    descricao: "Personalize o visual da Tralalá Pro.",
+    opcoes: [
+      ["tema", "Claro — branco tradicional", "claro"],
+      ["tema", "Escuro", "escuro"],
+      ["tema", "Automático", "automatico"]
+    ]
+  },
+
+  lala: {
+    titulo: "🌸 Assistente Lalá",
+    descricao: "Escolha como a Lalá deve conversar.",
+    opcoes: [
+      ["personalidade", "Direta", "direta"],
+      ["personalidade", "Profissional", "profissional"],
+      ["personalidade", "Carinhosa", "carinhosa"],
+      ["personalidade", "Alegre", "alegre"],
+      ["personalidade", "Conclusiva", "conclusiva"]
+    ]
+  },
+
+  sistema: {
+    titulo: "🛠️ Sistema",
+    descricao: "Preferências gerais do painel.",
+    texto: "Em breve: página inicial, notificações e organização dos atalhos."
+  },
+
+  conta: {
+    titulo: "👤 Minha conta",
+    descricao: "Seu perfil e segurança.",
+    texto: "As opções de conta serão integradas ao Firebase Authentication."
+  },
+
+  dados: {
+    titulo: "💾 Dados e backups",
+    descricao: "Proteja as informações da loja.",
+    texto: "Em breve: exportação e recuperação segura de backups."
+  }
+};
+
+async function abrirCardConfiguracoes(categoria) {
+  const config = categoriasConfiguracoes[categoria];
+  if (!config) return;
+
+  document.getElementById("tp-config-cards").hidden = true;
+  document.getElementById("tp-config-detalhes").hidden = false;
+
+  document.getElementById("tp-config-titulo")
+    .textContent = config.titulo;
+
+  document.getElementById("tp-config-descricao")
+    .textContent = config.descricao;
+
+  const conteudo = document.getElementById("tp-config-conteudo");
+  conteudo.replaceChildren();
+
+  if (config.texto) {
+    const aviso = document.createElement("p");
+    aviso.className = "tp-config-aviso";
+    aviso.textContent = config.texto;
+    conteudo.appendChild(aviso);
+    return;
+  }
+
+  let escolhas = {};
+
+  try {
+    const uid = window.State?.usuarioUID;
+    const banco = window.State?.db;
+
+    if (uid && banco) {
+      const snap = await banco.ref(
+        "configuracoes/preferencias/" + uid
+      ).once("value");
+
+      escolhas = snap.val() || {};
+    }
+  } catch (erro) {
+    console.warn("Erro ao carregar preferências:", erro);
+  }
+
+  const nomeCampo = categoria === "lala"
+    ? "personalidade" : "tema";
+
+  config.opcoes.forEach(([grupo, titulo, valor]) => {
+    const label = document.createElement("label");
+    label.className = "tp-config-opcao";
+
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.name = "tp-config-" + categoria;
+    input.value = valor;
+
+    const padrao = categoria === "lala"
+      ? "carinhosa" : "claro";
+
+    input.checked =
+      valor === (escolhas[nomeCampo] || padrao);
+
+    input.addEventListener("change", async () => {
+      if (!input.checked) return;
+
+      const uid = window.State?.usuarioUID;
+      const banco = window.State?.db;
+
+      if (!uid || !banco) {
+        alert("Faça login para salvar as preferências.");
+        return;
+      }
+
+      try {
+        await banco.ref(
+          "configuracoes/preferencias/" + uid
+        ).update({
+          [nomeCampo]: valor,
+          atualizadoEm: Date.now()
+        });
+
+        status.textContent = "✅ Preferência salva!";
+      } catch (erro) {
+        console.error(erro);
+        status.textContent = "❌ Não foi possível salvar.";
+      }
+    });
+
+    const texto = document.createElement("span");
+    texto.textContent = titulo;
+
+    label.append(input, texto);
+    conteudo.appendChild(label);
+  });
+
+  const status = document.createElement("p");
+  status.className = "tp-config-aviso";
+
+  status.textContent =
+    "As preferências são salvas por usuário. " +
+    "A aplicação dos temas e personalidades será " +
+    "conectada aos respectivos módulos na próxima etapa.";
+
+  conteudo.appendChild(status);
+}
+
+document.querySelectorAll(".tp-config-card")
+  .forEach(card => {
+    card.addEventListener("click", () => {
+      abrirCardConfiguracoes(card.dataset.config);
+    });
+  });
+
+document.getElementById("tp-config-voltar")
+  ?.addEventListener("click", abrirListaConfiguracoes);
 
   // Botões do menu
   menu.querySelectorAll("[data-pagina]")
