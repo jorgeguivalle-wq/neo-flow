@@ -1241,3 +1241,135 @@ h4 { color: var(--primary-dark); font-size: 15px; font-weight: 600; }
   }
 }
 
+/* ==========================================
+   MODAL DE SEGURANÇA - TRALALÁ PRO
+   ========================================== */
+
+.tp-seg-overlay[hidden] {
+  display: none !important;
+}
+
+.tp-seg-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(15, 23, 42, .65);
+  backdrop-filter: blur(7px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.tp-seg-modal {
+  width: 100%;
+  max-width: 430px;
+  background: #fff;
+  color: #334155;
+  padding: 35px 28px;
+  border-radius: 24px;
+  text-align: center;
+  box-shadow: 0 25px 80px rgba(0,0,0,.25);
+  animation: tpSegEntrada .3s ease;
+}
+
+@keyframes tpSegEntrada {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.tp-seg-icone {
+  width: 75px;
+  height: 75px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 18px;
+  background: #fff0f5;
+  border-radius: 22px;
+  font-size: 36px;
+}
+
+.tp-seg-modal h2 {
+  font-size: 23px;
+  color: #a3536a;
+  margin: 0 0 10px;
+}
+
+.tp-seg-modal p {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+#tp-seg-form {
+  margin-top: 22px;
+}
+
+#tp-seg-form[hidden] {
+  display: none !important;
+}
+
+#tp-seg-form input {
+  width: 100%;
+  padding: 14px;
+  margin-bottom: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 14px;
+}
+
+#tp-seg-form input:focus {
+  outline: none;
+  border-color: #a3536a;
+  box-shadow: 0 0 0 3px #a3536a20;
+}
+
+#tp-seg-confirmar,
+.tp-seg-continuar {
+  width: 100%;
+  background: #a3536a;
+  color: white;
+  padding: 14px;
+  border: 0;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#tp-seg-confirmar:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
+#tp-seg-recuperar,
+#tp-seg-fechar {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: block;
+  margin: 15px auto 0;
+  color: #a3536a;
+  font-size: 13px;
+}
+
+#tp-seg-fechar {
+  color: #64748b;
+}
+
+#tp-seg-mensagem {
+  font-size: 12px;
+  margin: 12px 0;
+}
+
+#tp-seg-mensagem .tp-seg-continuar {
+  margin-top: 10px;
+}
+
