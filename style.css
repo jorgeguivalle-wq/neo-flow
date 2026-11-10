@@ -886,4 +886,183 @@ h4 { color: var(--primary-dark); font-size: 15px; font-weight: 600; }
   }
 }
 
+/* ==========================================
+   TRALALÁ PRO - CONFIGURAÇÕES
+   ========================================== */
+
+@media screen {
+
+  #tp-configuracoes {
+    display: none;
+    min-width: 0;
+    padding: 8px 0 30px;
+  }
+
+  #secao-verificador.tp-configuracoes
+  #tp-configuracoes {
+    display: block;
+  }
+
+  #secao-verificador.tp-configuracoes
+  > :not(#tp-sidebar):not(#tp-configuracoes) {
+    display: none !important;
+  }
+
+  .tp-config-header {
+    margin-bottom: 25px;
+  }
+
+  .tp-config-header h2 {
+    color: #172033;
+    font-size: 27px;
+    margin: 0 0 7px;
+  }
+
+  .tp-config-header p {
+    color: #64748b;
+    font-size: 13px;
+    margin: 0;
+  }
+
+  .tp-config-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 17px;
+  }
+
+  .tp-config-card {
+    min-height: 190px;
+    background: #fff;
+    border: 1px solid #e8ebf0;
+    border-radius: 17px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    gap: 11px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px #0f172a06;
+    transition: border-color .2s, box-shadow .2s;
+  }
+
+  .tp-config-card:hover {
+    border-color: #d9a3b2;
+    box-shadow: 0 7px 24px #a3536a12;
+  }
+
+  .tp-config-emoji {
+    background: #fceef2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 49px;
+    height: 49px;
+    border-radius: 12px;
+    font-size: 24px;
+  }
+
+  .tp-config-card strong {
+    color: #172033;
+    font-size: 16px;
+  }
+
+  .tp-config-card small {
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.5;
+  }
+
+  .tp-config-seta {
+    align-self: flex-end;
+    font-size: 20px;
+    color: #a3536a;
+    margin-top: auto;
+  }
+
+  #tp-config-voltar {
+    background: transparent;
+    color: #a3536a;
+    font-weight: 600;
+    border: 0;
+    padding: 8px 0 18px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+
+  .tp-config-painel {
+    background: white;
+    border: 1px solid #e8ebf0;
+    border-radius: 18px;
+    padding: 28px;
+    box-shadow: 0 3px 12px #0f172a05;
+  }
+
+  .tp-config-painel h3 {
+    color: #172033;
+    font-size: 20px;
+    margin: 0 0 8px;
+  }
+
+  .tp-config-painel > p {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 22px;
+  }
+
+  .tp-config-opcao {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    margin: 9px 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 11px;
+    background: #fff;
+    cursor: pointer;
+    color: #334155;
+    font-size: 13px;
+  }
+
+  .tp-config-opcao:hover {
+    background: #fcf6f8;
+  }
+
+  .tp-config-opcao input {
+    accent-color: #a3536a;
+    width: 17px;
+    height: 17px;
+  }
+
+  #tp-config-conteudo h4 {
+    margin: 18px 0 12px;
+    color: #334155;
+  }
+
+  #tp-config-conteudo .tp-config-aviso {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 13px;
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 15px;
+  }
+
+  @media (max-width: 600px) {
+    .tp-config-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .tp-config-card {
+      min-height: 145px;
+      padding: 18px;
+    }
+
+    .tp-config-painel {
+      padding: 18px;
+    }
+  }
+}
+
 
