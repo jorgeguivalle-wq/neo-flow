@@ -2414,7 +2414,7 @@ window.TF = (function () {
       : String(data);
   }
 
- 
+ function navegar(pagina) {
 if (pagina === "configuracoes") {
   paginaAtual = pagina;
 
@@ -2438,9 +2438,7 @@ if (pagina === "configuracoes") {
   secao.classList.remove("tp-configuracoes");
 
 secao.classList.toggle("tp-inicio", pagina === "inicio");
-
-    secao.classList.toggle("tp-inicio", pagina === "inicio");
-
+   
     document.querySelectorAll("#tp-sidebar .tp-nav")
       .forEach(btn => {
         btn.classList.toggle(
@@ -2632,6 +2630,59 @@ const categoriasConfiguracoes = {
   }
 };
 
+/* =========================================
+   PREFERÊNCIAS - TRALALÁ PRO
+   ========================================= */
+
+let preferenciasCarregadasUID = "";
+
+function aplicarTemaTralala(tema) {
+  const escuro = tema === "escuro" ||
+    (tema === "automatico" &&
+     window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+  document.body.classList.toggle("tp-tema-escuro", escuro);
+  document.body.dataset.tpTema = tema;
+}
+
+async function carregarPreferenciasUsuario() {
+  const uid = window.State?.usuarioUID;
+  const banco = window.State?.db;
+
+  if (!uid || !banco) return;
+  if (preferenciasCarregadasUID === uid) return;
+
+  try {
+    const snap = await banco.ref(
+      "configuracoes/preferencias/" + uid
+    ).once("value");
+
+    if (window.State?.usuarioUID !== uid) return;
+
+    const preferencias = snap.val() || {};
+
+    window.TralalaPreferencias = preferencias;
+
+    aplicarTemaTralala(preferencias.tema || "claro");
+
+    preferenciasCarregadasUID = uid;
+
+  } catch (erro) {
+    console.error(
+      "Erro ao carregar preferências:",
+      erro
+    );
+  }
+}
+
+// Atualiza o tema automático se o dispositivo mudar.
+window.matchMedia("(prefers-color-scheme: dark)")
+  .addEventListener("change", () => {
+    if (document.body.dataset.tpTema === "automatico") {
+      aplicarTemaTralala("automatico");
+    }
+  });
+
 async function abrirCardConfiguracoes(categoria) {
   const config = categoriasConfiguracoes[categoria];
   if (!config) return;
@@ -2710,7 +2761,21 @@ async function abrirCardConfiguracoes(categoria) {
           atualizadoEm: Date.now()
         });
 
-        status.textContent = "✅ Preferência salva!";
+       
+window.TralalaPreferencias = {
+  ...(window.TralalaPreferencias || {}),
+  [nomeCampo]: valor
+};
+
+if (nomeCampo === "tema") {
+  aplicarTemaTralala(valor);
+  status.textContent = "✅ Tema aplicado e salvo!";
+} else {
+  status.textContent =
+    "✅ Personalidade salva! " +
+    "A integração das respostas da Lalá será feita em seguida.";
+}
+
       } catch (erro) {
         console.error(erro);
         status.textContent = "❌ Não foi possível salvar.";
@@ -2775,6 +2840,7 @@ document.getElementById("tp-config-voltar")
       if (!secao.dataset.tpInicializado) {
         secao.dataset.tpInicializado = "1";
         navegar("inicio");
+        carregarPreferenciasUsuario();
       }
       atualizarResumo();
     } else {
