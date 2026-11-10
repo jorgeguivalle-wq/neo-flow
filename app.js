@@ -3336,8 +3336,29 @@ const arquivoFoto =
   b = document.getElementById("btn-salvar-minha-planilha");
   if (b) b.onclick = salvarMinhaPlanilha;
 
+ 
+  // ==========================================
+  // CONFIRMAR E SALVAR RESERVA
+  // ==========================================
+  b = document.getElementById("btn-confirmar-agendamento");
+
+  if (b) {
+    b.onclick = function(e) {
+      e.preventDefault();
+      console.log("Botão de salvar reserva acionado");
+      handleSalvarFesta();
+    };
+  }
+
+  // ==========================================
+  // LOGIN
+  // ==========================================
   b = document.getElementById("btn-login-direto");
-  if (b) b.onclick = function(e) { if (e) e.preventDefault(); handleLogin(); };
+  if (b) b.onclick = function(e) {
+    if (e) e.preventDefault();
+    handleLogin();
+  };
+
   b = document.getElementById("btn-logout-direto");
   if (b) b.onclick = function(e) { if (e) e.preventDefault(); handleLogout(); };
   var senhaEl = document.getElementById("senha");
