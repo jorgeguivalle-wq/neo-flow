@@ -1373,3 +1373,104 @@ h4 { color: var(--primary-dark); font-size: 15px; font-weight: 600; }
   margin-top: 10px;
 }
 
+/* ==========================================
+   TRALALÁ PRO - SELETOR DE CARDS
+   ========================================== */
+
+.tp-seletor-cards[hidden] {
+  display: none !important;
+}
+
+.tp-seletor-cards {
+  background: #ffffff;
+  border: 1px solid #e8d4dc;
+  border-radius: 16px;
+  padding: 20px;
+  margin-top: 18px;
+  box-shadow: 0 5px 20px rgba(163,83,106,.08);
+}
+
+.tp-seletor-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+}
+
+.tp-seletor-topo h3 {
+  margin: 0 0 6px;
+  color: #a3536a;
+  font-size: 18px;
+}
+
+.tp-seletor-topo p {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.tp-lista-selecao {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0;
+  max-height: 330px;
+  overflow-y: auto;
+}
+
+.tp-item-selecao {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 15px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  background: white;
+}
+
+.tp-item-selecao:hover {
+  background: #fcf5f8;
+  border-color: #d9a3b2;
+}
+
+.tp-item-selecao:has(input:checked) {
+  background: #fceef2;
+  border-color: #a3536a;
+}
+
+.tp-item-selecao input {
+  width: 19px;
+  height: 19px;
+  accent-color: #a3536a;
+  flex-shrink: 0;
+}
+
+.tp-item-selecao strong {
+  display: block;
+  font-size: 13px;
+  color: #172033;
+}
+
+.tp-item-selecao small {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.tp-seletor-rodape {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid #eee;
+  padding-top: 16px;
+}
+
+.tp-seletor-rodape span {
+  color: #64748b;
+  font-size: 12px;
+}
+
