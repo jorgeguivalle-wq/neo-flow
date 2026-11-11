@@ -4326,8 +4326,25 @@ window.criarNovaPasta = async function() {
   try { await db.ref('pastas_agendamentos').push({nome, criadoEm: Date.now(), cards: []}); campo.value = ''; }
   catch(e) { Utils.showToast('Não foi possível criar a pasta.', 'error'); }
 };
-window.abrirPasta = function(id) { pastaAbertaId = id; renderizarPastas(); };
-window.voltarPastas = function() { pastaAbertaId = null; renderizarPastas(); };
+
+window.abrirPasta = function(id) {
+  pastaAbertaId = id;
+
+  const seletor = document.getElementById("seletor-cards-pasta");
+  if (seletor) seletor.hidden = true;
+
+  renderizarPastas();
+};
+
+window.voltarPastas = function() {
+  pastaAbertaId = null;
+
+  const seletor = document.getElementById("seletor-cards-pasta");
+  if (seletor) seletor.hidden = true;
+
+  renderizarPastas();
+};
+
 window.renomearPasta = async function(id) {
   const pasta = pastasAgendamento.find(p => p.id === id); if (!pasta) return;
   const nome = prompt('Novo nome da pasta:', pasta.nome);
@@ -4346,19 +4363,165 @@ window.removerDaPasta = async function(idPasta, idReserva) {
   try { await db.ref('pastas_agendamentos/' + idPasta + '/cards').set(ids.length ? ids : null); }
   catch(e) { Utils.showToast('Erro ao retirar agendamento.', 'error'); }
 };
-window.adicionarNaPasta = async function(idPasta) {
-  const p = pastasAgendamento.find(p => p.id === idPasta); if (!p) return;
-  const ocupados = new Set(pastasAgendamento.flatMap(x => normalizarIdsPasta(x.cards)));
-  const disponiveis = State.reservas.filter(r => !ocupados.has(String(r.id)));
-  if (!disponiveis.length) return Utils.showToast('Não há agendamentos fora das pastas.', 'warning');
-  const resposta = prompt('Digite o número do agendamento para adicionar:\n' + disponiveis.map((r,i) => `${i+1} - ${r.cliente || 'Sem nome'}`).join('\n'));
-  if (resposta === null) return;
-  const i = Number(resposta)-1;
-  if (!Number.isInteger(i) || i < 0 || i >= disponiveis.length) return Utils.showToast('Número inválido.', 'warning');
-  const ids = [...new Set([...normalizarIdsPasta(p.cards), String(disponiveis[i].id)])];
-  try { await db.ref('pastas_agendamentos/' + idPasta + '/cards').set(ids); }
-  catch(e) { Utils.showToast('Erro ao adicionar agendamento.', 'error'); }
+
+/* ==========================================
+   SELECIONAR CARDS PARA UMA PASTA
+   ========================================== */
+
+window.adicionarNaPasta = function(idPasta) {
+  const pasta = pastasAgendamento.find(p => p.id === idPasta);
+  if (!pasta) return;
+
+  const painel = document.getElementById("seletor-cards-pasta");
+  const lista = document.getElementById("lista-cards-disponiveis");
+  const contador = document.getElementById("contador-cards-selecionados");
+
+  if (!painel || !lista || !contador) return;
+
+  const ocupados = new Set(
+    pastasAgendamento.flatMap(p => normalizarIdsPasta(p.cards))
+  );
+
+  const disponiveis = State.reservas.filter(r =>
+    !ocupados.has(String(r.id))
+  );
+
+  lista.replaceChildren();
+  contador.textContent = "0 selecionados";
+
+  if (!disponiveis.length) {
+    const vazio = document.createElement("p");
+    vazio.textContent = "Nenhum card sem pasta disponível.";
+    lista.appendChild(vazio);
+  }
+
+  disponiveis.forEach(reserva => {
+    const label = document.createElement("label");
+    label.className = "tp-item-selecao";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.value = String(reserva.id);
+    checkbox.className = "tp-checkbox-pasta";
+
+    const detalhes = document.createElement("div");
+
+    const nome = document.createElement("strong");
+    nome.textContent = "🎉 " + (reserva.cliente || "Sem nome");
+
+    const info = document.createElement("small");
+    info.textContent =
+      "📅 " + Utils.formatDateBR(reserva.data) +
+      " • 🎨 " + (reserva.tema || "Sem tema");
+
+    detalhes.append(nome, info);
+    label.append(checkbox, detalhes);
+    lista.appendChild(label);
+
+    checkbox.addEventListener("change", () => {
+      const total = lista.querySelectorAll(
+        ".tp-checkbox-pasta:checked"
+      ).length;
+
+      contador.textContent = total + " selecionado(s)";
+    });
+  });
+
+  painel.dataset.pastaId = idPasta;
+  painel.hidden = false;
+  painel.scrollIntoView({ behavior: "smooth", block: "nearest" });
 };
+
+/* FECHAR O SELETOR */
+document.getElementById("btn-fechar-seletor-pasta")
+  ?.addEventListener("click", () => {
+    document.getElementById("seletor-cards-pasta").hidden = true;
+  });
+
+/* SALVAR OS CARDS SELECIONADOS */
+document.getElementById("btn-salvar-cards-pasta")
+  ?.addEventListener("click", async function() {
+
+    const painel = document.getElementById("seletor-cards-pasta");
+    const idPasta = painel.dataset.pastaId;
+
+    const selecionados = Array.from(
+      painel.querySelectorAll(".tp-checkbox-pasta:checked")
+    ).map(c => c.value);
+
+    if (!selecionados.length) {
+      return Utils.showToast(
+        "Selecione pelo menos um card.",
+        "warning"
+      );
+    }
+
+    if (!db || !idPasta) {
+      return Utils.showToast(
+        "Pasta ou conexão indisponível.",
+        "error"
+      );
+    }
+
+    const botao = this;
+    botao.disabled = true;
+
+    try {
+      // Transação para preservar cards já existentes.
+      const refPastas = db.ref("pastas_agendamentos");
+
+      const resultado = await refPastas.transaction(dados => {
+        if (!dados || !dados[idPasta]) return;
+
+        const ocupados = new Set();
+
+        Object.keys(dados).forEach(id => {
+          normalizarIdsPasta(dados[id]?.cards)
+            .forEach(cardId => ocupados.add(cardId));
+        });
+
+        const livres = selecionados.filter(id =>
+          !ocupados.has(id)
+        );
+
+        if (!livres.length) return;
+
+        const atuais = normalizarIdsPasta(
+          dados[idPasta].cards
+        );
+
+        dados[idPasta].cards = [
+          ...new Set([...atuais, ...livres])
+        ];
+
+        return dados;
+      });
+
+      if (!resultado.committed) {
+        return Utils.showToast(
+          "Os cards já foram movidos ou a pasta mudou. Atualize a lista.",
+          "warning"
+        );
+      }
+
+      painel.hidden = true;
+
+      Utils.showToast(
+        "Cards adicionados à pasta!",
+        "success"
+      );
+
+    } catch (erro) {
+      console.error("Erro ao adicionar cards:", erro);
+
+      Utils.showToast(
+        "Não foi possível salvar os cards.",
+        "error"
+      );
+    } finally {
+      botao.disabled = false;
+    }
+  });
 
 function renderizarPastasNoRelatorio() {
   const area = document.getElementById("pastas-relatorio");
@@ -4408,7 +4571,7 @@ function renderizarPastas() {
   const p = pastasAgendamento.find(x => x.id === pastaAbertaId);
   if (!p) { pastaAbertaId = null; return renderizarPastas(); }
   if (form) form.style.display = 'none';
-  area.innerHTML = `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button type="button" class="btn btn-outline" onclick="voltarPastas()">← Voltar</button><strong>📁 ${escaparTexto(p.nome)}</strong><button type="button" class="btn btn-primary" onclick="adicionarNaPasta('${p.id}')">+ Adicionar agendamento</button></div><div id="cards-dentro-pasta" style="display:grid;gap:12px;margin-top:15px"></div>`;
+  area.innerHTML = `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button type="button" class="btn btn-outline" onclick="voltarPastas()">← Voltar</button><strong>📁 ${escaparTexto(p.nome)}</strong><button type="button" class="btn btn-primary" onclick="adicionarNaPasta('${p.id}')">➕ Adicionar card</button></div><div id="cards-dentro-pasta" style="display:grid;gap:12px;margin-top:15px"></div>`;
   const ids = normalizarIdsPasta(p.cards);
   const destino = document.getElementById('cards-dentro-pasta');
   renderReservasOriginalPastas('', {container: destino, ids});
