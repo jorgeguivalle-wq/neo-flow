@@ -216,6 +216,8 @@
 
     <button type="button" class="tp-nav"
       data-pagina="financeiro">📊 Financeiro</button>
+    <button type="button" class="tp-nav"
+  data-pagina="campanhas">👥 Clientes e Campanhas</button>
   </nav>
 
   <div class="tp-menu-rodape">
@@ -2529,6 +2531,7 @@ secao.classList.toggle("tp-inicio", pagina === "inicio");
       estoque: "painel-catalogo-temas",
       orcamentos: "painel-orcamentos-aberto",
       financeiro: "secao-central-relatorios"
+      campanhas: "painel-clientes-campanhas",
     };
 
     const botoesOriginais = {
@@ -2536,8 +2539,34 @@ secao.classList.toggle("tp-inicio", pagina === "inicio");
       orcamentos: "btn-abrir-orcamentos-aberto",
       financeiro: "btn-abrir-central-relatorios",
       contratos: "btn-abrir-gerador-contrato"
+      campanhas: "btn-abrir-clientes-campanhas",
     };
+if (pagina === "campanhas") {
+  const botao = document.getElementById(
+    "btn-abrir-clientes-campanhas"
+  );
 
+  const painel = document.getElementById(
+    "painel-clientes-campanhas"
+  );
+
+  if (painel && getComputedStyle(painel).display === "none") {
+    botao?.click();
+  }
+
+  if (typeof window.iniciarClientesCampanhas === "function") {
+    window.iniciarClientesCampanhas();
+  }
+
+  setTimeout(() => {
+    painel?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  }, 100);
+
+  return;
+}
     if (pagina === "contratos") {
       const botao = $(botoesOriginais.contratos);
       if (botao) botao.click();
