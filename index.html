@@ -1472,7 +1472,6 @@
         <button type="button" id="btn-editar-contrato" class="btn btn-outline" style="width:auto; padding:12px 24px; border-color:#3498db; color:#3498db;">✏️ Editar Manualmente</button>
         <button type="button" id="btn-salvar-edicao-contrato" class="btn btn-success" style="width:auto; padding:12px 24px; display:none;">💾 Salvar Alterações</button>
         <button type="button" id="btn-add-nota-promissoria" class="btn btn-outline" style="width:auto; padding:12px 24px; border-color:#9b59b6; color:#9b59b6; display:none;">📝 Adicionar Nota Promissória</button>
-        <button type="button" id="btn-imprimir-contrato" class="btn btn-outline" style="width:auto; padding:12px 24px;">🖨️ Imprimir</button>
       </div>
     </div>
   </div>
@@ -1660,6 +1659,41 @@
         <!-- As pastas vão aparecer aqui automaticamente -->
       </div>
       
+<!-- SELETOR DE CARDS PARA PASTAS -->
+<div id="seletor-cards-pasta"
+     class="tp-seletor-cards"
+     hidden>
+
+  <div class="tp-seletor-topo">
+    <div>
+      <h3>📋 Selecione os cards</h3>
+      <p>Escolha as reservas que deseja colocar nesta pasta.</p>
+    </div>
+
+    <button type="button"
+            id="btn-fechar-seletor-pasta"
+            class="btn btn-outline">
+      ✕
+    </button>
+  </div>
+
+  <div id="lista-cards-disponiveis"
+       class="tp-lista-selecao">
+  </div>
+
+  <div class="tp-seletor-rodape">
+    <span id="contador-cards-selecionados">
+      0 selecionados
+    </span>
+
+    <button type="button"
+            id="btn-salvar-cards-pasta"
+            class="btn btn-primary">
+      💾 Salvar
+    </button>
+  </div>
+</div>
+
     </div>
   </div>
 
