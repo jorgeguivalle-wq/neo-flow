@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tralalá Festas - Sistema Pro</title>
-  <link rel="icon" type="image/png" href="tralala-logo.png">
+  <link rel="icon" type="image/png" href="tralala-logo (1).png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -163,6 +163,31 @@
   }
 </style>
 
+
+<!-- ISOLAMENTO DOS MÓDULOS - TELAS INDEPENDENTES -->
+<style>
+@media screen {
+  #secao-verificador.tp-isolado > :not(#tp-sidebar):not(.tp-modulo-visivel) {
+    display: none !important;
+  }
+  #secao-verificador.tp-isolado > #tp-home.tp-modulo-visivel,
+  #secao-verificador.tp-isolado > #tp-configuracoes.tp-modulo-visivel {
+    display: block !important;
+  }
+  #secao-verificador.tp-isolado > .tp-modulo-visivel {
+    grid-column: 2;
+    min-width: 0;
+  }
+  #tp-pagina-contratos .tp-pagina-titulo { margin: 9px 0 22px; }
+  #tp-pagina-contratos .tp-pagina-titulo h2 { margin:0 0 7px;color:#172033; }
+  #tp-pagina-contratos .tp-pagina-titulo p {color:#64748b;font-size:13px;margin:0;}
+  .tp-pagina-card {border:1px solid #e8ebf0; background:#fff; border-radius:17px; padding:25px; }
+  .tp-pagina-card h3 {margin:0 0 10px;color:#172033;}
+  .tp-pagina-card p {color:#64748b;font-size:13px;margin-bottom:18px;}
+  #tp-sidebar .tp-nav.ativo {background:#fceef2;color:#91455d;font-weight:700;}
+  @media(max-width:850px){#secao-verificador.tp-isolado > .tp-modulo-visivel{grid-column:1;}}
+}
+</style>
 </head>
 <body>
   <div class="site-container">
@@ -216,8 +241,6 @@
 
     <button type="button" class="tp-nav"
       data-pagina="financeiro">📊 Financeiro</button>
-    <button type="button" class="tp-nav"
-  data-pagina="campanhas">👥 Clientes e Campanhas</button>
   </nav>
 
   <div class="tp-menu-rodape">
@@ -233,72 +256,6 @@
     <h2>⚙️ Configurações</h2>
     <p>Personalize sua experiência na Tralalá Pro.</p>
   </header>
-
-<!-- SEGURANÇA DAS CONFIGURAÇÕES -->
-<div class="tp-seguranca-banner">
-  <div class="tp-seguranca-icone">🔐</div>
-
-  <div class="tp-seguranca-info">
-    <strong>Senha de segurança</strong>
-    <p>
-      Uma proteção adicional para sua conta
-      e para os backups da Tralalá Pro.
-    </p>
-    <span id="tp-seguranca-status">
-      Verificando proteção...
-    </span>
-  </div>
-
-  <button
-    type="button"
-    id="tp-configurar-senha"
-    disabled>
-    🔒 Configurar senha
-  </button>
-</div>
-
-<!-- MODAL DE SEGURANÇA -->
-<div id="tp-modal-seguranca" class="tp-seg-overlay" hidden>
-  <div class="tp-seg-modal">
-
-    <div class="tp-seg-icone" id="tp-seg-icone">🔐</div>
-
-    <h2 id="tp-seg-titulo">Área protegida</h2>
-    <p id="tp-seg-descricao">
-      Confirme sua senha de segurança.
-    </p>
-
-    <form id="tp-seg-form">
-      <input
-        id="tp-seg-email"
-        type="email"
-        placeholder="E-mail da conta de segurança"
-        autocomplete="username"
-        required>
-
-      <input
-        id="tp-seg-senha"
-        type="password"
-        placeholder="Senha de segurança"
-        autocomplete="current-password"
-        required>
-
-      <p id="tp-seg-mensagem" role="status"></p>
-
-      <button id="tp-seg-confirmar" type="submit">
-        🔓 Desbloquear acesso
-      </button>
-    </form>
-
-    <button id="tp-seg-recuperar" type="button">
-      Esqueci minha senha
-    </button>
-
-    <button id="tp-seg-fechar" type="button">
-      Cancelar
-    </button>
-  </div>
-</div>
 
   <div id="tp-config-cards" class="tp-config-grid">
 
@@ -2474,121 +2431,171 @@ window.TF = (function () {
     });
   }
 
- 
-function formatarData(data) {
-  if (!data) return "Data não informada";
+  function formatarData(data) {
+    if (!data) return "Data não informada";
+    const p = String(data).slice(0, 10).split("-");
+    return p.length === 3
+      ? p[2] + "/" + p[1] + "/" + p[0]
+      : String(data);
+  }
 
-  const p = String(data).slice(0, 10).split("-");
+  // Navegação isolada: mantém os painéis e handlers originais.
+  const modulos = {};
 
-  return p.length === 3
-    ? p[2] + "/" + p[1] + "/" + p[0]
-    : String(data);
-}
-
- function navegar(pagina) {
-if (pagina === "configuracoes") {
-  paginaAtual = pagina;
-
-  secao.classList.remove("tp-inicio");
-  secao.classList.add("tp-configuracoes");
-
-  menu.querySelectorAll(".tp-nav").forEach(btn => {
-    btn.classList.toggle(
-      "ativo",
-      btn.dataset.pagina === "configuracoes"
-    );
-  });
-
-  abrirListaConfiguracoes();
-  window.scrollTo({top: 0, behavior: "smooth"});
-  return;
-}
-
-
-    paginaAtual = pagina;
-  secao.classList.remove("tp-configuracoes");
-
-secao.classList.toggle("tp-inicio", pagina === "inicio");
-   
-    document.querySelectorAll("#tp-sidebar .tp-nav")
-      .forEach(btn => {
-        btn.classList.toggle(
-          "ativo",
-          btn.dataset.pagina === pagina
-        );
-      });
-
-    document.body.classList.add("tp-logado");
-
-    if (pagina === "inicio") {
-      atualizarResumo();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
+  function raizDireta(elemento) {
+    if (!elemento) return null;
+    while (elemento.parentElement && elemento.parentElement !== secao) {
+      elemento = elemento.parentElement;
     }
+    return elemento.parentElement === secao ? elemento : null;
+  }
+
+  function prepararModulos() {
+    // Mantém os modais disponíveis mesmo quando um módulo está oculto.
+    secao.querySelectorAll('[id^="modal-"]').forEach(el => {
+      if (el.closest('[id^="modal-"]') !== el) return;
+      document.body.appendChild(el);
+    });
+
+    // A assistente é flutuante e pertence ao aplicativo inteiro.
+    ['comando-lala-area', 'lala-personagem-container',
+     'lala-balao-tutorial'].forEach(id => {
+      const el = $(id);
+      if (el && secao.contains(el)) document.body.appendChild(el);
+    });
+    secao.querySelectorAll('.lala-fab, .lala-janela').forEach(el => {
+      if (el.closest('.lala-janela') !== el && el.closest('.lala-fab') !== el) return;
+      document.body.appendChild(el);
+    });
 
     const destinos = {
-      reservas: "titulo-form-reserva",
-      estoque: "painel-catalogo-temas",
-      orcamentos: "painel-orcamentos-aberto",
-      financeiro: "secao-central-relatorios"
-      campanhas: "painel-clientes-campanhas",
+      inicio: 'tp-home',
+      configuracoes: 'tp-configuracoes',
+      estoque: 'painel-catalogo-temas',
+      orcamentos: 'painel-orcamentos-aberto',
+      financeiro: 'secao-central-relatorios',
+      campanhas: 'painel-clientes-campanhas'
     };
-
-    const botoesOriginais = {
-      estoque: "btn-abrir-catalogo-temas",
-      orcamentos: "btn-abrir-orcamentos-aberto",
-      financeiro: "btn-abrir-central-relatorios",
-      contratos: "btn-abrir-gerador-contrato"
-      campanhas: "btn-abrir-clientes-campanhas",
-    };
-if (pagina === "campanhas") {
-  const botao = document.getElementById(
-    "btn-abrir-clientes-campanhas"
-  );
-
-  const painel = document.getElementById(
-    "painel-clientes-campanhas"
-  );
-
-  if (painel && getComputedStyle(painel).display === "none") {
-    botao?.click();
-  }
-
-  if (typeof window.iniciarClientesCampanhas === "function") {
-    window.iniciarClientesCampanhas();
-  }
-
-  setTimeout(() => {
-    painel?.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
+    Object.entries(destinos).forEach(([pagina,id]) => {
+      const r = raizDireta($(id));
+      modulos[pagina] = r ? [r] : [];
     });
-  }, 100);
 
-  return;
-}
-    if (pagina === "contratos") {
-      const botao = $(botoesOriginais.contratos);
-      if (botao) botao.click();
-      return;
+    // Kits ficam junto ao estoque, sem duplicar o gerador original.
+    const kits = raizDireta($('painel-gerador-kits'));
+    if (kits && !modulos.estoque.includes(kits)) {
+      modulos.estoque.push(kits);
     }
 
-    const destino = $(destinos[pagina]);
+    // O formulário de reservas é uma sequência de elementos, não um painel só.
+    // Capturamos seus nós originais, sem recriar inputs ou perder eventos.
+    const titulo = raizDireta($('titulo-form-reserva'));
+    const children = [...secao.children];
+    const inicio = children.indexOf(titulo);
+    modulos.reservas = inicio >= 0
+      ? children.slice(inicio).filter(el => el !== menu &&
+          el.id !== 'tp-home' && el.id !== 'tp-configuracoes')
+      : [];
 
-    if (destino && getComputedStyle(destino).display === "none") {
-      const botao = $(botoesOriginais[pagina]);
-      if (botao) botao.click();
+    // Contratos usam um modal existente; criamos apenas a página de entrada.
+    const paginaContrato = document.createElement('section');
+    paginaContrato.id = 'tp-pagina-contratos';
+    paginaContrato.innerHTML = `
+      <div class="tp-pagina-titulo">
+        <h2>📄 Contratos</h2>
+        <p>Crie e gerencie contratos sem sair do sistema.</p>
+      </div>
+      <div class="tp-pagina-card">
+        <h3>✍️ Gerador de contratos</h3>
+        <p>Use o gerador de contratos que já existe na Tralalá Pro.</p>
+        <button class="btn btn-primary" type="button"
+          id="tp-contrato-abrir">Criar contrato</button>
+      </div>`;
+    secao.appendChild(paginaContrato);
+    modulos.contratos = [paginaContrato];
+    $('tp-contrato-abrir').addEventListener('click', () => {
+      $('btn-abrir-gerador-contrato')?.click();
+    });
+
+    // O menu Campanhas agora tem o seu próprio item.
+    if (!menu.querySelector('[data-pagina="campanhas"]')) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'tp-nav';
+      btn.dataset.pagina = 'campanhas';
+      btn.textContent = '👥 Clientes e Campanhas';
+      const botaoConfig = menu.querySelector('[data-pagina="configuracoes"]');
+      const financeiro = menu.querySelector('[data-pagina="financeiro"]');
+      if (financeiro) financeiro.insertAdjacentElement('afterend', btn);
+      else if (botaoConfig) botaoConfig.insertAdjacentElement('beforebegin', btn);
+      else menu.appendChild(btn);
     }
 
-    setTimeout(() => {
-      const el = $(destinos[pagina]);
-      if (el) {
-        el.scrollIntoView({
-          behavior: "smooth",
-          block: "start"
-        });
+    // O cabeçalho da área de acesso e o ponto eletrônico ficam na reserva.
+    // Podem ser adicionados a outra página depois, se você desejar.
+    const barraUsuario = secao.querySelector('.usuario-logado');
+    const ponto = $('painel-ponto-eletronico');
+    [barraUsuario,ponto,$('painel-relatorio-pontos-geral')].forEach(el => {
+      const root = raizDireta(el);
+      if (root && !modulos.reservas.includes(root)) modulos.reservas.push(root);
+    });
+
+    // Painel de reuniões já existente: deixamos junto com campanhas.
+    const reunioes = raizDireta($('painel-reunioes-exclusivo'));
+    if (reunioes && !modulos.campanhas.includes(reunioes)) {
+      modulos.campanhas.push(reunioes);
+    }
+  }
+
+  function navegar(pagina) {
+    if (!modulos[pagina]) return;
+    paginaAtual = pagina;
+    secao.classList.remove('tp-inicio','tp-configuracoes');
+    secao.classList.add('tp-isolado');
+    document.body.classList.add('tp-logado');
+
+    [...secao.children].forEach(el => el.classList.remove('tp-modulo-visivel'));
+    (modulos[pagina] || []).forEach(el => el.classList.add('tp-modulo-visivel'));
+
+    // Ativar painel existente e executar suas rotinas originais quando necessário.
+    const originais = {
+      estoque: ['painel-catalogo-temas','btn-abrir-catalogo-temas'],
+      orcamentos: ['painel-orcamentos-aberto','btn-abrir-orcamentos-aberto'],
+      financeiro: ['secao-central-relatorios','btn-abrir-central-relatorios'],
+      campanhas: ['painel-clientes-campanhas','btn-abrir-clientes-campanhas']
+    };
+    if (originais[pagina]) {
+      const [painelId,botaoId] = originais[pagina];
+      const painel = $(painelId);
+      // O botão existente dispara a renderização e abre o painel.
+      if (painel && painel.style.display !== 'block') $(botaoId)?.click();
+      if (painel) painel.style.display = 'block';
+    }
+
+    // O gerador de kits fica na página de Estoque, quando solicitado.
+    if (pagina === 'estoque') {
+      const kits = $('painel-gerador-kits');
+      if (kits && !kits.querySelector('#tp-kits-abrir')) {
+        const b = document.createElement('button');
+        b.id = 'tp-kits-abrir'; b.type = 'button';
+        b.className = 'btn btn-outline'; b.textContent = '🎁 Abrir Gerador de Kits';
+        b.addEventListener('click', () => $('btn-abrir-gerador-kits')?.click());
+        kits.parentElement.insertBefore(b,kits);
+        b.classList.add('tp-modulo-visivel');
+        if (!modulos.estoque.includes(b)) modulos.estoque.push(b);
       }
-    }, 100);
+    }
+
+    if (pagina === 'campanhas' && typeof window.iniciarClientesCampanhas === 'function') {
+      window.iniciarClientesCampanhas();
+    }
+    if (pagina === 'configuracoes') abrirListaConfiguracoes();
+    if (pagina === 'inicio') atualizarResumo();
+
+    menu.querySelectorAll('.tp-nav').forEach(btn => {
+      btn.classList.toggle('ativo',btn.dataset.pagina === pagina);
+    });
+    window.scrollTo({top:0,behavior:'smooth'});
   }
 
   function atualizarResumo() {
@@ -2728,59 +2735,6 @@ const categoriasConfiguracoes = {
   }
 };
 
-/* =========================================
-   PREFERÊNCIAS - TRALALÁ PRO
-   ========================================= */
-
-let preferenciasCarregadasUID = "";
-
-function aplicarTemaTralala(tema) {
-  const escuro = tema === "escuro" ||
-    (tema === "automatico" &&
-     window.matchMedia("(prefers-color-scheme: dark)").matches);
-
-  document.body.classList.toggle("tp-tema-escuro", escuro);
-  document.body.dataset.tpTema = tema;
-}
-
-async function carregarPreferenciasUsuario() {
-  const uid = window.State?.usuarioUID;
-  const banco = window.State?.db;
-
-  if (!uid || !banco) return;
-  if (preferenciasCarregadasUID === uid) return;
-
-  try {
-    const snap = await banco.ref(
-      "configuracoes/preferencias/" + uid
-    ).once("value");
-
-    if (window.State?.usuarioUID !== uid) return;
-
-    const preferencias = snap.val() || {};
-
-    window.TralalaPreferencias = preferencias;
-
-    aplicarTemaTralala(preferencias.tema || "claro");
-
-    preferenciasCarregadasUID = uid;
-
-  } catch (erro) {
-    console.error(
-      "Erro ao carregar preferências:",
-      erro
-    );
-  }
-}
-
-// Atualiza o tema automático se o dispositivo mudar.
-window.matchMedia("(prefers-color-scheme: dark)")
-  .addEventListener("change", () => {
-    if (document.body.dataset.tpTema === "automatico") {
-      aplicarTemaTralala("automatico");
-    }
-  });
-
 async function abrirCardConfiguracoes(categoria) {
   const config = categoriasConfiguracoes[categoria];
   if (!config) return;
@@ -2859,21 +2813,7 @@ async function abrirCardConfiguracoes(categoria) {
           atualizadoEm: Date.now()
         });
 
-       
-window.TralalaPreferencias = {
-  ...(window.TralalaPreferencias || {}),
-  [nomeCampo]: valor
-};
-
-if (nomeCampo === "tema") {
-  aplicarTemaTralala(valor);
-  status.textContent = "✅ Tema aplicado e salvo!";
-} else {
-  status.textContent =
-    "✅ Personalidade salva! " +
-    "A integração das respostas da Lalá será feita em seguida.";
-}
-
+        status.textContent = "✅ Preferência salva!";
       } catch (erro) {
         console.error(erro);
         status.textContent = "❌ Não foi possível salvar.";
@@ -2898,218 +2838,17 @@ if (nomeCampo === "tema") {
   conteudo.appendChild(status);
 }
 
-/* ==========================================
-   SEGUNDA AUTENTICAÇÃO - TRALALÁ PRO
-   Firebase Authentication secundário
-   ========================================== */
-
-let tpSegurancaPendente = null;
-let tpSegurancaOcupada = false;
-
-const tpModal = document.getElementById(
-  "tp-modal-seguranca"
-);
-
-const tpSeg = id => document.getElementById(id);
-
-// Uma instância separada preserva o login principal.
-function tpAuthSeguranca() {
-  if (!window.firebase?.auth || !window.firebase?.app) {
-    throw new Error("Firebase Authentication indisponível.");
-  }
-
-  let app;
-
-  try {
-    app = firebase.app("tralala-seguranca");
-  } catch (_) {
-    app = firebase.initializeApp(
-      firebase.app().options,
-      "tralala-seguranca"
-    );
-  }
-
-  return {
-    auth: app.auth(),
-    db: app.database()
-  };
-}
-
-function tpAbrirSeguranca(categoria) {
-  if (!["conta", "dados"].includes(categoria)) return;
-
-  tpSegurancaPendente = categoria;
-  tpModal.hidden = false;
-
-  tpSeg("tp-seg-form").hidden = false;
-  tpSeg("tp-seg-recuperar").hidden = false;
-
-  tpSeg("tp-seg-icone").textContent = "🔐";
-  tpSeg("tp-seg-titulo").textContent =
-    "Verificação de segurança";
-
-  tpSeg("tp-seg-descricao").textContent =
-    "Digite sua segunda senha para acessar " +
-    (categoria === "conta"
-      ? "Minha conta."
-      : "Dados e backups.");
-
-  tpSeg("tp-seg-mensagem").textContent = "";
-  tpSeg("tp-seg-senha").value = "";
-
-  tpSeg("tp-seg-confirmar").disabled = false;
-  tpSeg("tp-seg-confirmar").textContent =
-    "🔓 Desbloquear acesso";
-
-  tpSeg("tp-seg-email").focus();
-}
-
-function tpFecharSeguranca() {
-  if (tpSegurancaOcupada) return;
-
-  tpModal.hidden = true;
-  tpSeg("tp-seg-senha").value = "";
-  tpSegurancaPendente = null;
-}
-
-tpSeg("tp-seg-fechar").addEventListener(
-  "click",
-  tpFecharSeguranca
-);
-
-tpSeg("tp-seg-form").addEventListener(
-  "submit",
-  async function(evento) {
-    evento.preventDefault();
-
-    if (tpSegurancaOcupada) return;
-
-    const categoria = tpSegurancaPendente;
-    const email = tpSeg("tp-seg-email").value.trim();
-    const senha = tpSeg("tp-seg-senha").value;
-
-    if (!categoria || !email || !senha) return;
-
-    tpSegurancaOcupada = true;
-
-    const botao = tpSeg("tp-seg-confirmar");
-    botao.disabled = true;
-    botao.textContent = "🔄 Verificando...";
-
-    tpSeg("tp-seg-mensagem").textContent = "";
-
-    try {
-      const { auth, db } = tpAuthSeguranca();
-
-      // Não reutilizar uma sessão secundária antiga.
-      await auth.signOut();
-
-      const resultado =
-        await auth.signInWithEmailAndPassword(
-          email,
-          senha
-        );
-
-      if (!resultado.user) {
-        throw new Error("Credencial inválida.");
-      }
-
-      // Somente o UID liberado nas regras consegue
-      // consultar este caminho.
-      await db.ref("segurancaPrivada").once("value");
-
-      // Encerra a sessão secundária após a verificação.
-      await auth.signOut();
-
-      tpSeg("tp-seg-senha").value = "";
-      tpSeg("tp-seg-form").hidden = true;
-      tpSeg("tp-seg-recuperar").hidden = true;
-
-      tpSeg("tp-seg-icone").textContent = "✅";
-      tpSeg("tp-seg-titulo").textContent =
-        "Acesso concedido!";
-
-      tpSeg("tp-seg-descricao").textContent =
-        "Identidade de segurança confirmada.";
-
-      tpSeg("tp-seg-mensagem").textContent = "";
-
-      // Abre a área solicitada após a confirmação.
-      const abrir = document.createElement("button");
-      abrir.type = "button";
-      abrir.className = "tp-seg-continuar";
-      abrir.textContent = "Continuar →";
-
-      abrir.onclick = () => {
-        abrir.remove();
-        tpModal.hidden = true;
-        tpSegurancaPendente = null;
-        abrirCardConfiguracoes(categoria);
-      };
-
-      tpSeg("tp-seg-mensagem").appendChild(abrir);
-
-    } catch (erro) {
-      console.error("Verificação de segurança:", erro);
-
-      tpSeg("tp-seg-mensagem").textContent =
-        "❌ Não foi possível autorizar o acesso. " +
-        "Confira a credencial e as permissões.";
-    } finally {
-      tpSeg("tp-seg-senha").value = "";
-      tpSegurancaOcupada = false;
-      botao.disabled = false;
-      botao.textContent = "🔓 Desbloquear acesso";
-    }
-  }
-);
-
-tpSeg("tp-seg-recuperar").addEventListener(
-  "click",
-  async () => {
-    const email = tpSeg("tp-seg-email").value.trim();
-
-    if (!email) {
-      tpSeg("tp-seg-mensagem").textContent =
-        "Informe primeiro o e-mail de segurança.";
-      return;
-    }
-
-    try {
-      const { auth } = tpAuthSeguranca();
-
-      await auth.sendPasswordResetEmail(email);
-
-      tpSeg("tp-seg-mensagem").textContent =
-        "📧 Se a conta estiver cadastrada, " +
-        "verifique a caixa de entrada do e-mail.";
-    } catch (erro) {
-      console.error(erro);
-
-      tpSeg("tp-seg-mensagem").textContent =
-        "Não foi possível solicitar a recuperação.";
-    }
-  }
-);
-
-
 document.querySelectorAll(".tp-config-card")
   .forEach(card => {
     card.addEventListener("click", () => {
-      const categoria = card.dataset.config;
-
-      if (categoria === "conta" ||
-          categoria === "dados") {
-        tpAbrirSeguranca(categoria);
-        return;
-      }
-
-      abrirCardConfiguracoes(categoria);
+      abrirCardConfiguracoes(card.dataset.config);
     });
   });
 
 document.getElementById("tp-config-voltar")
   ?.addEventListener("click", abrirListaConfiguracoes);
+
+  prepararModulos();
 
   // Botões do menu
   menu.querySelectorAll("[data-pagina]")
@@ -3125,8 +2864,7 @@ document.getElementById("tp-config-voltar")
 
   $("tp-abrir-lala")?.addEventListener("click", () => {
     // Deixa os elementos originais da Lalá acessíveis.
-    navegar("reservas");
-    $("lala-fab")?.click();
+    document.querySelector(".lala-fab")?.click();
   });
 
   // Detecta quando o login foi concluído.
@@ -3141,11 +2879,10 @@ document.getElementById("tp-config-voltar")
       if (!secao.dataset.tpInicializado) {
         secao.dataset.tpInicializado = "1";
         navegar("inicio");
-        carregarPreferenciasUsuario();
       }
       atualizarResumo();
     } else {
-      secao.classList.remove("tp-inicio");
+      secao.classList.remove("tp-inicio", "tp-isolado", "tp-configuracoes");
       delete secao.dataset.tpInicializado;
     }
   }
