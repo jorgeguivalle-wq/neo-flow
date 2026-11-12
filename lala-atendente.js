@@ -84,7 +84,10 @@
     conhecimentos: [],
     personalidade: "carinhosa",
     intensidade: 65,
-    kitsLiberados: [],
+    
+kitsLiberados: [],
+kitsPrecos: {},
+
     objetivos: ["Gerar pedidos de orçamento"],
     fluxo: [
       "Perguntar o tema",
@@ -350,72 +353,204 @@
     ));
   }
 
-  function renderKits() {
-    const area = $("tp-lala-editor-conteudo");
-    limpar(area);
 
-    const estoque = Array.isArray(estado().estoqueArray)
-      ? estado().estoqueArray
+function renderKits() {
+  const area = $("tp-lala-editor-conteudo");
+  limpar(area);
+
+  const kits = Array.isArray(estado().kits)
+    ? estado().kits
+    : [];
+
+  const estoque = Array.isArray(estado().estoqueArray)
+    ? estado().estoqueArray
+    : [];
+
+  const titulo = elemento(
+    "h4",
+    "🎁 Kits cadastrados na Tralalá Pro"
+  );
+
+  area.appendChild(titulo);
+
+  area.appendChild(aviso(
+    "A Lalá utilizará os kits reais do sistema. " +
+    "Informe o preço comercial autorizado e " +
+    "libere somente os kits que deseja oferecer."
+  ));
+
+  if (!kits.length) {
+    area.appendChild(aviso(
+      "Nenhum kit cadastrado foi encontrado. " +
+      "Cadastre um kit no Gerador de Kits " +
+      "e aguarde a sincronização do Firebase."
+    ));
+    return;
+  }
+
+  if (!dados.kitsPrecos) dados.kitsPrecos = {};
+  if (!Array.isArray(dados.kitsLiberados)) {
+    dados.kitsLiberados = [];
+  }
+
+  const lista = elemento(
+    "div",
+    null,
+    "tp-lala-kits-lista"
+  );
+
+  kits.forEach(kit => {
+    const id = String(kit.id || "");
+    if (!id) return;
+
+    const card = elemento(
+      "div",
+      null,
+      "tp-lala-kit-item"
+    );
+
+    const nome = elemento(
+      "strong",
+      kit.nome || "Kit sem nome"
+    );
+
+    const pecas = Array.isArray(kit.pecas)
+      ? kit.pecas
       : [];
 
-    area.appendChild(aviso(
-      "Itens cadastrados: " + estoque.length +
-      ". A existência no estoque não garante " +
-      "disponibilidade na data da festa."
-    ));
+    const temas = Array.isArray(kit.temas)
+      ? kit.temas
+      : [];
 
-    if (!estoque.length) {
-      area.appendChild(aviso(
-        "Nenhum item carregado. Confira o estoque " +
-        "e aguarde a sincronização do Firebase."
-      ));
-      return;
-    }
+    const detalhes = elemento(
+      "small",
+      `${pecas.length} peças cadastradas · ` +
+      `${temas.length} temas vinculados`
+    );
 
-    const pesquisa = campo("", "Pesquisar peça ou tema...");
-    const resultados = elemento("div");
-    area.append(pesquisa, resultados);
+    // Calcula somente a referência dos itens.
+    // Este NÃO é o preço comercial do pacote.
+    let somaPecas = 0;
 
-    function listar() {
-      limpar(resultados);
-      const termo = pesquisa.value.toLowerCase();
-      estoque
-        .filter(item =>
-          String(item.nome || "")
-            .toLowerCase().includes(termo)
-        )
-        .slice(0, 60)
-        .forEach(item => {
-          const linha = elemento(
-            "div", null, "tp-lala-kit-item"
+    pecas.forEach(nomePeca => {
+      const item = estoque.find(
+        p => p.nome === nomePeca
+      );
+
+      if (!item) return;
+
+      const quantidade = Math.max(
+        1,
+        Number(kit.pecasQtd?.[nomePeca]) || 1
+      );
+
+      somaPecas +=
+        (Number(item.preco) || 0) * quantidade;
+    });
+
+    const referencia = elemento(
+      "small",
+      "Referência das peças: " +
+      somaPecas.toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL"
+      }) +
+      " — não é o preço de venda do kit"
+    );
+
+    const labelPreco = elemento(
+      "label",
+      "Preço oficial do kit (R$)"
+    );
+
+    const preco = elemento("input");
+    preco.type = "number";
+    preco.min = "0";
+    preco.step = "0.01";
+    preco.placeholder = "Ex.: 99.99";
+
+    const precoSalvo = dados.kitsPrecos[id];
+
+    preco.value =
+      precoSalvo !== undefined &&
+      precoSalvo !== null
+        ? precoSalvo
+        : "";
+
+    const labelLiberado = elemento("label");
+    const checkbox = elemento("input");
+
+    checkbox.type = "checkbox";
+    checkbox.checked =
+      dados.kitsLiberados.includes(id);
+
+    labelLiberado.append(
+      checkbox,
+      document.createTextNode(
+        " Permitir que a Lalá ofereça este kit"
+      )
+    );
+
+    const salvarKit = botao(
+      "💾 Salvar configuração do kit",
+      async () => {
+        const valor = preco.value.trim();
+
+        if (
+          valor === "" ||
+          !Number.isFinite(Number(valor)) ||
+          Number(valor) <= 0
+        ) {
+          alert(
+            "Informe um preço oficial maior que zero."
           );
+          return;
+        }
 
-          linha.append(
-            elemento("strong", item.nome || "Sem nome"),
-            elemento("small",
-              "Categoria: " + (item.categoria || "Não informada")
-            ),
-            elemento("small",
-              "Quantidade cadastrada: " +
-              (Number(item.quantidade) || 0)
-            ),
-            elemento("small",
-              "Preço cadastrado: " +
-              Number(item.preco || 0).toLocaleString(
-                "pt-BR", {
-                  style: "currency",
-                  currency: "BRL"
-                }
-              )
-            )
-          );
-          resultados.appendChild(linha);
-        });
-    }
+        if (checkbox.checked) {
+          if (!dados.kitsLiberados.includes(id)) {
+            dados.kitsLiberados.push(id);
+          }
+        } else {
+          dados.kitsLiberados =
+            dados.kitsLiberados.filter(
+              salvo => salvo !== id
+            );
+        }
 
-    pesquisa.addEventListener("input", listar);
-    listar();
-  }
+        dados.kitsPrecos[id] = Number(valor);
+
+        await salvar();
+
+        alert(
+          "Configuração do kit registrada!"
+        );
+      }
+    );
+
+    card.append(
+      nome,
+      detalhes,
+      referencia,
+      labelPreco,
+      preco,
+      labelLiberado,
+      salvarKit
+    );
+
+    lista.appendChild(card);
+  });
+
+  area.appendChild(lista);
+
+  area.appendChild(aviso(
+    "⚠️ Liberar um kit não significa que " +
+    "suas peças estejam disponíveis em " +
+    "qualquer data. A conferência de reservas " +
+    "será uma operação separada."
+  ));
+}
+
 
   function renderHumano() {
     const area = $("tp-lala-editor-conteudo");
