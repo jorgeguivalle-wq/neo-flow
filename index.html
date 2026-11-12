@@ -241,6 +241,17 @@
 
     <button type="button" class="tp-nav"
       data-pagina="financeiro">📊 Financeiro</button>
+    
+<button type="button" class="tp-nav"
+  data-pagina="lala-atendente">
+  🌸 Lalá Atendente
+</button>
+
+<button type="button" class="tp-nav"
+  data-pagina="vitrine">
+  🛍️ Vitrine
+</button>
+
   </nav>
 
   <div class="tp-menu-rodape">
@@ -315,6 +326,319 @@
 </section>
 
 <!-- TRALALÁ PRO - TELA INÍCIO -->
+      
+<!-- =========================================
+     TRALALÁ PRO - LALÁ ATENDENTE
+     ========================================= -->
+
+<section id="tp-lala-atendente" class="tp-pagina" hidden>
+
+  <header class="tp-pagina-header">
+    <div>
+      <h2>🌸 Lalá Atendente</h2>
+      <p>Gerencie sua atendente virtual e o atendimento da vitrine.</p>
+    </div>
+
+    <span id="tp-lala-status" class="tp-status">
+      ● Não configurada
+    </span>
+  </header>
+
+  <!-- MENU PRINCIPAL -->
+  <div id="tp-lala-menu" class="tp-config-grid">
+
+    <button type="button" class="tp-config-card"
+      data-lala-tela="treinamento">
+      <span class="tp-config-emoji">🎓</span>
+      <strong>Treinamento</strong>
+      <small>Ensine regras, personalidade, kits e atendimento.</small>
+      <span class="tp-config-seta">→</span>
+    </button>
+
+    <button type="button" class="tp-config-card"
+      data-lala-tela="atendimentos">
+      <span class="tp-config-emoji">💬</span>
+      <strong>Atendimentos</strong>
+      <small>Conversas, solicitações e transferências humanas.</small>
+      <span class="tp-config-seta">→</span>
+    </button>
+
+    <button type="button" class="tp-config-card"
+      data-lala-tela="publicacao">
+      <span class="tp-config-emoji">🚀</span>
+      <strong>Publicar treinamento</strong>
+      <small>Revise e aprove as alterações antes de liberar.</small>
+      <span class="tp-config-seta">→</span>
+    </button>
+
+    <button type="button" class="tp-config-card"
+      data-lala-tela="tutorial">
+      <span class="tp-config-emoji">📖</span>
+      <strong>Tutorial da Lalá</strong>
+      <small>Aprenda ou refaça o tutorial completo.</small>
+      <span class="tp-config-seta">→</span>
+    </button>
+
+  </div>
+
+
+  <!-- =========================================
+       LALÁ ATENDENTE - PAINEL INTERNO
+       ========================================= -->
+
+  <div id="tp-lala-detalhes" hidden>
+
+    <button type="button"
+            id="tp-lala-voltar"
+            class="tp-btn-voltar">
+      ← Voltar para Lalá Atendente
+    </button>
+
+    <div class="tp-config-painel">
+
+      <h3 id="tp-lala-titulo"></h3>
+      <p id="tp-lala-descricao"></p>
+
+      <div id="tp-lala-conteudo">
+
+        <!-- CARDS DO TREINAMENTO -->
+        <div id="tp-lala-cards-treinamento"
+             class="tp-treinamento-grid"
+             hidden>
+
+          <button type="button" class="tp-config-card"
+                  data-treino="regras">
+            <span class="tp-config-emoji">📋</span>
+            <strong>Regras</strong>
+            <small>Adicione regras de atendimento.</small>
+          </button>
+
+          <button type="button" class="tp-config-card"
+                  data-treino="personalidade">
+            <span class="tp-config-emoji">💗</span>
+            <strong>Modo de atendimento</strong>
+            <small>Escolha entre 15 personalidades.</small>
+          </button>
+
+          <button type="button" class="tp-config-card"
+                  data-treino="conhecimentos">
+            <span class="tp-config-emoji">🧠</span>
+            <strong>Conhecimentos</strong>
+            <small>Ensine informações sobre a loja.</small>
+          </button>
+
+          <button type="button" class="tp-config-card"
+                  data-treino="kits">
+            <span class="tp-config-emoji">🎁</span>
+            <strong>Gerador de Kits</strong>
+            <small>Configure kits e consulte o estoque.</small>
+          </button>
+
+          <button type="button" class="tp-config-card"
+                  data-treino="objetivos">
+            <span class="tp-config-emoji">🎯</span>
+            <strong>Objetivos</strong>
+            <small>Defina as metas de atendimento.</small>
+          </button>
+
+          <button type="button" class="tp-config-card"
+                  data-treino="fluxo">
+            <span class="tp-config-emoji">🔀</span>
+            <strong>Fluxo de conversa</strong>
+            <small>Configure perguntas e etapas.</small>
+          </button>
+
+          <button type="button" class="tp-config-card"
+                  data-treino="humano">
+            <span class="tp-config-emoji">🚨</span>
+            <strong>Atendimento Humano</strong>
+            <small>Configure a transferência para a equipe.</small>
+          </button>
+
+          <button type="button" class="tp-config-card"
+                  data-treino="teste">
+            <span class="tp-config-emoji">🧪</span>
+            <strong>Testar Lalá</strong>
+            <small>Simule uma conversa antes de publicar.</small>
+          </button>
+
+          <button type="button" class="tp-config-card"
+                  data-treino="desempenho">
+            <span class="tp-config-emoji">📊</span>
+            <strong>Desempenho</strong>
+            <small>Acompanhe os resultados.</small>
+          </button>
+
+        </div>
+
+        <!-- EDITOR DOS TREINAMENTOS -->
+        <div id="tp-lala-editor" hidden>
+
+          <button type="button"
+                  id="tp-lala-voltar-treinamento"
+                  class="tp-btn-voltar">
+            ← Voltar aos treinamentos
+          </button>
+
+          <h3 id="tp-lala-editor-titulo"></h3>
+
+          <div id="tp-lala-editor-conteudo"></div>
+
+        </div>
+
+        <!-- ATENDIMENTOS -->
+        <div id="tp-lala-atendimentos" hidden>
+          <div id="tp-lala-fila-atendimento"></div>
+        </div>
+
+        <!-- PUBLICAÇÃO -->
+        <div id="tp-lala-publicacao" hidden>
+
+          <p>
+            Revise o treinamento antes de disponibilizá-lo
+            para os clientes.
+          </p>
+
+          <button type="button"
+                  class="btn btn-primary"
+                  id="tp-lala-publicar">
+            🚀 Publicar na vitrine
+          </button>
+
+          <button type="button"
+                  class="btn btn-outline"
+                  id="tp-lala-restaurar">
+            ↩ Restaurar versão anterior
+          </button>
+
+        </div>
+
+        <!-- TUTORIAL OBRIGATÓRIO -->
+        <div id="tp-lala-tutorial" hidden>
+
+          <div class="tp-tutorial-progresso">
+            <span id="tp-lala-tutorial-etapa">
+              Etapa 1
+            </span>
+          </div>
+
+          <h3 id="tp-lala-tutorial-titulo"></h3>
+
+          <div id="tp-lala-tutorial-texto"></div>
+
+          <div class="tp-aviso-cadastro">
+
+            <strong>
+              ⚠️ IMPORTANTE: OS KITS, PEÇAS, PREÇOS,
+              QUANTIDADES E RESERVAS PRECISAM ESTAR
+              100% CADASTRADOS E ATUALIZADOS PARA
+              QUE A LALÁ ATENDENTE TENHA ALTA PRECISÃO.
+            </strong>
+
+            <p>
+              Cadastros incompletos podem prejudicar
+              os orçamentos e a verificação de
+              disponibilidade.
+            </p>
+
+          </div>
+
+          <div class="tp-tutorial-acoes">
+
+            <button type="button"
+                    id="tp-tutorial-anterior"
+                    class="btn btn-outline">
+              ← Anterior
+            </button>
+
+            <button type="button"
+                    id="tp-tutorial-proximo"
+                    class="btn btn-primary">
+              Próximo →
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</section>
+<!-- FIM DA PÁGINA LALÁ ATENDENTE -->
+
+
+<!-- =========================================
+     TRALALÁ PRO - GERENCIAR VITRINE
+     ========================================= -->
+
+<section id="tp-vitrine" class="tp-pagina" hidden>
+
+  <header class="tp-pagina-header">
+    <div>
+      <h2>🛍️ Vitrine da Tralalá</h2>
+      <p>Gerencie o catálogo público e a Lalá Atendente.</p>
+    </div>
+  </header>
+
+  <div class="tp-config-grid">
+
+    <button type="button"
+            class="tp-config-card"
+            data-vitrine="catalogo">
+      <span class="tp-config-emoji">🎨</span>
+      <strong>Catálogo da Vitrine</strong>
+      <small>Selecione os temas, kits e peças visíveis.</small>
+    </button>
+
+    <button type="button"
+            class="tp-config-card"
+            data-vitrine="atendente">
+      <span class="tp-config-emoji">🌸</span>
+      <strong>Lalá na Vitrine</strong>
+      <small>Configure o atendimento virtual.</small>
+    </button>
+
+    <button type="button"
+            class="tp-config-card"
+            data-vitrine="visualizar">
+      <span class="tp-config-emoji">👁️</span>
+      <strong>Prévia da Vitrine</strong>
+      <small>Confira como o cliente verá a página.</small>
+    </button>
+
+    <button type="button"
+            class="tp-config-card"
+            data-vitrine="solicitacoes">
+      <span class="tp-config-emoji">📨</span>
+      <strong>Solicitações</strong>
+      <small>Acompanhe os pedidos recebidos.</small>
+    </button>
+
+  </div>
+
+  <div id="tp-vitrine-detalhes" hidden>
+
+    <button type="button"
+            id="tp-vitrine-voltar"
+            class="tp-btn-voltar">
+      ← Voltar à Vitrine
+    </button>
+
+    <div class="tp-config-painel">
+
+      <h3 id="tp-vitrine-titulo"></h3>
+      <p id="tp-vitrine-descricao"></p>
+
+      <div id="tp-vitrine-conteudo"></div>
+
+    </div>
+  </div>
+
+</section>
+<!-- FIM DA PÁGINA VITRINE -->
+
 <div id="tp-home">
   <div class="tp-cabecalho">
     <div>
@@ -681,6 +1005,62 @@
           <span>🎨 Catálogo de Temas & Peças</span>
           <span id="contador-catalogo-total" style="font-size: 13px; font-weight: normal; background: var(--primary); color: white; padding: 2px 8px; border-radius: 20px;">0 itens</span>
         </h3>
+
+<!-- IMPORTAÇÃO E EXPORTAÇÃO DO CATÁLOGO -->
+<div class="tp-importacao-catalogo">
+
+  <div class="tp-importacao-botoes">
+    <button type="button"
+            id="tp-btn-importar-catalogo"
+            class="btn btn-primary">
+      📥 Importar catálogo
+    </button>
+
+    <button type="button"
+            id="tp-btn-exportar-catalogo"
+            class="btn btn-outline">
+      📤 Exportar catálogo
+    </button>
+  </div>
+
+  <input type="file"
+         id="tp-arquivo-catalogo"
+         accept=".xlsx,.xls"
+         hidden>
+
+  <div id="tp-importacao-painel" hidden>
+
+    <h4>📋 Conferir importação</h4>
+
+    <label for="tp-importacao-categoria">
+      Em qual categoria deseja adicionar os itens?
+    </label>
+
+    <select id="tp-importacao-categoria"></select>
+
+    <p id="tp-importacao-resumo"></p>
+
+    <div id="tp-importacao-lista"></div>
+
+    <div class="tp-importacao-acoes">
+      <button type="button"
+              id="tp-cancelar-importacao"
+              class="btn btn-outline">
+        Cancelar
+      </button>
+
+      <button type="button"
+              id="tp-salvar-importacao"
+              class="btn btn-primary">
+        💾 Salvar no estoque
+      </button>
+    </div>
+
+    <p id="tp-importacao-status"
+       role="status"
+       aria-live="polite"></p>
+  </div>
+</div>
 
         <div style="background: #ffffff; border: 1.5px solid var(--primary-light); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
           <h4 style="margin: 0 0 10px 0; color: var(--primary); font-size: 14px;">➕ Adicionar Peça / Tema</h4>
@@ -1786,6 +2166,37 @@
       <button type="button" class="btn-tutorial-pular" onclick="window.LalaTutorial.pular()">Pular</button>
     </div>
     <div class="lala-tutorial-texto" id="lala-tutorial-texto"></div>
+    
+<div class="tp-aviso-treinamento-lala"
+     style="
+       margin-top:12px;
+       background:#fff2f6;
+       border:1px solid #edc6d4;
+       border-radius:12px;
+       padding:15px;
+       color:#783b51;
+       font-size:13px;
+       line-height:1.7;
+     ">
+
+  <strong>
+    ⚠️ IMPORTANTE: PARA A LALÁ ATENDENTE TER
+    ALTA PRECISÃO, É NECESSÁRIO QUE OS KITS,
+    PEÇAS, PREÇOS E QUANTIDADES ESTEJAM
+    100% CADASTRADOS E ATUALIZADOS.
+  </strong>
+
+  <p style="margin-bottom:0;">
+    A Lalá utilizará essas informações para consultar
+    produtos, orientar clientes e preparar solicitações
+    de orçamento.
+
+    Informações incompletas podem gerar respostas
+    imprecisas. Antes de ativar o atendimento,
+    confira os cadastros e a disponibilidade das peças.
+  </p>
+</div>
+
     <div class="lala-tutorial-acoes">
       <!-- NOVO BOTÃO VOLTAR -->
       <button type="button" id="btn-tutorial-voltar" class="btn-tutorial-voltar" onclick="window.LalaTutorial.voltar()" style="display: none; background: #eee; color: #555; margin-right: auto;">Voltar</button>
@@ -2935,5 +3346,426 @@ document.getElementById("tp-config-voltar")
 
 })();
 </script>
+        
+<script>
+/* ==========================================
+   TRALALÁ PRO - IMPORTAR/EXPORTAR CATÁLOGO
+   ========================================== */
+(function () {
+  "use strict";
+
+  const $ = id => document.getElementById(id);
+
+  const btnImportar = $("tp-btn-importar-catalogo");
+  const btnExportar = $("tp-btn-exportar-catalogo");
+  const arquivoInput = $("tp-arquivo-catalogo");
+  const painel = $("tp-importacao-painel");
+  const categoriaSelect = $("tp-importacao-categoria");
+  const resumo = $("tp-importacao-resumo");
+  const lista = $("tp-importacao-lista");
+  const status = $("tp-importacao-status");
+  const btnSalvar = $("tp-salvar-importacao");
+  const btnCancelar = $("tp-cancelar-importacao");
+
+  if (!btnImportar || !btnExportar) return;
+
+  let itensImportacao = [];
+
+  const normalizar = texto =>
+    String(texto || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+
+  const numero = valor => {
+    if (typeof valor === "number") return valor;
+
+    const texto = String(valor || "")
+      .replace(/[R$\s]/g, "");
+
+    if (!texto) return 0;
+
+    const convertido = texto.includes(",")
+      ? Number(texto.replace(/\./g, "").replace(",", "."))
+      : Number(texto);
+
+    return Number.isFinite(convertido) ? convertido : 0;
+  };
+
+  function fecharImportacao() {
+    itensImportacao = [];
+    lista.replaceChildren();
+    arquivoInput.value = "";
+    painel.hidden = true;
+    status.textContent = "";
+  }
+
+  function preencherCategorias() {
+    const estado = window.State;
+    const categorias = new Set([
+      ...(estado?.categorias || []),
+      ...Array.from(
+        document.querySelectorAll(
+          "#catalogo-peca-categoria option"
+        )
+      ).map(op => op.value)
+    ]);
+
+    categoriaSelect.replaceChildren();
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Selecione uma categoria...";
+    categoriaSelect.appendChild(placeholder);
+
+    [...categorias]
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b, "pt-BR"))
+      .forEach(nome => {
+        const option = document.createElement("option");
+        option.value = nome;
+        option.textContent = nome;
+        categoriaSelect.appendChild(option);
+      });
+  }
+
+  // Abre o explorador de arquivos.
+  btnImportar.addEventListener("click", () => {
+    if (typeof XLSX === "undefined") {
+      alert("A biblioteca de planilhas não foi carregada.");
+      return;
+    }
+
+    arquivoInput.value = "";
+    arquivoInput.click();
+  });
+
+  // Lê a planilha sem alterar o estoque.
+  arquivoInput.addEventListener("change", async () => {
+    const arquivo = arquivoInput.files?.[0];
+    if (!arquivo) return;
+
+    try {
+      const buffer = await arquivo.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: "array" });
+
+      let registros = [];
+
+      for (const aba of workbook.SheetNames) {
+        const linhas = XLSX.utils.sheet_to_json(
+          workbook.Sheets[aba],
+          { header: 1, defval: "", blankrows: false }
+        );
+
+        if (!linhas.length) continue;
+
+        // Formato exportado pela própria Tralalá Pro.
+        const cabecalho = linhas.findIndex(l =>
+          normalizar(l[0]) === "nome" &&
+          normalizar(l[1]) === "categoria"
+        );
+
+        if (cabecalho >= 0) {
+          for (const linha of linhas.slice(cabecalho + 1)) {
+            const nome = String(linha[0] || "").trim();
+            if (!nome) continue;
+
+            registros.push({
+              nome,
+              quantidade: Math.max(
+                0, Math.floor(numero(linha[2]) || 0)
+              ),
+              modelo: String(linha[3] || ""),
+              preco: numero(linha[4]),
+              precoReposicao: numero(linha[5])
+            });
+          }
+          break;
+        }
+
+        // Planilha antiga: coluna B com o título TEMAS.
+        const linhaTitulo = linhas.findIndex(l =>
+          normalizar(l[1]) === "temas"
+        );
+
+        if (linhaTitulo >= 0) {
+          for (const linha of linhas.slice(linhaTitulo + 1)) {
+            const nome = String(linha[1] || "").trim();
+
+            // Ignora linhas vazias e divisórias A, B, C...
+            if (!nome || /^[A-Z]$/.test(nome)) continue;
+
+            registros.push({
+              nome,
+              quantidade: 1,
+              modelo: "",
+              preco: 0,
+              precoReposicao: 0
+            });
+          }
+          break;
+        }
+      }
+
+      if (!registros.length) {
+        alert(
+          "Não encontrei uma coluna TEMAS na coluna B " +
+          "nem uma planilha exportada pela Tralalá Pro."
+        );
+        return;
+      }
+
+      // Evita nomes repetidos no próprio arquivo.
+      const nomesNoArquivo = new Set();
+
+      itensImportacao = registros.filter(item => {
+        const chave = normalizar(item.nome);
+        if (!chave || nomesNoArquivo.has(chave)) return false;
+        nomesNoArquivo.add(chave);
+        return true;
+      });
+
+      // Também identifica os nomes já existentes.
+      const nomesExistentes = new Set(
+        (window.State?.estoqueArray || [])
+          .map(item => normalizar(item.nome))
+      );
+
+      preencherCategorias();
+      lista.replaceChildren();
+      painel.hidden = false;
+
+      let novos = 0;
+
+      itensImportacao.forEach(item => {
+        const existente = nomesExistentes.has(
+          normalizar(item.nome)
+        );
+
+        const label = document.createElement("label");
+        label.className = "tp-item-importacao";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "tp-check-importacao";
+        checkbox.dataset.nome = item.nome;
+        checkbox.checked = !existente;
+        checkbox.disabled = existente;
+
+        if (!existente) novos++;
+
+        const texto = document.createElement("span");
+        texto.textContent = item.nome;
+
+        const detalhe = document.createElement("small");
+        detalhe.textContent = existente
+          ? "Já cadastrado — ignorado"
+          : "Novo item";
+
+        label.append(checkbox, texto, detalhe);
+        lista.appendChild(label);
+      });
+
+      resumo.textContent =
+        `${itensImportacao.length} nomes encontrados. ` +
+        `${novos} novos itens disponíveis para importar.`;
+
+      status.textContent =
+        "Na planilha antiga, cada tema será criado " +
+        "com quantidade 1 e preços R$ 0,00. " +
+        "Confira e atualize esses dados depois.";
+
+      painel.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest"
+      });
+
+    } catch (erro) {
+      console.error("Erro ao ler catálogo:", erro);
+      alert("Não foi possível ler o arquivo Excel.");
+    }
+  });
+
+  // Exporta o estoque que está no sistema.
+  btnExportar.addEventListener("click", () => {
+    if (typeof XLSX === "undefined") {
+      alert("A biblioteca de planilhas não foi carregada.");
+      return;
+    }
+
+    const estado = window.State;
+    if (!estado?.usuarioUID || !estado.db) {
+      alert("Faça login para exportar o catálogo.");
+      return;
+    }
+
+    const itens = estado.estoqueArray || [];
+
+    if (!itens.length) {
+      alert("Não há itens cadastrados para exportar.");
+      return;
+    }
+
+    const dados = itens.map(item => ({
+      Nome: item.nome || "",
+      Categoria: item.categoria || "",
+      Quantidade: Number(item.quantidade) || 0,
+      Modelo: item.modelo || "",
+      "Preço Locação": Number(item.preco) || 0,
+      "Preço Reposição": Number(item.precoReposicao) || 0
+    }));
+
+    const planilha = XLSX.utils.json_to_sheet(dados);
+    planilha["!cols"] = [
+      { wch: 35 },
+      { wch: 24 },
+      { wch: 14 },
+      { wch: 22 },
+      { wch: 18 },
+      { wch: 20 }
+    ];
+
+    const livro = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(
+      livro,
+      planilha,
+      "Catalogo"
+    );
+
+    const data = new Date().toISOString().slice(0, 10);
+
+    XLSX.writeFile(
+      livro,
+      `catalogo-tralala-${data}.xlsx`
+    );
+  });
+
+  // Salva somente itens selecionados e ainda não cadastrados.
+  btnSalvar.addEventListener("click", async () => {
+    const categoria = categoriaSelect.value;
+    const estado = window.State;
+
+    if (!categoria) {
+      alert("Selecione uma categoria para os itens.");
+      return;
+    }
+
+    if (!estado?.usuarioUID || !estado.db) {
+      alert("Faça login antes de importar.");
+      return;
+    }
+
+    const marcados = new Set(
+      Array.from(
+        lista.querySelectorAll(
+          ".tp-check-importacao:checked"
+        )
+      ).map(el => normalizar(el.dataset.nome))
+    );
+
+    const selecionados = itensImportacao.filter(
+      item => marcados.has(normalizar(item.nome))
+    );
+
+    if (!selecionados.length) {
+      alert("Selecione pelo menos um item novo.");
+      return;
+    }
+
+    const confirmado = confirm(
+      `Adicionar ${selecionados.length} itens ` +
+      `à categoria "${categoria}"?\n\n` +
+      "Itens da planilha antiga começam com quantidade 1 " +
+      "e preços zerados. Nenhum cadastro atual será apagado."
+    );
+
+    if (!confirmado) return;
+
+    btnSalvar.disabled = true;
+    status.textContent = "Verificando e salvando...";
+
+    try {
+      const banco = estado.db;
+
+      // Reconfere os dados atuais do servidor.
+      const snapshot = await banco.ref("estoque").once("value");
+      const atuais = snapshot.val() || {};
+
+      const nomesExistentes = new Set(
+        Object.values(atuais)
+          .filter(v => v && typeof v === "object")
+          .map(v => normalizar(v.nome))
+      );
+
+      const novos = selecionados.filter(
+        item => !nomesExistentes.has(normalizar(item.nome))
+      );
+
+      if (!novos.length) {
+        status.textContent =
+          "Todos os itens selecionados já existem no estoque.";
+        return;
+      }
+
+      // Grava em lotes para não enviar uma operação enorme.
+      let salvos = 0;
+
+      for (let i = 0; i < novos.length; i += 100) {
+        const lote = novos.slice(i, i + 100);
+        const atualizacoes = {};
+
+        lote.forEach(item => {
+          const chave = banco.ref("estoque").push().key;
+
+          atualizacoes[chave] = {
+            idFirebase: chave,
+            nome: item.nome,
+            categoria,
+            quantidade: item.quantidade,
+            modelo: item.modelo,
+            preco: item.preco,
+            precoReposicao: item.precoReposicao,
+            imagem: "",
+            atualizadoEm: Date.now()
+          };
+        });
+
+        await banco.ref("estoque").update(atualizacoes);
+
+        salvos += lote.length;
+        status.textContent = `${salvos} de ${novos.length} salvos...`;
+      }
+
+      alert(
+        `${salvos} itens importados com sucesso!\n` +
+        "Confira quantidades, preços e disponibilidade."
+      );
+
+      fecharImportacao();
+
+    } catch (erro) {
+      console.error("Erro no Firebase:", erro);
+
+      status.textContent =
+        "Não foi possível concluir a importação. " +
+        "Confira as permissões e quais itens foram salvos.";
+
+      alert(
+        "A importação não foi concluída. " +
+        "Confira o estoque antes de tentar novamente."
+      );
+    } finally {
+      btnSalvar.disabled = false;
+    }
+  });
+
+  btnCancelar.addEventListener("click", fecharImportacao);
+
+})();
+</script>
+
 </body>
 </html>
