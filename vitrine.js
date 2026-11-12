@@ -338,7 +338,6 @@ function renderizarCardsTemas(grid, busca) {
     const grid = $('grade-produtos');
     grid.replaceChildren();
     const q = $('busca').value
-    const q = $('busca').value
       .toLocaleLowerCase('pt-BR')
       .trim();
 
