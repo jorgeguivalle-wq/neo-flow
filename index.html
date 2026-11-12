@@ -2914,6 +2914,8 @@ window.TF = (function () {
     });
 
     const destinos = {
+      'lala-atendente': 'tp-lala-atendente',
+vitrine: 'tp-vitrine',
       inicio: 'tp-home',
       configuracoes: 'tp-configuracoes',
       estoque: 'painel-catalogo-temas',
@@ -2994,6 +2996,19 @@ window.TF = (function () {
 
   function navegar(pagina) {
     if (!modulos[pagina]) return;
+    
+["tp-lala-atendente", "tp-vitrine"].forEach(id => {
+  const paginaNova = document.getElementById(id);
+  if (paginaNova) {
+    paginaNova.hidden =
+      id !== (pagina === "lala-atendente"
+        ? "tp-lala-atendente"
+        : pagina === "vitrine"
+          ? "tp-vitrine"
+          : "");
+  }
+});
+
     paginaAtual = pagina;
     secao.classList.remove('tp-inicio','tp-configuracoes');
     secao.classList.add('tp-isolado');
