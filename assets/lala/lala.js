@@ -1248,6 +1248,43 @@ consultarOrcamentosPendentes: function() {
       if (!texto || !texto.trim()) return;
       addUserMsg(texto);
       
+// ========================================
+// COMANDO: TUTORIAL LALÁ ATENDENTE
+// ========================================
+
+const comandoTutorial = LALA.normalizarTexto(texto)
+  .replace(/[.,!?]/g, "")
+  .replace(/\s+/g, " ")
+  .trim();
+
+if (
+  comandoTutorial === "tutorial lala" ||
+  comandoTutorial === "lala tutorial lala" ||
+  comandoTutorial === "refazer tutorial lala" ||
+  comandoTutorial === "lala refazer tutorial lala"
+) {
+  addBotMsg(
+    "🌸 Claro! Vou abrir o tutorial da " +
+    "<b>Lalá Atendente</b>, explicando " +
+    "o treinamento, os kits, o atendimento " +
+    "humano e a vitrine! 💗"
+  );
+
+  if (
+    typeof window.abrirTutorialLalaAtendente ===
+    "function"
+  ) {
+    window.abrirTutorialLalaAtendente();
+  } else {
+    addBotMsg(
+      "⚠️ O módulo Lalá Atendente ainda " +
+      "não está carregado."
+    );
+  }
+
+  return;
+}
+
       // COMANDOS AUTOMÁTICOS DA LALÁ
       const comandosLala = [
         '/fim-semana',
