@@ -381,197 +381,177 @@
 
   </div>
 
+<!-- =========================================
+     TRALALÁ PRO - GERENCIAR VITRINE
+     ========================================= -->
 
-  <!-- =========================================
-       LALÁ ATENDENTE - PAINEL INTERNO
-       ========================================= -->
 
+
+  <!-- PAINEL INTERNO -->
   <div id="tp-lala-detalhes" hidden>
 
-    <button type="button"
-            id="tp-lala-voltar"
-            class="tp-btn-voltar">
+    <button type="button" id="tp-lala-voltar"
+      class="tp-btn-voltar">
       ← Voltar para Lalá Atendente
     </button>
 
     <div class="tp-config-painel">
-
       <h3 id="tp-lala-titulo"></h3>
       <p id="tp-lala-descricao"></p>
+      
+<div id="tp-lala-conteudo">
 
-      <div id="tp-lala-conteudo">
+  <!-- CARDS DO TREINAMENTO -->
+  <div id="tp-lala-cards-treinamento"
+       class="tp-treinamento-grid" hidden>
 
-        <!-- CARDS DO TREINAMENTO -->
-        <div id="tp-lala-cards-treinamento"
-             class="tp-treinamento-grid"
-             hidden>
+    <button type="button" class="tp-config-card"
+      data-treino="regras">
+      <span class="tp-config-emoji">📋</span>
+      <strong>Regras</strong>
+      <small>Adicione regras de atendimento.</small>
+    </button>
 
-          <button type="button" class="tp-config-card"
-                  data-treino="regras">
-            <span class="tp-config-emoji">📋</span>
-            <strong>Regras</strong>
-            <small>Adicione regras de atendimento.</small>
-          </button>
+    <button type="button" class="tp-config-card"
+      data-treino="personalidade">
+      <span class="tp-config-emoji">💗</span>
+      <strong>Modo de atendimento</strong>
+      <small>Escolha entre 15 personalidades.</small>
+    </button>
 
-          <button type="button" class="tp-config-card"
-                  data-treino="personalidade">
-            <span class="tp-config-emoji">💗</span>
-            <strong>Modo de atendimento</strong>
-            <small>Escolha entre 15 personalidades.</small>
-          </button>
+    <button type="button" class="tp-config-card"
+      data-treino="conhecimentos">
+      <span class="tp-config-emoji">🧠</span>
+      <strong>Conhecimentos</strong>
+      <small>Ensine informações sobre a loja.</small>
+    </button>
 
-          <button type="button" class="tp-config-card"
-                  data-treino="conhecimentos">
-            <span class="tp-config-emoji">🧠</span>
-            <strong>Conhecimentos</strong>
-            <small>Ensine informações sobre a loja.</small>
-          </button>
+    <button type="button" class="tp-config-card"
+      data-treino="kits">
+      <span class="tp-config-emoji">🎁</span>
+      <strong>Gerador de Kits</strong>
+      <small>Configure kits e consulte o estoque.</small>
+    </button>
 
-          <button type="button" class="tp-config-card"
-                  data-treino="kits">
-            <span class="tp-config-emoji">🎁</span>
-            <strong>Gerador de Kits</strong>
-            <small>Configure kits e consulte o estoque.</small>
-          </button>
+    <button type="button" class="tp-config-card"
+      data-treino="objetivos">
+      <span class="tp-config-emoji">🎯</span>
+      <strong>Objetivos</strong>
+      <small>Defina as metas de atendimento.</small>
+    </button>
 
-          <button type="button" class="tp-config-card"
-                  data-treino="objetivos">
-            <span class="tp-config-emoji">🎯</span>
-            <strong>Objetivos</strong>
-            <small>Defina as metas de atendimento.</small>
-          </button>
+    <button type="button" class="tp-config-card"
+      data-treino="fluxo">
+      <span class="tp-config-emoji">🔀</span>
+      <strong>Fluxo de conversa</strong>
+      <small>Configure perguntas e etapas.</small>
+    </button>
 
-          <button type="button" class="tp-config-card"
-                  data-treino="fluxo">
-            <span class="tp-config-emoji">🔀</span>
-            <strong>Fluxo de conversa</strong>
-            <small>Configure perguntas e etapas.</small>
-          </button>
+    <button type="button" class="tp-config-card"
+      data-treino="humano">
+      <span class="tp-config-emoji">🚨</span>
+      <strong>Atendimento Humano</strong>
+      <small>Configure a transferência para a equipe.</small>
+    </button>
 
-          <button type="button" class="tp-config-card"
-                  data-treino="humano">
-            <span class="tp-config-emoji">🚨</span>
-            <strong>Atendimento Humano</strong>
-            <small>Configure a transferência para a equipe.</small>
-          </button>
+    <button type="button" class="tp-config-card"
+      data-treino="teste">
+      <span class="tp-config-emoji">🧪</span>
+      <strong>Testar Lalá</strong>
+      <small>Simule uma conversa antes de publicar.</small>
+    </button>
 
-          <button type="button" class="tp-config-card"
-                  data-treino="teste">
-            <span class="tp-config-emoji">🧪</span>
-            <strong>Testar Lalá</strong>
-            <small>Simule uma conversa antes de publicar.</small>
-          </button>
+    <button type="button" class="tp-config-card"
+      data-treino="desempenho">
+      <span class="tp-config-emoji">📊</span>
+      <strong>Desempenho</strong>
+      <small>Acompanhe os resultados.</small>
+    </button>
 
-          <button type="button" class="tp-config-card"
-                  data-treino="desempenho">
-            <span class="tp-config-emoji">📊</span>
-            <strong>Desempenho</strong>
-            <small>Acompanhe os resultados.</small>
-          </button>
+  </div>
 
-        </div>
+  <!-- ABRE O CONTEÚDO DE CADA TREINAMENTO -->
+  <div id="tp-lala-editor" hidden>
 
-        <!-- EDITOR DOS TREINAMENTOS -->
-        <div id="tp-lala-editor" hidden>
+    <button type="button" id="tp-lala-voltar-treinamento"
+      class="tp-btn-voltar">
+      ← Voltar aos treinamentos
+    </button>
 
-          <button type="button"
-                  id="tp-lala-voltar-treinamento"
-                  class="tp-btn-voltar">
-            ← Voltar aos treinamentos
-          </button>
+    <h3 id="tp-lala-editor-titulo"></h3>
 
-          <h3 id="tp-lala-editor-titulo"></h3>
+    <div id="tp-lala-editor-conteudo"></div>
 
-          <div id="tp-lala-editor-conteudo"></div>
+  </div>
 
-        </div>
+  <!-- PAINEL DE ATENDIMENTOS -->
+  <div id="tp-lala-atendimentos" hidden>
+    <div id="tp-lala-fila-atendimento"></div>
+  </div>
 
-        <!-- ATENDIMENTOS -->
-        <div id="tp-lala-atendimentos" hidden>
-          <div id="tp-lala-fila-atendimento"></div>
-        </div>
+  <!-- CONTROLE DE PUBLICAÇÃO -->
+  <div id="tp-lala-publicacao" hidden>
+    <p>
+      Revise o treinamento antes de disponibilizá-lo
+      para os clientes.
+    </p>
 
-        <!-- PUBLICAÇÃO -->
-        <div id="tp-lala-publicacao" hidden>
+    <button type="button" class="btn btn-primary"
+      id="tp-lala-publicar">
+      🚀 Publicar na vitrine
+    </button>
 
-          <p>
-            Revise o treinamento antes de disponibilizá-lo
-            para os clientes.
-          </p>
+    <button type="button" class="btn btn-outline"
+      id="tp-lala-restaurar">
+      ↩ Restaurar versão anterior
+    </button>
+  </div>
 
-          <button type="button"
-                  class="btn btn-primary"
-                  id="tp-lala-publicar">
-            🚀 Publicar na vitrine
-          </button>
+  <!-- TUTORIAL OBRIGATÓRIO -->
+  <div id="tp-lala-tutorial" hidden>
 
-          <button type="button"
-                  class="btn btn-outline"
-                  id="tp-lala-restaurar">
-            ↩ Restaurar versão anterior
-          </button>
-
-        </div>
-
-        <!-- TUTORIAL OBRIGATÓRIO -->
-        <div id="tp-lala-tutorial" hidden>
-
-          <div class="tp-tutorial-progresso">
-            <span id="tp-lala-tutorial-etapa">
-              Etapa 1
-            </span>
-          </div>
-
-          <h3 id="tp-lala-tutorial-titulo"></h3>
-
-          <div id="tp-lala-tutorial-texto"></div>
-
-          <div class="tp-aviso-cadastro">
-
-            <strong>
-              ⚠️ IMPORTANTE: OS KITS, PEÇAS, PREÇOS,
-              QUANTIDADES E RESERVAS PRECISAM ESTAR
-              100% CADASTRADOS E ATUALIZADOS PARA
-              QUE A LALÁ ATENDENTE TENHA ALTA PRECISÃO.
-            </strong>
-
-            <p>
-              Cadastros incompletos podem prejudicar
-              os orçamentos e a verificação de
-              disponibilidade.
-            </p>
-
-          </div>
-
-          <div class="tp-tutorial-acoes">
-
-            <button type="button"
-                    id="tp-tutorial-anterior"
-                    class="btn btn-outline">
-              ← Anterior
-            </button>
-
-            <button type="button"
-                    id="tp-tutorial-proximo"
-                    class="btn btn-primary">
-              Próximo →
-            </button>
-
-          </div>
-
-        </div>
-
-      </div>
+    <div class="tp-tutorial-progresso">
+      <span id="tp-lala-tutorial-etapa">Etapa 1</span>
     </div>
+
+    <h3 id="tp-lala-tutorial-titulo"></h3>
+
+    <div id="tp-lala-tutorial-texto"></div>
+
+    <div class="tp-aviso-cadastro">
+      <strong>
+        ⚠️ IMPORTANTE: OS KITS, PEÇAS, PREÇOS,
+        QUANTIDADES E RESERVAS PRECISAM ESTAR
+        100% CADASTRADOS E ATUALIZADOS PARA
+        QUE A LALÁ ATENDENTE TENHA ALTA PRECISÃO.
+      </strong>
+      <p>
+        Cadastros incompletos podem prejudicar
+        os orçamentos e a verificação de disponibilidade.
+      </p>
+    </div>
+
+    <div class="tp-tutorial-acoes">
+      <button type="button" id="tp-tutorial-anterior"
+        class="btn btn-outline">
+        ← Anterior
+      </button>
+
+      <button type="button" id="tp-tutorial-proximo"
+        class="btn btn-primary">
+        Próximo →
+      </button>
+    </div>
+
+  </div>
+
+</div>
+
+    </div>
+
   </div>
 
 </section>
-<!-- FIM DA PÁGINA LALÁ ATENDENTE -->
-
-
-<!-- =========================================
-     TRALALÁ PRO - GERENCIAR VITRINE
-     ========================================= -->
 
 <section id="tp-vitrine" class="tp-pagina" hidden>
 
@@ -584,35 +564,29 @@
 
   <div class="tp-config-grid">
 
-    <button type="button"
-            class="tp-config-card"
-            data-vitrine="catalogo">
+    <button type="button" class="tp-config-card"
+      data-vitrine="catalogo">
       <span class="tp-config-emoji">🎨</span>
-      <strong>Catálogo da Vitrine</strong>
-      <small>Selecione os temas, kits e peças visíveis.</small>
+      <strong>Adicionar item à Vitrine</strong>
+      <small>Cadastre temas, descrições e opções de kits.</small>
     </button>
 
-   
-<button type="button" class="tp-config-card"
-        data-vitrine="pagamentos">
-  <span class="tp-config-emoji">💳</span>
-  <strong>Pagamentos</strong>
-  <small>Adicionar chave e QR Code Pix.</small>
-  <span class="tp-config-seta">→</span>
-</button>
+    <button type="button" class="tp-config-card"
+      data-vitrine="pagamentos">
+      <span class="tp-config-emoji">🌸</span>
+      <strong>Pagamentos</strong>
+      <small>Configure a chave e o QR Code Pix interno.</small>
+    </button>
 
-
-    <button type="button"
-            class="tp-config-card"
-            data-vitrine="visualizar">
+    <button type="button" class="tp-config-card"
+      data-vitrine="visualizar">
       <span class="tp-config-emoji">👁️</span>
       <strong>Prévia da Vitrine</strong>
       <small>Confira como o cliente verá a página.</small>
     </button>
 
-    <button type="button"
-            class="tp-config-card"
-            data-vitrine="solicitacoes">
+    <button type="button" class="tp-config-card"
+      data-vitrine="solicitacoes">
       <span class="tp-config-emoji">📨</span>
       <strong>Solicitações</strong>
       <small>Acompanhe os pedidos recebidos.</small>
@@ -622,24 +596,20 @@
 
   <div id="tp-vitrine-detalhes" hidden>
 
-    <button type="button"
-            id="tp-vitrine-voltar"
-            class="tp-btn-voltar">
+    <button type="button" id="tp-vitrine-voltar"
+      class="tp-btn-voltar">
       ← Voltar à Vitrine
     </button>
 
     <div class="tp-config-painel">
-
       <h3 id="tp-vitrine-titulo"></h3>
       <p id="tp-vitrine-descricao"></p>
-
       <div id="tp-vitrine-conteudo"></div>
-
     </div>
+
   </div>
 
 </section>
-<!-- FIM DA PÁGINA VITRINE -->
 
 <div id="tp-home">
   <div class="tp-cabecalho">
@@ -2916,13 +2886,13 @@ window.TF = (function () {
     });
 
     const destinos = {
-      'lala-atendente': 'tp-lala-atendente',
-vitrine: 'tp-vitrine',
       inicio: 'tp-home',
       configuracoes: 'tp-configuracoes',
       estoque: 'painel-catalogo-temas',
       orcamentos: 'painel-orcamentos-aberto',
       financeiro: 'secao-central-relatorios',
+      'lala-atendente': 'tp-lala-atendente',
+      vitrine: 'tp-vitrine',
       campanhas: 'painel-clientes-campanhas'
     };
     Object.entries(destinos).forEach(([pagina,id]) => {
@@ -2943,7 +2913,7 @@ vitrine: 'tp-vitrine',
     const inicio = children.indexOf(titulo);
     modulos.reservas = inicio >= 0
       ? children.slice(inicio).filter(el => el !== menu &&
-          el.id !== 'tp-home' && el.id !== 'tp-configuracoes')
+          el.id !== 'tp-home' && el.id !== 'tp-configuracoes' && el.id !== 'tp-lala-atendente' && el.id !== 'tp-vitrine')
       : [];
 
     // Contratos usam um modal existente; criamos apenas a página de entrada.
@@ -2998,26 +2968,14 @@ vitrine: 'tp-vitrine',
 
   function navegar(pagina) {
     if (!modulos[pagina]) return;
-    
-["tp-lala-atendente", "tp-vitrine"].forEach(id => {
-  const paginaNova = document.getElementById(id);
-  if (paginaNova) {
-    paginaNova.hidden =
-      id !== (pagina === "lala-atendente"
-        ? "tp-lala-atendente"
-        : pagina === "vitrine"
-          ? "tp-vitrine"
-          : "");
-  }
-});
-
     paginaAtual = pagina;
     secao.classList.remove('tp-inicio','tp-configuracoes');
     secao.classList.add('tp-isolado');
     document.body.classList.add('tp-logado');
 
     [...secao.children].forEach(el => el.classList.remove('tp-modulo-visivel'));
-    (modulos[pagina] || []).forEach(el => el.classList.add('tp-modulo-visivel'));
+    (modulos[pagina] || []).forEach(el => { el.classList.add('tp-modulo-visivel'); if (el.id === 'tp-lala-atendente' || el.id === 'tp-vitrine') el.hidden = false; });
+    ['tp-lala-atendente','tp-vitrine'].forEach(id => { const e=$(id); if(e && !e.classList.contains('tp-modulo-visivel')) e.hidden=true; });
 
     // Ativar painel existente e executar suas rotinas originais quando necessário.
     const originais = {
@@ -3784,10 +3742,7 @@ document.getElementById("tp-config-voltar")
 })();
 </script>
 
-<!-- LALÁ ATENDENTE -->
 <script src="lala-atendente.js"></script>
-<script src="lala-integracoes.js"></script>
-<script src="vitrine-publicar.js"></script>
 <script src="vitrine-gerenciar.js"></script>
 </body>
 </html>
