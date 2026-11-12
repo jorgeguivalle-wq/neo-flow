@@ -39,7 +39,7 @@
     }
   }
 
-  let catalog = { kits: {}, itens: {} };
+  let catalog = { kits: {}, itens: {}, temas: {} };
   let cart = getCart();
   let mode = 'login';
   let pendingAction = null;
@@ -121,13 +121,76 @@
     return clean;
   }
 
-  function productByKey(key) {
-    const [type, id] = key.split(':');
+function prepararTemasPublicos(raw) {
+  const temas = {};
 
-    return (type === 'kits' || type === 'itens')
-      ? catalog[type][id]
-      : null;
+  for (const [id, tema] of Object.entries(raw || {})) {
+    if (!tema || typeof tema !== 'object' ||
+        !tema.nome) continue;
+
+    const modelos = {};
+
+    for (const [modeloId, modelo] of
+      Object.entries(tema.modelos || {})) {
+
+      const valor = Number(modelo?.preco);
+
+      if (!Number.isFinite(valor) || valor <= 0) continue;
+
+      modelos[modeloId] = {
+        nome: String(modelo.nome || 'Kit').slice(0, 100),
+        preco: valor
+      };
+    }
+
+    if (!Object.keys(modelos).length) continue;
+
+    temas[id] = {
+      id,
+      nome: String(tema.nome).slice(0, 130),
+      descricao: String(tema.descricao || '').slice(0, 2000),
+      imagem: typeof tema.imagem === 'string' &&
+        /^data:image\/(jpeg|png|webp);base64,/.test(tema.imagem) &&
+        tema.imagem.length < 180000
+          ? tema.imagem : '',
+      modelos
+    };
   }
+
+  return temas;
+}
+
+  
+function productByKey(key) {
+  const partes = String(key).split(':');
+  const tipo = partes[0];
+  const id = partes[1];
+
+  if (tipo === 'temas') {
+    const modeloId = partes[2];
+    const tema = catalog.temas?.[id];
+    const modelo = tema?.modelos?.[modeloId];
+
+    if (!tema || !modelo) return null;
+
+    return {
+      id: key,
+      nome: tema.nome + ' — ' + modelo.nome,
+      categoria: 'Tema com kit',
+      preco: modelo.preco,
+      imagem: tema.imagem,
+      temaId: id,
+      modeloId
+    };
+  }
+
+  if (tipo === 'kits' || tipo === 'itens') {
+    return catalog[tipo]?.[id] || null;
+  }
+
+  return null;
+}
+
 
   function saveCart() {
     sessionStorage.setItem(
@@ -149,15 +212,141 @@
     toast('Adicionado ao carrinho! 💗');
   }
 
+let temaSelecionadoId = '';
+
+function abrirEscolhaTema(id) {
+  const tema = catalog.temas?.[id];
+
+  if (!tema) {
+    toast('Este tema não está mais disponível.');
+    return;
+  }
+
+  temaSelecionadoId = id;
+
+  $('tema-modal-titulo').textContent = tema.nome;
+  $('tema-modal-descricao').textContent =
+    tema.descricao || 'Escolha o modelo do kit.';
+
+  const select = $('tema-modal-modelo');
+  select.replaceChildren();
+
+  for (const [modeloId, modelo] of
+    Object.entries(tema.modelos)) {
+
+    select.append(
+      new Option(
+        modelo.nome + ' — ' + fmt(modelo.preco),
+        modeloId
+      )
+    );
+  }
+
+  function atualizarValor() {
+    const modelo = tema.modelos[select.value];
+
+    $('tema-modal-preco').textContent = modelo
+      ? fmt(modelo.preco)
+      : 'Escolha um modelo';
+  }
+
+  select.onchange = atualizarValor;
+  atualizarValor();
+
+  dialog('dialog-tema');
+}
+
+function adicionarTemaEscolhido() {
+  const tema = catalog.temas?.[temaSelecionadoId];
+  const modeloId = $('tema-modal-modelo').value;
+
+  if (!tema || !tema.modelos?.[modeloId]) {
+    toast('Selecione um modelo válido.');
+    return;
+  }
+
+  const key = 'temas:' + temaSelecionadoId + ':' + modeloId;
+
+  add(key);
+  dialog('dialog-tema', false);
+  dialog('dialog-carrinho');
+}
+
+function renderizarCardsTemas(grid, busca) {
+  let encontrados = 0;
+
+  for (const tema of Object.values(catalog.temas || {})) {
+    const texto = (
+      tema.nome + ' ' + tema.descricao
+    ).toLocaleLowerCase('pt-BR');
+
+    if (!texto.includes(busca)) continue;
+
+    encontrados++;
+
+    const card = el('article', undefined, 'produto');
+    const foto = el('div', undefined, 'foto-produto');
+
+    if (tema.imagem) {
+      const img = el('img');
+      img.src = tema.imagem;
+      img.alt = 'Tema ' + tema.nome;
+      img.loading = 'lazy';
+      foto.append(img);
+    } else {
+      foto.textContent = '🎈';
+    }
+
+    const corpo = el('div', undefined, 'corpo-produto');
+
+    corpo.append(
+      el('small', 'Tema para festa'),
+      el('h3', tema.nome),
+      el('p', tema.descricao || 'Escolha seu modelo favorito.')
+    );
+
+    const valores = Object.values(tema.modelos)
+      .map(m => m.preco);
+
+    const menor = Math.min(...valores);
+
+    corpo.append(
+      el('div', 'A partir de ' + fmt(menor), 'preco')
+    );
+
+    const reservar = el(
+      'button',
+      '🎁 Reservar tema',
+      'botao primaria'
+    );
+
+    reservar.type = 'button';
+    reservar.addEventListener(
+      'click',
+      () => abrirEscolhaTema(tema.id)
+    );
+
+    corpo.append(reservar);
+    card.append(foto, corpo);
+    grid.append(card);
+  }
+
+  return encontrados;
+}
+
   function renderProducts() {
     const grid = $('grade-produtos');
     grid.replaceChildren();
-
+    const q = $('busca').value
     const q = $('busca').value
       .toLocaleLowerCase('pt-BR')
       .trim();
 
     let count = 0;
+    
+if (filter === 'todos' || filter === 'temas') {
+  count += renderizarCardsTemas(grid, q);
+}
 
     for (const type of ['kits', 'itens']) {
       if (filter !== 'todos' && filter !== type) continue;
