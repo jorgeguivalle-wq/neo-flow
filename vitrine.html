@@ -142,6 +142,41 @@
     🌸 Conversar com a Lalá
   </button>
 
+<!-- ESCOLHER MODELO DO TEMA -->
+<dialog id="dialog-tema" class="modal">
+  <div class="modal-cabecalho">
+    <h2 id="tema-modal-titulo">Escolher kit</h2>
+
+    <button type="button" class="fechar"
+            data-fechar="dialog-tema"
+            aria-label="Fechar">✕</button>
+  </div>
+
+  <p id="tema-modal-descricao"></p>
+
+  <label for="tema-modal-modelo">
+    <strong>Qual modelo você deseja?</strong>
+  </label>
+
+  <select id="tema-modal-modelo"
+          style="width:100%;padding:12px;margin:12px 0;">
+  </select>
+
+  <p id="tema-modal-preco"
+     style="font-size:22px;font-weight:bold;color:#a3536a;">
+  </p>
+
+  <button type="button" class="botao primaria cheia"
+          id="tema-modal-adicionar">
+    🛒 Adicionar ao carrinho
+  </button>
+
+  <p class="aviso">
+    A reserva só será confirmada após a conferência
+    da disponibilidade pela equipe.
+  </p>
+</dialog>
+
   <!-- CARRINHO -->
   <dialog id="dialog-carrinho" class="modal">
     <div class="modal-cabecalho">
