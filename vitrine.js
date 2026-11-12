@@ -443,6 +443,8 @@
       throw Error('Confirme seu e-mail primeiro.');
     }
 
+await user.getIdToken(true);
+
     const ref = db.ref(
       'clientesVitrine/' +
       user.uid +
