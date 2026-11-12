@@ -543,6 +543,8 @@ function renderKits() {
 
   area.appendChild(lista);
 
+criarPainelConferenciaKits(area);
+
   area.appendChild(aviso(
     "⚠️ Liberar um kit não significa que " +
     "suas peças estejam disponíveis em " +
@@ -551,6 +553,276 @@ function renderKits() {
   ));
 }
 
+
+/* ==========================================
+   LALÁ - CONFERÊNCIA DE KIT E ESTOQUE
+   Consulta administrativa, sem reserva automática
+   ========================================== */
+
+function conferirKitLala(idKit, dataFesta) {
+  const state = estado();
+
+  const kits = Array.isArray(state.kits)
+    ? state.kits : [];
+
+  const estoque = Array.isArray(state.estoqueArray)
+    ? state.estoqueArray : [];
+
+  const reservas = Array.isArray(state.reservas)
+    ? state.reservas : [];
+
+  const kit = kits.find(k => String(k.id) === String(idKit));
+
+  if (!kit) {
+    return {
+      ok: false,
+      titulo: "Kit não encontrado",
+      itens: [],
+      alertas: ["Esse kit não está no cadastro atual."]
+    };
+  }
+
+  const normalizar = valor =>
+    String(valor || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase();
+
+  // Junta peças e temas usados na montagem.
+  const nomes = [
+    ...new Set([
+      ...(Array.isArray(kit.pecas) ? kit.pecas : []),
+      ...(Array.isArray(kit.temas) ? kit.temas : [])
+    ])
+  ];
+
+  const itens = [];
+  const alertas = [];
+
+  if (!nomes.length) {
+    alertas.push(
+      "Este kit não possui peças ou temas vinculados."
+    );
+  }
+
+  nomes.forEach(nome => {
+    const encontrados = estoque.filter(
+      p => normalizar(p.nome) === normalizar(nome)
+    );
+
+    if (encontrados.length !== 1) {
+      itens.push({
+        nome,
+        necessario: 1,
+        quantidadeAtual: null,
+        situacao: encontrados.length === 0
+          ? "Não cadastrado"
+          : "Cadastro duplicado"
+      });
+
+      alertas.push(
+        encontrados.length === 0
+          ? `Peça não encontrada: ${nome}`
+          : `Nome duplicado no estoque: ${nome}`
+      );
+      return;
+    }
+
+    const peca = encontrados[0];
+
+    const quantidadeInformada = Number(
+      kit.pecasQtd?.[nome] ?? 1
+    );
+
+    const quantidadeValida =
+      Number.isInteger(quantidadeInformada) &&
+      quantidadeInformada > 0;
+
+    const necessario = quantidadeValida
+      ? quantidadeInformada : 1;
+
+    const atual = Number(peca.quantidade);
+
+    const atualValido =
+      peca.quantidade !== "" &&
+      peca.quantidade != null &&
+      Number.isInteger(atual) &&
+      atual >= 0;
+
+    let situacao = "Conferir com a equipe";
+
+    if (!quantidadeValida || !atualValido) {
+      situacao = "Cadastro incompleto";
+      alertas.push(
+        `Revise a quantidade cadastrada de ${nome}.`
+      );
+    } else if (atual < necessario) {
+      situacao = "Quantidade atual insuficiente";
+      alertas.push(
+        `${nome}: precisa de ${necessario}, ` +
+        `mas o saldo atual é ${atual}.`
+      );
+    }
+
+    itens.push({
+      nome,
+      necessario,
+      quantidadeAtual: atualValido ? atual : null,
+      situacao
+    });
+  });
+
+  // Identifica reservas na data.
+  // Não subtrai quantidades porque o app.js
+  // já faz movimentação do estoque.
+  const reservasNaData = dataFesta
+    ? reservas.filter(r => r.data === dataFesta)
+    : [];
+
+  const nomesKit = new Set(nomes.map(normalizar));
+
+  const conflitosPossiveis = reservasNaData.filter(r => {
+    const pecasReservadas = Array.isArray(r.pecas)
+      ? r.pecas : [];
+
+    return pecasReservadas.some(
+      nome => nomesKit.has(normalizar(nome))
+    ) || nomesKit.has(normalizar(r.tema));
+  });
+
+  if (conflitosPossiveis.length) {
+    alertas.push(
+      `${conflitosPossiveis.length} reserva(s) ` +
+      "na data utilizam peças ou temas deste kit."
+    );
+  }
+
+  alertas.push(
+    "A conferência por data ainda é preliminar. " +
+    "O cadastro atual não garante controle " +
+    "completo de retirada, devolução e reservas " +
+    "simultâneas. A equipe deve confirmar."
+  );
+
+  return {
+    ok: alertas.length === 1,
+    titulo: kit.nome || "Kit sem nome",
+    itens,
+    reservasNaData: conflitosPossiveis.length,
+    alertas,
+    dataFesta
+  };
+}
+
+function criarPainelConferenciaKits(area) {
+  const kits = Array.isArray(estado().kits)
+    ? estado().kits : [];
+
+  const painel = elemento("div", null, "tp-publicacao-info");
+  const titulo = elemento("h4", "🔎 Conferir disponibilidade");
+
+  const descricao = elemento(
+    "p",
+    "Consulte os componentes e identifique possíveis " +
+    "problemas antes de oferecer o kit."
+  );
+
+  const labelKit = elemento("label", "Kit");
+  const select = elemento("select");
+
+  const placeholder = elemento("option", "Escolha um kit...");
+  placeholder.value = "";
+  select.appendChild(placeholder);
+
+  kits.forEach(kit => {
+    const opcao = elemento(
+      "option", kit.nome || "Kit sem nome"
+    );
+    opcao.value = String(kit.id || "");
+    select.appendChild(opcao);
+  });
+
+  const labelData = elemento("label", "Data da festa");
+  const data = elemento("input");
+  data.type = "date";
+
+  const resultado = elemento("div");
+  resultado.style.marginTop = "15px";
+
+  const conferir = botao("🔍 Conferir kit", () => {
+    resultado.replaceChildren();
+
+    if (!select.value || !data.value) {
+      alert("Selecione o kit e a data da festa.");
+      return;
+    }
+
+    const consulta = conferirKitLala(
+      select.value, data.value
+    );
+
+    resultado.appendChild(
+      elemento("h4", consulta.titulo)
+    );
+
+    consulta.itens.forEach(item => {
+      const linha = elemento(
+        "div", null, "tp-lala-kit-item"
+      );
+
+      linha.style.marginBottom = "9px";
+
+      linha.append(
+        elemento("strong", item.nome),
+        elemento(
+          "small",
+          "Necessário: " + item.necessario
+        ),
+        elemento(
+          "small",
+          "Saldo atual cadastrado: " +
+          (item.quantidadeAtual ?? "Não informado")
+        ),
+        elemento(
+          "small",
+          "Situação: " + item.situacao
+        )
+      );
+
+      resultado.appendChild(linha);
+    });
+
+    consulta.alertas.forEach(texto => {
+      const alerta = elemento(
+        "p", "⚠️ " + texto,
+        "tp-lala-alerta-humano"
+      );
+
+      resultado.appendChild(alerta);
+    });
+
+    resultado.appendChild(
+      elemento(
+        "strong",
+        "Resultado: requer confirmação humana."
+      )
+    );
+  });
+
+  painel.append(
+    titulo,
+    descricao,
+    labelKit,
+    select,
+    labelData,
+    data,
+    conferir,
+    resultado
+  );
+
+  area.appendChild(painel);
+}
 
   function renderHumano() {
     const area = $("tp-lala-editor-conteudo");
