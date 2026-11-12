@@ -1,0 +1,313 @@
+
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Conheça os temas e kits da Tralalá Festas e solicite seu orçamento.">
+  <title>Vitrine | Tralalá Festas</title>
+
+  <link rel="stylesheet" href="vitrine.css">
+
+  <script defer src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+  <script defer src="vitrine.js"></script>
+</head>
+<body>
+
+  <header class="topo">
+    <a href="vitrine.html" class="marca">
+      🌸 <span>Tralalá <small>Festas</small></span>
+    </a>
+
+    <nav aria-label="Menu principal">
+      <a href="#catalogo">Catálogo</a>
+      <a href="#como-funciona">Como funciona</a>
+    </nav>
+
+    <div class="acoes-topo">
+      <button id="btn-conta" class="botao claro" type="button">
+        Entrar
+      </button>
+
+      <button id="btn-carrinho" class="botao primaria" type="button">
+        🛒 Carrinho <span id="contador-carrinho">0</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+
+    <section class="hero">
+      <div class="hero-texto">
+        <span class="eyebrow">✨ Mais encanto para sua comemoração</span>
+
+        <h1>A festa dos seus sonhos começa aqui! 🎈</h1>
+
+        <p>
+          Explore temas e kits, monte seu carrinho e envie
+          sua solicitação à equipe da Tralalá Festas.
+        </p>
+
+        <a class="botao primaria" href="#catalogo">
+          Explorar catálogo
+        </a>
+      </div>
+
+      <div class="hero-arte" aria-hidden="true">
+        🎉 <span>🎂</span> 🎈
+      </div>
+    </section>
+
+    <section id="catalogo" class="secao">
+
+      <div class="titulo-secao">
+        <div>
+          <span class="eyebrow">Nosso acervo</span>
+          <h2>Kits e temas</h2>
+
+          <p>
+            Escolha suas opções. A confirmação de disponibilidade
+            depende da data da festa.
+          </p>
+        </div>
+
+        <label class="campo-busca">
+          🔎
+          <input id="busca"
+                 placeholder="Buscar tema ou kit..."
+                 autocomplete="off"
+                 aria-label="Buscar produtos">
+        </label>
+      </div>
+
+      <div class="abas">
+        <button type="button" class="filtro ativo"
+                data-filtro="todos">Todos</button>
+
+        <button type="button" class="filtro"
+                data-filtro="kits">Kits</button>
+
+        <button type="button" class="filtro"
+                data-filtro="temas">Temas e peças</button>
+      </div>
+
+      <p id="estado-catalogo" role="status">
+        Carregando catálogo...
+      </p>
+
+      <div id="grade-produtos" class="grade-produtos"></div>
+    </section>
+
+    <section class="secao orientacoes" id="como-funciona">
+      <h2>Como funciona?</h2>
+
+      <div class="grade-etapas">
+        <div>
+          <strong>1. Escolha</strong>
+          <p>
+            Navegue livremente e adicione itens ao carrinho
+            sem criar conta.
+          </p>
+        </div>
+
+        <div>
+          <strong>2. Identifique-se</strong>
+          <p>
+            Para conversar ou enviar um pedido, crie uma
+            conta e confirme seu e-mail.
+          </p>
+        </div>
+
+        <div>
+          <strong>3. Solicite</strong>
+          <p>
+            Informe a data e a modalidade da festa.
+            Nossa equipe verifica a disponibilidade.
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    Tralalá Festas • Orçamentos sujeitos a confirmação de
+    disponibilidade, frete e condições contratuais.
+  </footer>
+
+  <button class="botao primaria botao-lala"
+          id="btn-lala" type="button">
+    🌸 Conversar com a Lalá
+  </button>
+
+  <!-- CARRINHO -->
+  <dialog id="dialog-carrinho" class="modal">
+    <div class="modal-cabecalho">
+      <h2>🛒 Meu carrinho</h2>
+      <button class="fechar" type="button"
+              data-fechar="dialog-carrinho"
+              aria-label="Fechar">✕</button>
+    </div>
+
+    <div id="itens-carrinho"></div>
+
+    <div class="total">
+      <span>Subtotal estimado</span>
+      <strong id="total-carrinho">R$ 0,00</strong>
+    </div>
+
+    <p class="aviso">
+      Preços e disponibilidade serão confirmados pela equipe.
+      Não há cobrança nesta etapa.
+    </p>
+
+    <button class="botao primaria cheia"
+            id="btn-checkout" type="button">
+      Continuar pedido
+    </button>
+  </dialog>
+
+  <!-- LOGIN E CADASTRO -->
+  <dialog id="dialog-conta" class="modal">
+    <div class="modal-cabecalho">
+      <h2 id="titulo-conta">Minha conta</h2>
+      <button class="fechar" type="button"
+              data-fechar="dialog-conta"
+              aria-label="Fechar">✕</button>
+    </div>
+
+    <div id="area-conta">
+      <div class="alternar">
+        <button type="button" id="mostrar-entrar"
+                class="filtro ativo">Entrar</button>
+
+        <button type="button" id="mostrar-cadastro"
+                class="filtro">Criar conta</button>
+      </div>
+
+      <form id="form-conta">
+        <label id="linha-nome" hidden>
+          Nome completo
+          <input id="conta-nome" type="text"
+                 autocomplete="name"
+                 minlength="2" maxlength="120">
+        </label>
+
+        <label>
+          E-mail
+          <input id="conta-email" type="email"
+                 required autocomplete="email">
+        </label>
+
+        <label>
+          Senha
+          <input id="conta-senha" type="password"
+                 required minlength="8"
+                 autocomplete="current-password">
+        </label>
+
+        <button class="botao primaria cheia"
+                id="btn-enviar-conta" type="submit">
+          Entrar
+        </button>
+      </form>
+
+      <button type="button" id="btn-recuperar"
+              class="link-discreto">
+        Esqueci minha senha
+      </button>
+    </div>
+
+    <p role="status" id="status-conta"></p>
+  </dialog>
+
+  <!-- SOLICITAÇÃO DE ORÇAMENTO -->
+  <dialog id="dialog-pedido" class="modal">
+    <div class="modal-cabecalho">
+      <h2>📋 Solicitar orçamento</h2>
+      <button class="fechar" type="button"
+              data-fechar="dialog-pedido"
+              aria-label="Fechar">✕</button>
+    </div>
+
+    <p class="aviso">
+      Não é uma compra confirmada nem um pagamento.
+      Nossa equipe conferirá o pedido.
+    </p>
+
+    <form id="form-pedido">
+      <label>
+        Data da festa
+        <input id="pedido-data" type="date" required>
+      </label>
+
+      <label>
+        Modalidade
+        <select id="pedido-modalidade" required>
+          <option value="">Selecione</option>
+          <option value="Pegue e Monte">Pegue e Monte</option>
+          <option value="Decoração com montagem">
+            Decoração com montagem
+          </option>
+          <option value="A definir">Ainda não sei</option>
+        </select>
+      </label>
+
+      <label>
+        Bairro ou região da festa
+        <input id="pedido-regiao" required maxlength="120"
+               placeholder="Ex.: Samambaia Sul">
+      </label>
+
+      <label>
+        Observações
+        <textarea id="pedido-obs" maxlength="1500"
+                  rows="3"
+                  placeholder="Tema, preferências e dúvidas..."></textarea>
+      </label>
+
+      <button class="botao primaria cheia"
+              type="submit" id="btn-enviar-pedido">
+        Enviar solicitação
+      </button>
+    </form>
+
+    <p role="status" id="status-pedido"></p>
+  </dialog>
+
+  <!-- ATENDIMENTO -->
+  <dialog id="dialog-lala" class="modal">
+    <div class="modal-cabecalho">
+      <h2>🌸 Atendimento Lalá</h2>
+      <button class="fechar" type="button"
+              data-fechar="dialog-lala"
+              aria-label="Fechar">✕</button>
+    </div>
+
+    <p>
+      Olá! 💗 O chat automático ainda está em preparação.
+      Você já pode enviar uma solicitação à nossa equipe.
+    </p>
+
+    <form id="form-ajuda">
+      <label>
+        Como podemos ajudar?
+        <textarea id="ajuda-texto" required maxlength="1500"
+                  rows="4"
+                  placeholder="Conte o que você precisa..."></textarea>
+      </label>
+
+      <button class="botao primaria cheia" type="submit">
+        🚨 Solicitar atendimento humano
+      </button>
+    </form>
+
+    <p role="status" id="status-ajuda"></p>
+  </dialog>
+
+  <div id="notificacao" role="status" aria-live="polite"></div>
+
+</body>
+</html>
