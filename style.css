@@ -1474,3 +1474,842 @@ h4 { color: var(--primary-dark); font-size: 15px; font-weight: 600; }
   font-size: 12px;
 }
 
+/* =====================================================
+   TRALALÁ PRO — LALÁ ATENDENTE E VITRINE
+   Design Clean | Branco + Rosa | Responsivo
+   ===================================================== */
+
+/* ===== PÁGINAS PRINCIPAIS ===== */
+
+#tp-lala-atendente,
+#tp-vitrine {
+  --tp-rosa: #a3536a;
+  --tp-rosa-escuro: #8e465e;
+  --tp-rosa-claro: #fceef2;
+  --tp-fundo: #f5f6f9;
+  --tp-texto: #172033;
+  --tp-muted: #64748b;
+  --tp-borda: #e8eaf0;
+
+  width: 100%;
+  min-width: 0;
+  padding: 10px 0 35px;
+  color: var(--tp-texto);
+}
+
+/* Respeitar a propriedade hidden */
+
+#tp-lala-atendente [hidden],
+#tp-vitrine [hidden] {
+  display: none !important;
+}
+
+/* As páginas ficam escondidas até a navegação ativar */
+
+#tp-lala-atendente[hidden],
+#tp-vitrine[hidden] {
+  display: none !important;
+}
+
+/* Mostrar apenas a página selecionada */
+
+@media screen {
+  #secao-verificador.tp-isolado
+  > #tp-lala-atendente.tp-modulo-visivel,
+
+  #secao-verificador.tp-isolado
+  > #tp-vitrine.tp-modulo-visivel {
+    display: block !important;
+    grid-column: 2;
+    min-width: 0;
+  }
+}
+
+/* ===== CABEÇALHO ===== */
+
+#tp-lala-atendente .tp-pagina-header,
+#tp-vitrine .tp-pagina-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-bottom: 28px;
+  padding: 7px 0;
+}
+
+#tp-lala-atendente .tp-pagina-header h2,
+#tp-vitrine .tp-pagina-header h2 {
+  margin: 0 0 7px;
+  font-size: 27px;
+  font-weight: 700;
+  color: var(--tp-texto);
+  letter-spacing: -0.5px;
+}
+
+#tp-lala-atendente .tp-pagina-header p,
+#tp-vitrine .tp-pagina-header p {
+  margin: 0;
+  color: var(--tp-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* ===== STATUS DA LALÁ ===== */
+
+#tp-lala-atendente .tp-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 15px;
+  background: #fff8eb;
+  border: 1px solid #f3dfb8;
+  border-radius: 30px;
+  color: #a16207;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+#tp-lala-atendente .tp-status.ativo {
+  background: #edf9f1;
+  border-color: #bbebc9;
+  color: #16803d;
+}
+
+#tp-lala-atendente .tp-status.inativo {
+  background: #f9eef0;
+  border-color: #efcbd0;
+  color: #ab4051;
+}
+
+/* ===== CARDS PRINCIPAIS ===== */
+
+#tp-lala-atendente .tp-config-grid,
+#tp-vitrine .tp-config-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+#tp-lala-atendente .tp-config-card,
+#tp-vitrine .tp-config-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 12px;
+
+  width: 100%;
+  min-height: 190px;
+  padding: 23px;
+
+  background: #ffffff;
+  border: 1px solid var(--tp-borda);
+  border-radius: 17px;
+
+  box-shadow: 0 3px 12px rgba(20, 30, 50, 0.035);
+
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+#tp-lala-atendente .tp-config-card:hover,
+#tp-vitrine .tp-config-card:hover {
+  transform: translateY(-3px);
+  border-color: #daa7b7;
+  box-shadow: 0 10px 25px rgba(163, 83, 106, 0.11);
+}
+
+#tp-lala-atendente .tp-config-card:focus-visible,
+#tp-vitrine .tp-config-card:focus-visible {
+  outline: 3px solid #d7a1b2;
+  outline-offset: 3px;
+}
+
+#tp-lala-atendente .tp-config-emoji,
+#tp-vitrine .tp-config-emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 49px;
+  height: 49px;
+
+  background: var(--tp-rosa-claro);
+  border-radius: 13px;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+#tp-lala-atendente .tp-config-card strong,
+#tp-vitrine .tp-config-card strong {
+  display: block;
+  color: var(--tp-texto);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+#tp-lala-atendente .tp-config-card small,
+#tp-vitrine .tp-config-card small {
+  color: var(--tp-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+#tp-lala-atendente .tp-config-seta,
+#tp-vitrine .tp-config-seta {
+  align-self: flex-end;
+  margin-top: auto;
+  font-size: 20px;
+  color: var(--tp-rosa);
+}
+
+/* ===== PAINÉIS INTERNOS ===== */
+
+#tp-lala-atendente .tp-config-painel,
+#tp-vitrine .tp-config-painel {
+  width: 100%;
+  padding: 26px;
+
+  background: #ffffff;
+  border: 1px solid var(--tp-borda);
+  border-radius: 18px;
+
+  box-shadow: 0 4px 18px rgba(20, 30, 50, 0.04);
+}
+
+#tp-lala-atendente .tp-config-painel > h3,
+#tp-vitrine .tp-config-painel > h3 {
+  color: var(--tp-texto);
+  margin: 0 0 8px;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+#tp-lala-atendente .tp-config-painel > p,
+#tp-vitrine .tp-config-painel > p {
+  margin: 0 0 22px;
+  font-size: 13px;
+  color: var(--tp-muted);
+  line-height: 1.7;
+}
+
+/* ===== BOTÕES VOLTAR ===== */
+
+#tp-lala-atendente .tp-btn-voltar,
+#tp-vitrine .tp-btn-voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 10px 0;
+  margin-bottom: 15px;
+
+  background: transparent;
+  color: var(--tp-rosa);
+  border: none;
+  border-radius: 7px;
+
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+
+  transition: color 0.2s ease;
+}
+
+#tp-lala-atendente .tp-btn-voltar:hover,
+#tp-vitrine .tp-btn-voltar:hover {
+  color: var(--tp-rosa-escuro);
+  text-decoration: underline;
+}
+
+/* ===== OS 9 CARDS DE TREINAMENTO ===== */
+
+#tp-lala-cards-treinamento {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+}
+
+#tp-lala-cards-treinamento[hidden] {
+  display: none !important;
+}
+
+#tp-lala-cards-treinamento .tp-config-card {
+  min-height: 164px;
+  padding: 19px;
+}
+
+#tp-lala-cards-treinamento .tp-config-card strong {
+  font-size: 14px;
+}
+
+#tp-lala-cards-treinamento .tp-config-card small {
+  font-size: 11px;
+}
+
+/* ===== EDITOR DE TREINAMENTO ===== */
+
+#tp-lala-editor {
+  margin-top: 6px;
+}
+
+#tp-lala-editor-titulo {
+  color: var(--tp-texto);
+  font-size: 19px;
+  margin: 0 0 20px;
+}
+
+#tp-lala-editor-conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  min-width: 0;
+}
+
+/* Campos dinâmicos criados no JavaScript */
+
+#tp-lala-editor-conteudo input:not([type="checkbox"]):not([type="radio"]),
+#tp-lala-editor-conteudo textarea,
+#tp-lala-editor-conteudo select,
+#tp-vitrine-conteudo input:not([type="checkbox"]):not([type="radio"]),
+#tp-vitrine-conteudo textarea,
+#tp-vitrine-conteudo select {
+  width: 100%;
+  padding: 12px 14px;
+
+  background: #fff;
+  border: 1px solid #dce1e8;
+  border-radius: 10px;
+
+  color: #334155;
+  font-size: 13px;
+  font-family: 'Poppins', sans-serif;
+
+  outline: none;
+  transition: border-color .2s;
+}
+
+#tp-lala-editor-conteudo input:focus,
+#tp-lala-editor-conteudo textarea:focus,
+#tp-lala-editor-conteudo select:focus,
+#tp-vitrine-conteudo input:focus,
+#tp-vitrine-conteudo textarea:focus,
+#tp-vitrine-conteudo select:focus {
+  border-color: var(--tp-rosa);
+}
+
+#tp-lala-editor-conteudo label,
+#tp-vitrine-conteudo label {
+  font-size: 13px;
+  color: #475569;
+  font-weight: 500;
+}
+
+#tp-lala-editor-conteudo textarea,
+#tp-vitrine-conteudo textarea {
+  min-height: 105px;
+  resize: vertical;
+}
+
+/* ===== REGRAS E CONHECIMENTOS ===== */
+
+.tp-lala-regra,
+.tp-lala-conhecimento {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 13px;
+
+  background: #fff;
+  border: 1px solid #e6e9ef;
+  border-radius: 12px;
+
+  padding: 16px;
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.6;
+}
+
+.tp-lala-regra:hover,
+.tp-lala-conhecimento:hover {
+  border-color: #dfbdc8;
+}
+
+.tp-lala-regra-acoes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ===== 15 PERSONALIDADES ===== */
+
+.tp-lala-personalidades {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.tp-lala-personalidade {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  padding: 18px 10px;
+  min-height: 112px;
+
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 13px;
+
+  text-align: center;
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  color: #475569;
+
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tp-lala-personalidade:hover {
+  background: #fff5f8;
+  border-color: #daadbb;
+}
+
+.tp-lala-personalidade.ativo,
+.tp-lala-personalidade[aria-pressed="true"] {
+  background: #fceef2;
+  border: 2px solid #a3536a;
+  color: #91455d;
+  font-weight: 700;
+}
+
+.tp-lala-personalidade .emoji {
+  font-size: 27px;
+}
+
+.tp-lala-previa {
+  margin-top: 16px;
+  padding: 19px;
+  background: #f9f3f6;
+  border: 1px solid #ecd8e0;
+  border-radius: 13px;
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.7;
+}
+
+/* ===== GERADOR DE KITS ===== */
+
+.tp-lala-kits-lista {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.tp-lala-kit-item {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 13px;
+  padding: 17px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tp-lala-kit-item strong {
+  color: #172033;
+  font-size: 14px;
+}
+
+.tp-lala-kit-item small {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.tp-lala-kit-preco {
+  color: #a3536a;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.tp-lala-kit-item label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tp-lala-kit-item input[type="checkbox"] {
+  accent-color: #a3536a;
+}
+
+/* ===== OBJETIVOS E FLUXO ===== */
+
+.tp-lala-opcao {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 11px;
+  padding: 15px;
+
+  color: #334155;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.tp-lala-opcao:hover {
+  background: #fdf5f8;
+}
+
+.tp-lala-opcao input {
+  accent-color: #a3536a;
+}
+
+.tp-lala-fluxo-item {
+  background: #fff;
+  border-left: 4px solid #a3536a;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.04);
+}
+
+/* ===== ATENDIMENTO HUMANO ===== */
+
+.tp-lala-atendimento-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 12px;
+}
+
+.tp-lala-atendimento-card.pendente {
+  border-left: 4px solid #f59e0b;
+}
+
+.tp-lala-atendimento-card.em-atendimento {
+  border-left: 4px solid #2563eb;
+}
+
+.tp-lala-atendimento-card.finalizado {
+  border-left: 4px solid #16a34a;
+}
+
+.tp-lala-atendimento-card h4 {
+  color: #172033;
+  font-size: 15px;
+  margin: 0 0 9px;
+}
+
+.tp-lala-atendimento-card p {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.tp-lala-atendimento-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 16px;
+}
+
+.tp-lala-alerta-humano {
+  padding: 15px;
+  background: #fff8ec;
+  border: 1px solid #f2dfb5;
+  border-radius: 12px;
+  color: #92400e;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+/* ===== SIMULADOR TESTAR LALÁ ===== */
+
+.tp-lala-chat-teste {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  background: #fcfafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+
+  padding: 18px;
+  min-height: 260px;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.tp-lala-chat-msg {
+  max-width: 84%;
+  padding: 11px 15px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.tp-lala-chat-msg.cliente {
+  align-self: flex-end;
+  background: #a3536a;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.tp-lala-chat-msg.lala {
+  align-self: flex-start;
+  background: white;
+  color: #334155;
+  border: 1px solid #efdce3;
+  border-bottom-left-radius: 4px;
+}
+
+/* ===== PUBLICAÇÃO ===== */
+
+#tp-lala-publicacao {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+#tp-lala-publicacao button {
+  margin: 0;
+}
+
+.tp-publicacao-info {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.tp-publicacao-sucesso {
+  background: #effaf2;
+  border: 1px solid #bce7c5;
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 13px;
+  color: #166534;
+}
+
+/* ===== TUTORIAL OBRIGATÓRIO ===== */
+
+#tp-lala-tutorial {
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+}
+
+.tp-tutorial-progresso {
+  padding: 12px 16px;
+  background: #fceef2;
+  border-radius: 11px;
+  color: #a3536a;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+#tp-lala-tutorial-titulo {
+  margin: 6px 0;
+  color: #172033;
+  font-size: 19px;
+}
+
+#tp-lala-tutorial-texto {
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.9;
+}
+
+.tp-aviso-cadastro {
+  padding: 19px;
+  background: #fff3f6;
+  border: 1px solid #edc6d4;
+  border-left: 4px solid #a3536a;
+  border-radius: 12px;
+
+  color: #783b51;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.tp-aviso-cadastro strong {
+  display: block;
+  margin-bottom: 11px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tp-aviso-cadastro p {
+  margin: 0;
+}
+
+.tp-tutorial-acoes {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+/* ===== GERENCIAMENTO DA VITRINE ===== */
+
+.tp-vitrine-produto {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  padding: 15px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.tp-vitrine-produto img {
+  width: 68px;
+  height: 68px;
+  object-fit: cover;
+  border-radius: 9px;
+  background: #f1f5f9;
+}
+
+.tp-vitrine-produto-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tp-vitrine-produto-info strong {
+  display: block;
+  font-size: 13px;
+  color: #172033;
+}
+
+.tp-vitrine-produto-info small {
+  color: #64748b;
+  font-size: 11px;
+}
+
+.tp-vitrine-produto input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #a3536a;
+}
+
+/* ===== BOTÕES DE AÇÃO ===== */
+
+#tp-lala-atendente .tp-btn-rosa,
+#tp-vitrine .tp-btn-rosa {
+  background: #a3536a;
+  color: white;
+  border: 1px solid #a3536a;
+  border-radius: 10px;
+  padding: 11px 18px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#tp-lala-atendente .tp-btn-rosa:hover,
+#tp-vitrine .tp-btn-rosa:hover {
+  background: #8e465e;
+}
+
+#tp-lala-atendente button:disabled,
+#tp-vitrine button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+/* ===== RESPONSIVIDADE ===== */
+
+@media (max-width: 1050px) {
+  #tp-lala-cards-treinamento {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 850px) {
+  #secao-verificador.tp-isolado
+  > #tp-lala-atendente.tp-modulo-visivel,
+
+  #secao-verificador.tp-isolado
+  > #tp-vitrine.tp-modulo-visivel {
+    grid-column: 1;
+  }
+
+  #tp-lala-atendente .tp-pagina-header h2,
+  #tp-vitrine .tp-pagina-header h2 {
+    font-size: 23px;
+  }
+}
+
+@media (max-width: 600px) {
+  #tp-lala-atendente .tp-config-grid,
+  #tp-vitrine .tp-config-grid,
+  #tp-lala-cards-treinamento,
+  .tp-lala-kits-lista {
+    grid-template-columns: 1fr;
+  }
+
+  .tp-lala-personalidades {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #tp-lala-atendente .tp-config-card,
+  #tp-vitrine .tp-config-card {
+    min-height: 145px;
+    padding: 18px;
+  }
+
+  #tp-lala-atendente .tp-config-painel,
+  #tp-vitrine .tp-config-painel {
+    padding: 17px;
+  }
+
+  .tp-tutorial-acoes {
+    flex-direction: column;
+  }
+
+  .tp-tutorial-acoes button {
+    width: 100%;
+  }
+
+  .tp-lala-chat-msg {
+    max-width: 95%;
+  }
+
+  .tp-vitrine-produto {
+    flex-wrap: wrap;
+  }
+}
+
+/* ===== ACESSIBILIDADE ===== */
+
+@media (prefers-reduced-motion: reduce) {
+  #tp-lala-atendente .tp-config-card,
+  #tp-vitrine .tp-config-card {
+    transition: none;
+  }
+
+  #tp-lala-atendente .tp-config-card:hover,
+  #tp-vitrine .tp-config-card:hover {
+    transform: none;
+  }
+}
+
