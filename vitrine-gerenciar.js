@@ -772,27 +772,26 @@ async function abrirPedidosVitrine() {
     }
 
     const filtro = criar("select");
+    
     filtro.style.cssText =
       "padding:12px;border:1px solid #ddd;" +
       "border-radius:10px;margin:15px 0;width:100%;";
 
     [
-    
-[
-  ["todos", "Todas as solicitações"],
-  ["atendimento", "💬 Pedidos de atendimento humano"],
-  ["orcamento", "🎈 Pedidos de orçamento"],
-  ["pendente", "⏳ Pendentes"],
-  ["em-atendimento", "🙋 Em atendimento"],
-  ["finalizado", "✅ Finalizados"]
-].forEach(([valor, texto]) => {
-  filtro.append(new Option(texto, valor));
-});
-
+      ["todos", "Todas as solicitações"],
+      ["atendimento", "💬 Pedidos de atendimento humano"],
+      ["orcamento", "🎈 Pedidos de orçamento"],
+      ["pendente", "⏳ Pendentes"],
+      ["em-atendimento", "🙋 Em atendimento"],
+      ["finalizado", "✅ Finalizados"]
+    ].forEach(([valor, texto]) => {
+      filtro.append(new Option(texto, valor));
+    });
 
     area.append(
       criarLabel("Filtrar solicitações", filtro)
     );
+
 
     const lista = criar("div");
     area.append(lista);
