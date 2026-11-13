@@ -3789,5 +3789,312 @@ document.getElementById("tp-config-voltar")
 <script src="lala-integracoes.js"></script>
 <script src="vitrine-publicar.js"></script>
 <script src="vitrine-gerenciar.js"></script>
+        
+<!-- ==========================================
+     TRALALÁ PRO — AJUSTES DE NAVEGAÇÃO
+     Comando Lalá, Gerador de Kits e Vitrine
+     ========================================== -->
+
+<style>
+  /* Comando Lalá dentro do chat */
+  .lala-janela #comando-lala-area {
+    position: static !important;
+    inset: auto !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 8px 12px !important;
+    background: #fff !important;
+    border-top: 1px solid #eedde4;
+    box-shadow: none !important;
+    z-index: auto !important;
+  }
+
+  .lala-janela #btn-comando-lala {
+    position: static !important;
+    width: 100%;
+    padding: 10px 14px;
+    border: 0;
+    border-radius: 10px;
+    background: #a3536a;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: none !important;
+  }
+
+  .lala-janela #menu-comando-lala {
+    position: static !important;
+    width: 100% !important;
+    max-height: 175px;
+    overflow-y: auto;
+    padding: 12px;
+    margin-top: 8px;
+    background: #fff8fb;
+    border: 1px solid #eedde4;
+    border-radius: 12px;
+    box-shadow: none !important;
+  }
+
+  .lala-janela #menu-comando-lala[hidden] {
+    display: none !important;
+  }
+
+  .lala-janela #menu-comando-lala:not([hidden]) {
+    display: block !important;
+  }
+
+  .lala-janela #menu-comando-lala .lala-atalho {
+    margin: 4px;
+  }
+
+  #tp-abrir-criador-kits {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+  }
+</style>
+
+<script>
+(() => {
+  "use strict";
+
+  function iniciarAjustesTralala() {
+
+    /* ====================================
+       1. COMANDO LALÁ DENTRO DO CHAT
+       ==================================== */
+
+    const janela = document.getElementById(
+      "lala-janela"
+    );
+
+    const area = document.getElementById(
+      "comando-lala-area"
+    );
+
+    const atalhos = document.getElementById(
+      "lala-atalhos"
+    );
+
+    const comando = document.getElementById(
+      "btn-comando-lala"
+    );
+
+    const menuComando = document.getElementById(
+      "menu-comando-lala"
+    );
+
+    if (
+      janela &&
+      area &&
+      atalhos &&
+      comando &&
+      menuComando
+    ) {
+
+      // Move o comando original para dentro
+      // da janela existente da Lalá.
+      janela.insertBefore(area, atalhos);
+
+      menuComando.hidden = true;
+
+      comando.addEventListener("click", () => {
+        menuComando.hidden = !menuComando.hidden;
+
+        comando.setAttribute(
+          "aria-expanded",
+          String(!menuComando.hidden)
+        );
+      });
+
+      comando.setAttribute(
+        "aria-expanded",
+        "false"
+      );
+
+      // Atalhos do comando usam
+      // a conversa original da Lalá.
+      menuComando.querySelectorAll(
+        "[data-pergunta]"
+      ).forEach(botao => {
+
+        botao.addEventListener("click", () => {
+
+          const mensagem =
+            botao.dataset.pergunta || "";
+
+          const campo = document.getElementById(
+            "lala-input"
+          );
+
+          const enviar = document.getElementById(
+            "lala-enviar"
+          );
+
+          if (!campo || !enviar || !mensagem) {
+            return;
+          }
+
+          campo.value = mensagem;
+          menuComando.hidden = true;
+
+          enviar.click();
+        });
+      });
+    }
+
+    /* ====================================
+       2. ACESSO AO GERADOR DE KITS
+       ==================================== */
+
+    const gradeTreinamento =
+      document.getElementById(
+        "tp-lala-cards-treinamento"
+      );
+
+    if (
+      gradeTreinamento &&
+      !document.getElementById(
+        "tp-abrir-criador-kits"
+      )
+    ) {
+
+      const abrirCriador =
+        document.createElement("button");
+
+      abrirCriador.type = "button";
+      abrirCriador.id = "tp-abrir-criador-kits";
+      abrirCriador.className = "tp-config-card";
+
+      const icone = document.createElement("span");
+      icone.className = "tp-config-emoji";
+      icone.textContent = "➕";
+
+      const conteudo = document.createElement("span");
+
+      const titulo = document.createElement("strong");
+      titulo.textContent = "Criar novo Kit";
+
+      const descricao = document.createElement("small");
+      descricao.textContent =
+        "Abrir o Gerador de Kits do acervo.";
+
+      conteudo.append(titulo, descricao);
+      abrirCriador.append(icone, conteudo);
+
+      abrirCriador.addEventListener(
+        "click",
+        () => {
+
+          // Abre a página Estoque.
+          const estoque = document.querySelector(
+            '#tp-sidebar [data-pagina="estoque"]'
+          );
+
+          if (!estoque) {
+            alert(
+              "Não encontrei o menu Estoque."
+            );
+            return;
+          }
+
+          estoque.click();
+
+          // Usa o gerador que já existe.
+          const gerador = document.getElementById(
+            "painel-gerador-kits"
+          );
+
+          const botaoOriginal =
+            document.getElementById(
+              "btn-abrir-gerador-kits"
+            );
+
+          if (!gerador) {
+            alert(
+              "O Gerador de Kits não foi encontrado."
+            );
+            return;
+          }
+
+          if (
+            gerador.style.display !== "block"
+          ) {
+            if (botaoOriginal) {
+              botaoOriginal.click();
+            } else {
+              gerador.style.display = "block";
+            }
+          }
+
+          gerador.style.display = "block";
+
+          gerador.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+          });
+        }
+      );
+
+      // Adiciona o novo botão junto dos
+      // demais cartões de treinamento.
+      const botaoKits =
+        gradeTreinamento.querySelector(
+          '[data-treino="kits"]'
+        );
+
+      if (botaoKits) {
+        botaoKits.insertAdjacentElement(
+          "afterend",
+          abrirCriador
+        );
+      } else {
+        gradeTreinamento.append(abrirCriador);
+      }
+    }
+
+    /* ====================================
+       3. VISUALIZAR A VITRINE
+       ==================================== */
+
+    document.querySelectorAll(
+      '[data-vitrine="visualizar"]'
+    ).forEach(botao => {
+
+      botao.addEventListener(
+        "click",
+        () => {
+          const url = new URL(
+            "vitrine.html",
+            document.baseURI
+          );
+
+          window.open(
+            url.href,
+            "_blank",
+            "noopener,noreferrer"
+          );
+        }
+      );
+    });
+
+    console.log(
+      "🌸 Ajustes da Tralalá inicializados."
+    );
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener(
+      "DOMContentLoaded",
+      iniciarAjustesTralala
+    );
+  } else {
+    iniciarAjustesTralala();
+  }
+
+})();
+</script>
+
 </body>
 </html>
