@@ -729,6 +729,10 @@ await user.getIdToken(true);
 
       catalog = safeCat(snap.val() || {});
 
+catalog.temas = prepararTemasPublicos(
+  snap.val()?.temas || {}
+);
+
       renderProducts();
       renderCart();
     } catch (e) {
