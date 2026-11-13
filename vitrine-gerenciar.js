@@ -1054,6 +1054,247 @@ if (pedido.status === "pendente") {
   card.append(assumir);
 }
 
+// ==========================================
+// CONFERÊNCIA MANUAL DE PAGAMENTO PIX
+// ==========================================
+
+const areaPix = criar("div");
+
+areaPix.style.cssText =
+  "padding:14px;margin-top:15px;" +
+  "border:1px solid #eedde4;" +
+  "border-radius:12px;background:#fff9fb;";
+
+const tituloPix = criar(
+  "h4",
+  "💳 Conferência de pagamento"
+);
+
+const situacaoPix = criar(
+  "p",
+  pedido.pagamentoConferido
+    ? "✅ Pagamento registrado como conferido."
+    : "⏳ Pagamento ainda não conferido."
+);
+
+const confirmarPix = criar("input");
+confirmarPix.type = "checkbox";
+
+const textoConfirmacao = criar("label");
+textoConfirmacao.style.cssText =
+  "display:flex;align-items:center;gap:8px;";
+
+textoConfirmacao.append(
+  confirmarPix,
+  criar(
+    "span",
+    "Conferi o recebimento na conta bancária."
+  )
+);
+
+const registrarPix = criarBotao(
+  "💾 Registrar conferência",
+  async () => {
+
+    if (!confirmarPix.checked) {
+      alert(
+        "Confira o recebimento no banco " +
+        "antes de registrar."
+      );
+      return;
+    }
+
+    if (!confirm(
+      "Você realmente verificou o " +
+      "crédito na conta bancária?"
+    )) {
+      return;
+    }
+
+    registrarPix.disabled = true;
+
+    try {
+      await db.ref(
+        "clientesVitrine/" +
+        pedido.uid +
+        "/solicitacoes/" +
+        pedido.id
+      ).update({
+        pagamentoConferido: true,
+        pagamentoConferidoPor:
+          state().usuarioUID,
+        pagamentoConferidoEm:
+          firebase.database.ServerValue.TIMESTAMP
+      });
+
+      pedido.pagamentoConferido = true;
+
+      situacaoPix.textContent =
+        "✅ Pagamento registrado como conferido.";
+
+      alert("Conferência registrada!");
+
+    } catch (erro) {
+      alert(
+        "Erro ao registrar: " +
+        erro.message
+      );
+    } finally {
+      registrarPix.disabled = false;
+    }
+  }
+);
+
+areaPix.append(
+  tituloPix,
+  situacaoPix,
+  textoConfirmacao,
+  registrarPix
+);
+
+card.append(areaPix);
+
+// ==========================================
+// CONSULTA DE KITS PARA RESERVA
+// ==========================================
+
+if (
+  pedido.tipo === "orcamento" &&
+  Array.isArray(pedido.itens) &&
+  pedido.itens.length
+) {
+
+  const areaReserva = criar("div");
+
+  areaReserva.style.cssText =
+    "padding:14px;margin-top:15px;" +
+    "border:1px solid #eedde4;" +
+    "border-radius:12px;";
+
+  areaReserva.append(
+    criar("h4", "📦 Conferir disponibilidade"),
+    criar(
+      "p",
+      "Consulta informativa. Não bloqueia " +
+      "o estoque e não confirma a reserva."
+    )
+  );
+
+  const kitsParaConferir = new Set();
+
+  pedido.itens.forEach(item => {
+    const partes = String(item.id || "")
+      .split(":");
+
+    if (
+      partes[0] === "kits" &&
+      partes[1]
+    ) {
+      kitsParaConferir.add(partes[1]);
+    }
+
+    if (
+      partes[0] === "temas" &&
+      partes[2]
+    ) {
+      kitsParaConferir.add(partes[2]);
+    }
+  });
+
+  const resultadoReserva = criar("div");
+
+  if (!kitsParaConferir.size) {
+    areaReserva.append(
+      criar(
+        "p",
+        "Este pedido não possui modelos de kits " +
+        "identificáveis. Confira as peças manualmente."
+      )
+    );
+  }
+
+  kitsParaConferir.forEach(kitId => {
+
+    const conferir = criarBotao(
+      "🔎 Consultar kit",
+      async () => {
+
+        const integracao =
+          window.TralalaLalaIntegracoes;
+
+        if (!integracao?.conferirKit) {
+          alert(
+            "O verificador de kits não está carregado."
+          );
+          return;
+        }
+
+        if (!pedido.dataFesta) {
+          alert("O pedido não possui data da festa.");
+          return;
+        }
+
+        conferir.disabled = true;
+
+        try {
+          const resultado =
+            await integracao.conferirKit(
+              kitId,
+              pedido.dataFesta
+            );
+
+          resultadoReserva.replaceChildren();
+
+          resultadoReserva.append(
+            criar(
+              "h4",
+              "Resultado: " + resultado.kit
+            )
+          );
+
+          resultado.lines.forEach(peca => {
+            resultadoReserva.append(
+              criar(
+                "p",
+                peca.name +
+                " — necessário: " +
+                peca.needed +
+                " — saldo: " +
+                (peca.current ?? "desconhecido") +
+                " — " + peca.status
+              )
+            );
+          });
+
+          resultadoReserva.append(
+            criar(
+              "p",
+              "Reservas possivelmente relacionadas " +
+              "na data: " + resultado.possible
+            )
+          );
+
+          resultadoReserva.append(
+            criar("p", resultado.limitations)
+          );
+
+        } catch (erro) {
+          alert(
+            "Erro na consulta: " + erro.message
+          );
+        } finally {
+          conferir.disabled = false;
+        }
+      }
+    );
+
+    areaReserva.append(conferir);
+  });
+
+  areaReserva.append(resultadoReserva);
+  card.append(areaReserva);
+}
+
         lista.append(card);
       });
     }
