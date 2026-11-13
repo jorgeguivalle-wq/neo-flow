@@ -698,17 +698,422 @@
      CONECTAR AO PAINEL EXISTENTE
      ===================================== */
 
-  function iniciar() {
-    document.querySelectorAll(
-      '[data-vitrine="catalogo"]'
-    ).forEach(botao => {
-      botao.addEventListener(
-        "click",
-        () => setTimeout(
-          abrirCadastroTemas, 100
-        )
+/* ==========================================
+   PEDIDOS RECEBIDOS PELA VITRINE
+   Painel exclusivo para funcionários
+   ========================================== */
+
+async function abrirPedidosVitrine() {
+  const area = obterArea("📨 Pedidos da Vitrine");
+
+  area.replaceChildren(
+    aviso("Consultando solicitações dos clientes...")
+  );
+
+  try {
+    const db = obterBanco();
+
+    const snap = await db.ref("clientesVitrine")
+      .once("value");
+
+    const clientes = snap.val() || {};
+    const pedidos = [];
+
+    Object.entries(clientes).forEach(([uid, cliente]) => {
+      if (!cliente || typeof cliente !== "object") {
+        return;
+      }
+
+      const perfil = cliente.perfil || {};
+      const solicitacoes = cliente.solicitacoes || {};
+
+      Object.entries(solicitacoes).forEach(
+        ([id, pedido]) => {
+          if (!pedido || typeof pedido !== "object") {
+            return;
+          }
+
+          pedidos.push({
+            ...pedido,
+            id,
+            uid,
+            nomeCliente: perfil.nome || "Cliente",
+            emailCliente: perfil.email || "Não informado"
+          });
+        }
       );
     });
+
+    pedidos.sort(
+      (a, b) =>
+        Number(b.criadoEm || 0) -
+        Number(a.criadoEm || 0)
+    );
+
+    area.replaceChildren();
+
+    const titulo = criar(
+      "h3",
+      "📋 Solicitações recebidas: " + pedidos.length
+    );
+
+    const atualizar = criarBotao(
+      "🔄 Atualizar pedidos",
+      abrirPedidosVitrine
+    );
+
+    area.append(titulo, atualizar);
+
+    if (!pedidos.length) {
+      area.append(
+        aviso("Nenhum pedido recebido até agora.")
+      );
+      return;
+    }
+
+    const filtro = criar("select");
+    filtro.style.cssText =
+      "padding:12px;border:1px solid #ddd;" +
+      "border-radius:10px;margin:15px 0;width:100%;";
+
+    [
+    
+[
+  ["todos", "Todas as solicitações"],
+  ["atendimento", "💬 Pedidos de atendimento humano"],
+  ["orcamento", "🎈 Pedidos de orçamento"],
+  ["pendente", "⏳ Pendentes"],
+  ["em-atendimento", "🙋 Em atendimento"],
+  ["finalizado", "✅ Finalizados"]
+].forEach(([valor, texto]) => {
+  filtro.append(new Option(texto, valor));
+});
+
+
+    area.append(
+      criarLabel("Filtrar solicitações", filtro)
+    );
+
+    const lista = criar("div");
+    area.append(lista);
+
+    const statusPermitidos = new Set([
+      "pendente",
+      "em-atendimento",
+      "finalizado"
+    ]);
+
+    function renderizar() {
+      lista.replaceChildren();
+
+      
+const filtrados = pedidos.filter(p => {
+  if (filtro.value === "todos") return true;
+
+  if (
+    filtro.value === "atendimento" ||
+    filtro.value === "orcamento"
+  ) {
+    return p.tipo === filtro.value;
+  }
+
+  return p.status === filtro.value;
+});
+
+      filtrados.forEach(pedido => {
+        const card = criar("article");
+
+        card.style.cssText =
+          "background:white;border:1px solid #ead9e0;" +
+          "border-radius:14px;padding:18px;" +
+          "margin:15px 0;";
+
+        const status = statusPermitidos.has(
+          pedido.status
+        ) ? pedido.status : "pendente";
+
+        const dataRegistro = Number(pedido.criadoEm)
+          ? new Date(pedido.criadoEm)
+              .toLocaleString("pt-BR")
+          : "Data não informada";
+
+        const dataFesta = pedido.dataFesta
+          ? String(pedido.dataFesta)
+              .split("-")
+              .reverse()
+              .join("/")
+          : "Não informada";
+
+        card.append(
+          criar(
+            "h4",
+            pedido.tipo === "atendimento"
+              ? "💬 Solicitação de atendimento"
+              : "🎈 Pedido de orçamento"
+          ),
+
+          criar(
+            "p",
+            "👤 Cliente: " + pedido.nomeCliente
+          ),
+
+          criar(
+            "p",
+            "📧 E-mail: " + pedido.emailCliente
+          ),
+
+          criar(
+            "p",
+            "📅 Recebido em: " + dataRegistro
+          ),
+
+          criar(
+            "p",
+            "🎂 Data da festa: " + dataFesta
+          ),
+
+          criar(
+            "p",
+            "🏠 Modalidade: " +
+            (pedido.modalidade || "Não informada")
+          ),
+
+          criar(
+            "p",
+            "📍 Região: " +
+            (pedido.regiao || "Não informada")
+          ),
+
+          criar(
+            "p",
+            "📌 Status: " + status
+          )
+        );
+
+        const itens = Array.isArray(pedido.itens)
+          ? pedido.itens
+          : [];
+
+        if (itens.length) {
+          card.append(
+            criar("h4", "🛒 Itens solicitados")
+          );
+
+          itens.forEach(item => {
+            card.append(
+              criar(
+                "p",
+                "• " +
+                String(item.quantidade || 1) +
+                "x " +
+                String(item.nome || "Item")
+              )
+            );
+          });
+        }
+
+        if (pedido.mensagem) {
+          card.append(
+            criar("h4", "💬 Mensagem do cliente"),
+            criar("p", pedido.mensagem)
+          );
+        }
+
+        const seletor = criar("select");
+        seletor.style.cssText =
+          "padding:10px;border-radius:10px;" +
+          "border:1px solid #ddd;max-width:100%;";
+
+        [
+          ["pendente", "⏳ Pendente"],
+          ["em-atendimento", "🙋 Em atendimento"],
+          ["finalizado", "✅ Finalizado"]
+        ].forEach(([valor, texto]) => {
+          seletor.append(new Option(texto, valor));
+        });
+
+        seletor.value = status;
+
+        const salvarStatus = criarBotao(
+          "💾 Atualizar status",
+          async () => {
+            const novoStatus = seletor.value;
+
+            if (!statusPermitidos.has(novoStatus)) {
+              return;
+            }
+
+            if (novoStatus === pedido.status) {
+              alert("O pedido já está neste status.");
+              return;
+            }
+
+            salvarStatus.disabled = true;
+
+            try {
+              await db.ref(
+                "clientesVitrine/" +
+                pedido.uid +
+                "/solicitacoes/" +
+                pedido.id
+              ).update({
+                status: novoStatus
+              });
+
+              pedido.status = novoStatus;
+
+              alert("Status atualizado!");
+              renderizar();
+
+            } catch (erro) {
+              alert(
+                "Não foi possível atualizar: " +
+                erro.message
+              );
+            } finally {
+              salvarStatus.disabled = false;
+            }
+          }
+        );
+
+        card.append(
+          criar("h4", "Alterar andamento"),
+          seletor,
+          salvarStatus
+        );
+
+// ======================================
+// ASSUMIR ATENDIMENTO COM SEGURANÇA
+// ======================================
+
+if (pedido.status === "pendente") {
+
+  const assumir = criarBotao(
+    "🙋 Assumir atendimento",
+    async () => {
+      const usuario = state().usuarioUID;
+
+      if (!usuario) {
+        alert("Faça login novamente.");
+        return;
+      }
+
+      assumir.disabled = true;
+
+      try {
+        const refPedido = db.ref(
+          "clientesVitrine/" +
+          pedido.uid +
+          "/solicitacoes/" +
+          pedido.id
+        );
+
+        const resultado = await refPedido.transaction(
+          atual => {
+
+            // Outra pessoa pode ter assumido antes.
+            if (
+              !atual ||
+              atual.status !== "pendente"
+            ) {
+              return;
+            }
+
+            return {
+              ...atual,
+              status: "em-atendimento",
+              responsavelUid: usuario,
+              atualizadoEm:
+                firebase.database.ServerValue.TIMESTAMP
+            };
+          }
+        );
+
+        if (!resultado.committed) {
+          alert(
+            "Este atendimento já foi assumido " +
+            "ou alterado por outra pessoa."
+          );
+        } else {
+          alert("Atendimento assumido com sucesso!");
+        }
+
+        await abrirPedidosVitrine();
+
+      } catch (erro) {
+        alert(
+          "Erro ao assumir atendimento: " +
+          erro.message
+        );
+      } finally {
+        assumir.disabled = false;
+      }
+    }
+  );
+
+  card.append(assumir);
+}
+
+        lista.append(card);
+      });
+    }
+
+    filtro.addEventListener("change", renderizar);
+
+    renderizar();
+
+  } catch (erro) {
+    console.error("Erro nos pedidos da vitrine:", erro);
+
+    area.replaceChildren(
+      aviso(
+        "Não foi possível carregar as solicitações. " +
+        "Confira as permissões do Firebase. " +
+        "Detalhes: " + erro.message
+      )
+    );
+  }
+}
+
+  
+function iniciar() {
+
+  // 🎨 ADICIONAR ITEM À VITRINE
+  document.querySelectorAll(
+    '[data-vitrine="catalogo"]'
+  ).forEach(botao => {
+    botao.addEventListener("click", () => {
+      setTimeout(abrirCadastroTemas, 100);
+    });
+  });
+
+  // 💳 PAGAMENTOS / QR CODE PIX
+  document.querySelectorAll(
+    '[data-vitrine="pagamentos"]'
+  ).forEach(botao => {
+    botao.addEventListener("click", () => {
+      setTimeout(abrirPagamentos, 100);
+    });
+  });
+
+  // 📨 PEDIDOS RECEBIDOS
+  document.querySelectorAll(
+    '[data-vitrine="solicitacoes"]'
+  ).forEach(botao => {
+    botao.addEventListener("click", () => {
+      setTimeout(abrirPedidosVitrine, 150);
+    });
+  });
+
+  // FUNÇÕES PARA TESTES
+  window.TralalaGerenciarVitrine = {
+    abrirCadastroTemas,
+    abrirPagamentos,
+    abrirPedidosVitrine
+  };
+
+}
+
 
     document.querySelectorAll(
       '[data-vitrine="pagamentos"]'
