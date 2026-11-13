@@ -148,12 +148,14 @@
         );
       }
 
-      await root.ref('vitrineCatalogo').set({
-        itens,
-        kits: publishedKits,
-        publicadoEm:
-          firebase.database.ServerValue.TIMESTAMP
-      });
+     
+await root.ref('vitrineCatalogo').update({
+  itens,
+  kits: publishedKits,
+  publicadoEm:
+    firebase.database.ServerValue.TIMESTAMP
+});
+
 
       alert(
         'Catálogo público atualizado!\n' +
