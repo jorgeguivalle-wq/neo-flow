@@ -811,9 +811,559 @@ function iniciarAtendimentoGuiado() {
   });
 }
 
+/* =====================================================
+   LALÁ — INTERPRETADOR SEM API
+   Gírias, erros de grafia, contexto e confirmação
+   ===================================================== */
+
+const lalaMemoria = {
+  tema: "",
+  modelo: "",
+  data: "",
+  aguardandoTema: ""
+};
+
+const lalaGirias = {
+  vc: "voce",
+  vcs: "voces",
+  q: "que",
+  qnt: "quanto",
+  qto: "quanto",
+  qt: "quanto",
+  agr: "agora",
+  hj: "hoje",
+  amnh: "amanha",
+  amanhaa: "amanha",
+  pfv: "por favor",
+  pfvr: "por favor",
+  pls: "por favor",
+  tbm: "tambem",
+  tb: "tambem",
+  pq: "porque",
+  pqq: "porque",
+  obg: "obrigado",
+  vlw: "valeu",
+  blz: "beleza",
+  msg: "mensagem",
+  disp: "disponivel",
+  precoo: "preco",
+  basco: "basico",
+  bazico: "basico",
+  basiku: "basico",
+  stori: "story",
+  safare: "safari",
+  p: "para",
+  pra: "para"
+};
+
+function lalaNormalizar(texto) {
+  return String(texto || "")
+    .toLocaleLowerCase("pt-BR")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/(.)\1{2,}/g, "$1$1")
+    .replace(/[^a-z0-9/\s-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function lalaExpandir(texto) {
+  return lalaNormalizar(texto)
+    .split(" ")
+    .map(palavra => lalaGirias[palavra] || palavra)
+    .join(" ");
+}
+
+function lalaDistancia(a, b) {
+  const anterior = Array.from(
+    { length: b.length + 1 },
+    (_, i) => i
+  );
+
+  let linha = anterior;
+
+  for (let i = 1; i <= a.length; i++) {
+    const nova = [i];
+
+    for (let j = 1; j <= b.length; j++) {
+      nova[j] = Math.min(
+        nova[j - 1] + 1,
+        linha[j] + 1,
+        linha[j - 1] +
+          (a[i - 1] === b[j - 1] ? 0 : 1)
+      );
+    }
+
+    linha = nova;
+  }
+
+  return linha[b.length];
+}
+
+function lalaSimilaridade(a, b) {
+  if (!a || !b) return 0;
+
+  return 1 -
+    lalaDistancia(a, b) /
+    Math.max(a.length, b.length);
+}
+
+function lalaTemas() {
+  return Object.entries(catalog.temas || {})
+    .filter(([, tema]) => tema?.nome)
+    .map(([id, tema]) => ({
+      id,
+      nome: tema.nome,
+      modelos: tema.modelos || {}
+    }));
+}
+
+function lalaDetectarTema(texto) {
+  const temas = lalaTemas();
+  const entrada = lalaExpandir(texto);
+  const palavras = entrada.match(/[a-z]+/g) || [];
+
+  const resultados = [];
+
+  for (const tema of temas) {
+    const nome = lalaNormalizar(tema.nome);
+
+    if (!nome) continue;
+
+    // Primeiro: nome completo, sem erros.
+    if (
+      (" " + entrada + " ").includes(
+        " " + nome + " "
+      )
+    ) {
+      resultados.push({
+        tema,
+        confianca: 1
+      });
+      continue;
+    }
+
+    // Depois: comparação aproximada.
+    const partes = nome.split(" ");
+    let melhor = 0;
+
+    for (let i = 0; i < palavras.length; i++) {
+      for (
+        let tamanho = Math.max(1, partes.length - 1);
+        tamanho <= partes.length + 1;
+        tamanho++
+      ) {
+        const trecho = palavras
+          .slice(i, i + tamanho)
+          .join(" ");
+
+        if (!trecho || trecho.length < 4) continue;
+
+        const nota = lalaSimilaridade(
+          trecho,
+          nome
+        );
+
+        melhor = Math.max(melhor, nota);
+      }
+    }
+
+    if (melhor >= 0.68) {
+      resultados.push({
+        tema,
+        confianca: melhor
+      });
+    }
+  }
+
+  resultados.sort(
+    (a, b) => b.confianca - a.confianca
+  );
+
+  const primeiro = resultados[0];
+  const segundo = resultados[1];
+
+  if (!primeiro) return null;
+
+  // Se dois temas forem muito parecidos,
+  // não escolher arbitrariamente.
+  const ambiguo = segundo &&
+    primeiro.confianca - segundo.confianca < 0.12;
+
+  return {
+    ...primeiro,
+    confirmar:
+      primeiro.confianca < 0.90 ||
+      Boolean(ambiguo)
+  };
+}
+
+function lalaDetectarModelo(texto) {
+  const entrada = lalaExpandir(texto);
+
+  const modelosConhecidos = [
+    ["Só um Bolinho", ["so um bolinho", "bolinho"]],
+    ["Básico", ["basico", "basic"]],
+    ["Prata", ["prata"]],
+    ["Ouro", ["ouro"]]
+  ];
+
+  for (const [modelo, alternativas] of modelosConhecidos) {
+    if (alternativas.some(palavra =>
+      (" " + entrada + " ").includes(
+        " " + palavra + " "
+      )
+    )) {
+      return modelo;
+    }
+  }
+
+  return "";
+}
+
+function lalaDetectarData(texto) {
+  const achou = String(texto).match(
+    /\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/
+  );
+
+  if (!achou) return "";
+
+  const dia = Number(achou[1]);
+  const mes = Number(achou[2]);
+
+  if (
+    dia < 1 || dia > 31 ||
+    mes < 1 || mes > 12
+  ) {
+    return "";
+  }
+
+  // Sem ano: manter a data incompleta.
+  // A Lalá deve pedir confirmação.
+  if (!achou[3]) {
+    return (
+      String(dia).padStart(2, "0") + "/" +
+      String(mes).padStart(2, "0")
+    );
+  }
+
+  let ano = Number(achou[3]);
+
+  if (ano < 100) ano += 2000;
+
+  const data = new Date(ano, mes - 1, dia);
+
+  if (
+    data.getFullYear() !== ano ||
+    data.getMonth() !== mes - 1 ||
+    data.getDate() !== dia
+  ) {
+    return "";
+  }
+
+  return (
+    String(dia).padStart(2, "0") + "/" +
+    String(mes).padStart(2, "0") + "/" +
+    ano
+  );
+}
+
+function lalaFalar(texto, cliente = false) {
+  const conversa = document.getElementById(
+    "lala-conversa"
+  );
+
+  if (!conversa) return;
+
+  const mensagem = document.createElement("div");
+
+  mensagem.textContent = texto;
+
+  mensagem.style.cssText =
+    "padding:12px 14px;border-radius:15px;" +
+    "line-height:1.6;white-space:pre-line;" +
+    "overflow-wrap:anywhere;" +
+    "background:" +
+    (cliente ? "#f4dce6" : "#f8f4f6") + ";" +
+    "margin-left:" +
+    (cliente ? "28px" : "0") + ";" +
+    "margin-right:" +
+    (cliente ? "0" : "28px") + ";";
+
+  conversa.append(mensagem);
+  conversa.scrollTop = conversa.scrollHeight;
+}
+
+function lalaConfirmarTema(tema) {
+  const conversa = document.getElementById(
+    "lala-conversa"
+  );
+
+  if (!conversa) return;
+
+  const linha = document.createElement("div");
+  linha.style.cssText =
+    "display:flex;gap:8px;flex-wrap:wrap;";
+
+  const sim = document.createElement("button");
+  sim.type = "button";
+  sim.className = "botao primaria";
+  sim.textContent = "💗 Isso mesmo!";
+
+  const nao = document.createElement("button");
+  nao.type = "button";
+  nao.className = "botao claro";
+  nao.textContent = "Outro tema";
+
+  sim.addEventListener("click", () => {
+    lalaMemoria.tema = tema.nome;
+    lalaMemoria.aguardandoTema = "";
+
+    linha.remove();
+
+    lalaFalar(
+      "Perfeito! 💕 Então vamos considerar " +
+      tema.nome + ". " +
+      "Qual modelo de kit você gostaria?"
+    );
+  });
+
+  nao.addEventListener("click", () => {
+    lalaMemoria.aguardandoTema = "";
+    linha.remove();
+
+    lalaFalar(
+      "Sem problemas! 🌷 Pode me escrever " +
+      "o nome do tema novamente ou me dar " +
+      "mais alguma pista? Vou tentar encontrar!"
+    );
+  });
+
+  linha.append(sim, nao);
+  conversa.append(linha);
+}
+
+function lalaEncontrarPreco() {
+  if (
+    !lalaMemoria.tema ||
+    !lalaMemoria.modelo
+  ) return null;
+
+  const tema = lalaTemas().find(
+    t => lalaNormalizar(t.nome) ===
+      lalaNormalizar(lalaMemoria.tema)
+  );
+
+  if (!tema) return null;
+
+  const modelo = Object.values(tema.modelos)
+    .find(m =>
+      lalaNormalizar(m.nome) ===
+      lalaNormalizar(lalaMemoria.modelo)
+    );
+
+  const preco = Number(modelo?.preco);
+
+  return Number.isFinite(preco) && preco > 0
+    ? preco
+    : null;
+}
+
+function lalaInterpretar(texto) {
+  const entrada = lalaExpandir(texto);
+
+  // Enquanto aguarda confirmação, não
+  // sobrescrever o tema por uma suposição.
+  if (lalaMemoria.aguardandoTema) {
+    if (/^(sim|isso|isso mesmo|correto|ss|s)$/i.test(entrada)) {
+      const tema = lalaTemas().find(
+        t => t.nome === lalaMemoria.aguardandoTema
+      );
+
+      lalaMemoria.aguardandoTema = "";
+
+      if (tema) {
+        lalaMemoria.tema = tema.nome;
+        return (
+          "Isso mesmo! 💗 Tema " + tema.nome +
+          " confirmado. Qual kit você deseja?"
+        );
+      }
+    }
+
+    lalaMemoria.aguardandoTema = "";
+  }
+
+  const temaEncontrado = lalaDetectarTema(texto);
+
+  if (temaEncontrado?.confirmar) {
+    lalaMemoria.aguardandoTema =
+      temaEncontrado.tema.nome;
+
+    return {
+      confirmar: temaEncontrado.tema,
+      texto:
+        "Acho que encontrei uma possibilidade! 💗 " +
+        "Você está procurando o tema " +
+        temaEncontrado.tema.nome +
+        "? Me confirma para eu não confundir."
+    };
+  }
+
+  if (temaEncontrado) {
+    lalaMemoria.tema =
+      temaEncontrado.tema.nome;
+  }
+
+  const modelo = lalaDetectarModelo(texto);
+  const data = lalaDetectarData(texto);
+
+  if (modelo) lalaMemoria.modelo = modelo;
+  if (data) lalaMemoria.data = data;
+
+  const saudacao =
+    /^(oi|ola|bom dia|boa tarde|boa noite|eai)$/i
+      .test(entrada);
+
+  if (saudacao) {
+    return "Oiê! 💗 Me conta qual tema, " +
+      "modelo de kit ou data você está procurando!";
+  }
+
+  const querPreco =
+    /\b(quanto|preco|valor|custa|ta)\b/.test(
+      entrada
+    );
+
+  const querDisponibilidade =
+    /\b(disponivel|disponibilidade|tem|reserva)\b/
+      .test(entrada);
+
+  const querHumano =
+    /\b(atendente|humano|pessoa|funcionario)\b/
+      .test(entrada);
+
+  if (querHumano) {
+    return "Claro! 💗 Você pode solicitar " +
+      "o atendimento de alguém da nossa equipe " +
+      "no formulário logo abaixo.";
+  }
+
+  if (
+    !lalaMemoria.tema &&
+    !lalaMemoria.modelo &&
+    !lalaMemoria.data
+  ) {
+    return (
+      "Opa, acho que ainda não consegui " +
+      "identificar o tema direitinho. 💗 " +
+      "Pode me dar mais uma pista ou escrever " +
+      "o nome de outra forma?"
+    );
+  }
+
+  let resposta = "Entendi até aqui! 💗\n\n";
+
+  if (lalaMemoria.tema) {
+    resposta += "🎨 Tema: " +
+      lalaMemoria.tema + "\n";
+  }
+
+  if (lalaMemoria.modelo) {
+    resposta += "🎁 Kit: " +
+      lalaMemoria.modelo + "\n";
+  }
+
+  if (lalaMemoria.data) {
+    resposta += "📅 Data: " +
+      lalaMemoria.data + "\n";
+  }
+
+  const preco = lalaEncontrarPreco();
+
+  if (querPreco) {
+    resposta += "\n";
+
+    resposta += preco !== null
+      ? "💰 Valor cadastrado: " +
+        fmt(preco) + ".\n"
+      : "O valor desse modelo precisa " +
+        "ser confirmado pela equipe.\n";
+  }
+
+  if (querDisponibilidade) {
+    resposta +=
+      "\nA disponibilidade será conferida " +
+      "pela equipe antes da confirmação. 🌷";
+  }
+
+  if (
+    lalaMemoria.data &&
+    !/\/\d{4}$/.test(lalaMemoria.data)
+  ) {
+    resposta +=
+      "\nVocê pode confirmar o ano da festa?";
+  } else if (!lalaMemoria.tema) {
+    resposta +=
+      "\nQual tema você gostaria?";
+  } else if (!lalaMemoria.modelo) {
+    resposta +=
+      "\nQual modelo de kit você prefere?";
+  } else if (!lalaMemoria.data) {
+    resposta +=
+      "\nPara qual data seria a festa?";
+  } else {
+    resposta +=
+      "\nSe estiver tudo certinho, você pode " +
+      "enviar sua solicitação à equipe. 🎈";
+  }
+
+  return resposta;
+}
+
+function iniciarLalaInteligente() {
+  const formulario = document.getElementById(
+    "form-lala-mensagem"
+  );
+
+  if (!formulario) return;
+
+  formulario.addEventListener(
+    "submit",
+    evento => {
+      evento.preventDefault();
+
+      const campo = document.getElementById(
+        "lala-mensagem"
+      );
+
+      const texto = campo.value.trim();
+      if (!texto) return;
+
+      lalaFalar(texto, true);
+      campo.value = "";
+
+      const resultado = lalaInterpretar(texto);
+
+      if (typeof resultado === "string") {
+        lalaFalar(resultado);
+      } else {
+        lalaFalar(resultado.texto);
+
+        if (resultado.confirmar) {
+          lalaConfirmarTema(
+            resultado.confirmar
+          );
+        }
+      }
+    }
+  );
+}
+
   function init() {
     
 iniciarAtendimentoGuiado();
+iniciarLalaInteligente();
 
     document.querySelectorAll('[data-fechar]')
       .forEach(button => button.addEventListener(
