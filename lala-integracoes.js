@@ -378,37 +378,31 @@
     area.append(search,list,save);
   }
 
+  
   // Complementa os painéis já criados.
-  function init(){
-    document.querySelectorAll('[data-lala-tela="atendimentos"]')
-      .forEach(b=>b.addEventListener(
-        'click',
-        ()=>setTimeout(renderQueue,0)
-      ));
+  function init() {
 
-    document.querySelectorAll('[data-vitrine="catalogo"]')
-      .forEach(b=>b.addEventListener(
+    // Mantém o verificador de kits da Lalá.
+    document.querySelectorAll(
+      '[data-treino="kits"]'
+    ).forEach(b => {
+      b.addEventListener(
         'click',
-        ()=>setTimeout(()=>{
-          renderCatalogAdmin().catch(e=>console.error(e));
-        },0)
-      ));
+        () => setTimeout(addKitChecker, 0)
+      );
+    });
 
-    document.querySelectorAll('[data-treino="kits"]')
-      .forEach(b=>b.addEventListener(
-        'click',
-        ()=>setTimeout(addKitChecker,0)
-      ));
-
-    window.TralalaLalaIntegracoes=Object.freeze({
-      conferirKit:checkKit,
-      abrirFila:renderQueue
+    // Funções disponíveis para integração.
+    window.TralalaLalaIntegracoes = Object.freeze({
+      conferirKit: checkKit,
+      abrirFila: renderQueue
     });
   }
 
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',init);
-  }else{
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
     init();
   }
+
 })();
