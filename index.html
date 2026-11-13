@@ -1215,10 +1215,54 @@
               <input type="number" id="kit-quantidade" value="1" min="0">
             </div>
           </div>
-          <div class="grid-2" style="margin-bottom: 10px;">
-            <button type="button" id="btn-kit-selecionar-pecas" class="btn-pecas-tema" style="padding:12px;">🍽️ Selecionar Peças</button>
-            <button type="button" id="btn-kit-selecionar-temas" class="btn-pecas-tema" style="padding:12px;">🎨 Selecionar Temas</button>
-          </div>
+         
+<div id="kit-composicao" style="margin:15px 0;">
+  <h4>🎁 Composição do Kit</h4>
+  <p style="font-size:12px;color:#777;">
+    Informe o que acompanha cada kit.
+    Não é necessário selecionar um tema.
+  </p>
+
+  <div class="grid-2">
+    <label>Quantidade de cilindros
+      <input id="kit-qtd-cilindros"
+             type="number" min="0" value="0">
+    </label>
+
+    <label>Quantidade de painéis
+      <input id="kit-qtd-paineis"
+             type="number" min="0" value="0">
+    </label>
+
+    <label>Quantidade de tapetes
+      <input id="kit-qtd-tapetes"
+             type="number" min="0" value="0">
+    </label>
+
+    <label>Quantidade de bandejas
+      <input id="kit-qtd-bandejas"
+             type="number" min="0" value="0">
+    </label>
+
+    <label>Quantidade de mesas ou cômodas
+      <input id="kit-qtd-mesas"
+             type="number" min="0" value="0">
+    </label>
+
+    <label>Quantidade de bolos maquete
+      <input id="kit-qtd-bolos"
+             type="number" min="0" value="0">
+    </label>
+  </div>
+
+  <label style="display:block;margin-top:12px;">
+    Outros itens inclusos
+    <textarea id="kit-outros-itens"
+              rows="3"
+              placeholder="Ex.: 2 displays, 1 arco de balões de 1 metro..."></textarea>
+  </label>
+</div>
+
           <div id="kit-info-selecao" style="background:#fff; padding:10px; border-radius:8px; margin-bottom:10px; font-size:12px; color:var(--text-muted); border:1px dashed #d8b4e2; min-height:40px;">
             Nenhuma peça ou tema selecionado ainda.
           </div>
