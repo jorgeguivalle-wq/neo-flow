@@ -2677,9 +2677,6 @@ function salvarKit() {
   var nome = nomeEl ? nomeEl.value.trim() : "";
   var qtd = qtdEl ? (parseInt(qtdEl.value) || 1) : 1;
   if (!nome) return Utils.showToast("Preencha o nome do kit.", "warning");
-  if (!State.kitCriando.pecas || State.kitCriando.pecas.length === 0) {
-    if (!State.kitCriando.temas || State.kitCriando.temas.length === 0) return Utils.showToast("Selecione pelo menos uma peça ou tema.", "warning");
-  }
   var processar = function(img) {
     ModalStatus.exibir("SALVANDO KIT...", nome);
     Database.salvarKitNuvem({ nome, quantidade: qtd, pecas: State.kitCriando.pecas || [], pecasQtd: State.kitCriando.pecasQtd || {}, temas: State.kitCriando.temas || [], imagem: img || "", criadoEm: Date.now() })
