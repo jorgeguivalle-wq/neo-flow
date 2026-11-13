@@ -1345,37 +1345,20 @@ function iniciar() {
     });
   });
 
-  // FUNÇÕES PARA TESTES
-  window.TralalaGerenciarVitrine = {
-    abrirCadastroTemas,
-    abrirPagamentos,
-    abrirPedidosVitrine
-  };
-
-}
-
-
-    document.querySelectorAll(
-      '[data-vitrine="pagamentos"]'
-    ).forEach(botao => {
-      botao.addEventListener(
-        "click",
-        () => setTimeout(
-          abrirPagamentos, 100
-        )
-      );
-    });
-
-    // Disponibiliza as funções para testes.
+ 
+    // FUNÇÕES DISPONÍVEIS PARA TESTES
     window.TralalaGerenciarVitrine = {
       abrirCadastroTemas,
-      abrirPagamentos
+      abrirPagamentos,
+      abrirPedidosVitrine
     };
   }
 
+  // INICIALIZAÇÃO DO GERENCIADOR
   if (document.readyState === "loading") {
     document.addEventListener(
-      "DOMContentLoaded", iniciar
+      "DOMContentLoaded",
+      iniciar
     );
   } else {
     iniciar();
