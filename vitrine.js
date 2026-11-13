@@ -743,7 +743,78 @@ catalog.temas = prepararTemasPublicos(
     }
   }
 
+/* ==========================================
+   LALÁ — ATENDIMENTO GUIADO
+   ========================================== */
+
+function iniciarAtendimentoGuiado() {
+
+  const respostas = {
+
+    kits:
+      "🎁 Temos diversos modelos de kits " +
+      "e temas para sua comemoração! " +
+      "Explore a Vitrine e escolha o seu favorito. " +
+      "A equipe confirma a disponibilidade.",
+
+    reservas:
+      "📅 Para solicitar uma reserva, " +
+      "escolha o tema e modelo, adicione " +
+      "ao carrinho e informe a data da festa. " +
+      "A reserva só será confirmada " +
+      "pela nossa equipe.",
+
+    pagamentos:
+      "💳 As informações de pagamento " +
+      "são fornecidas pela equipe após " +
+      "a conferência do orçamento. " +
+      "Não realize transferências sem " +
+      "confirmar os dados oficiais da loja.",
+
+    humano:
+      "🙋 Claro! Conte sua dúvida no " +
+      "campo abaixo e envie a solicitação. " +
+      "Um atendente humano poderá ajudar você."
+  };
+
+  document.querySelectorAll(
+    "[data-lala-ajuda]"
+  ).forEach(botao => {
+
+    botao.addEventListener(
+      "click",
+      () => {
+
+        const tipo =
+          botao.dataset.lalaAjuda;
+
+        const resposta = respostas[tipo];
+
+        if (!resposta) return;
+
+        const destino =
+          document.getElementById(
+            "lala-resposta"
+          );
+
+        if (destino) {
+          destino.textContent = resposta;
+        }
+
+        if (tipo === "humano") {
+          document.getElementById(
+            "ajuda-texto"
+          )?.focus();
+        }
+      }
+    );
+  });
+}
+
   function init() {
+    
+iniciarAtendimentoGuiado();
+
     document.querySelectorAll('[data-fechar]')
       .forEach(button => button.addEventListener(
         'click',
