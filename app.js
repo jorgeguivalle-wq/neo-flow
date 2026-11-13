@@ -2677,9 +2677,40 @@ function salvarKit() {
   var nome = nomeEl ? nomeEl.value.trim() : "";
   var qtd = qtdEl ? (parseInt(qtdEl.value) || 1) : 1;
   if (!nome) return Utils.showToast("Preencha o nome do kit.", "warning");
+  
+  var quantidadeComposicao = function(id) {
+    var campo = document.getElementById(id);
+    var valor = Number(campo ? campo.value : 0);
+
+    return Number.isInteger(valor) && valor >= 0
+      ? valor
+      : 0;
+  };
+
+  var composicaoKit = {
+    cilindros: quantidadeComposicao("kit-qtd-cilindros"),
+    paineis: quantidadeComposicao("kit-qtd-paineis"),
+    tapetes: quantidadeComposicao("kit-qtd-tapetes"),
+    bandejas: quantidadeComposicao("kit-qtd-bandejas"),
+    mesas: quantidadeComposicao("kit-qtd-mesas"),
+    bolosMaquete: quantidadeComposicao("kit-qtd-bolos"),
+    outros: (
+      document.getElementById("kit-outros-itens")?.value || ""
+    ).trim().slice(0, 1000)
+  };
+
   var processar = function(img) {
     ModalStatus.exibir("SALVANDO KIT...", nome);
-    Database.salvarKitNuvem({ nome, quantidade: qtd, pecas: State.kitCriando.pecas || [], pecasQtd: State.kitCriando.pecasQtd || {}, temas: State.kitCriando.temas || [], imagem: img || "", criadoEm: Date.now() })
+     Database.salvarKitNuvem({
+  nome,
+  quantidade: qtd,
+  pecas: State.kitCriando.pecas || [],
+  pecasQtd: State.kitCriando.pecasQtd || {},
+  temas: State.kitCriando.temas || [],
+  composicao: composicaoKit,
+  imagem: img || "",
+  criadoEm: Date.now()
+})
       .then(function() {
         ModalStatus.sucesso("✓ KIT SALVO");
         if (nomeEl) nomeEl.value = "";
