@@ -351,10 +351,66 @@
               aria-label="Fechar">✕</button>
     </div>
 
-    <p>
-      Olá! 💗 O chat automático ainda está em preparação.
-      Você já pode enviar uma solicitação à nossa equipe.
-    </p>
+    
+<!-- APRESENTAÇÃO DA LALÁ -->
+<div id="lala-boas-vindas">
+  <p>
+    Oiê! 💗 Eu sou a <strong>Lalá</strong>,
+    assistente virtual da Tralalá Festas! 🌸
+  </p>
+
+  <p>
+    Estou aqui para ajudar você a escolher
+    o tema e o kit da sua comemoração! 🎈
+  </p>
+
+  <p class="aviso">
+    <strong>
+      ✨ Sou uma assistente virtual e posso
+      cometer errinhos ao entender suas mensagens.
+      Se isso acontecer, pode me corrigir, tá bem?
+      Vou fazer o possível para te ajudar! 💕
+    </strong>
+  </p>
+</div>
+
+<!-- CONVERSA -->
+<div id="lala-conversa"
+     role="log"
+     aria-label="Conversa com Lalá"
+     style="display:grid;gap:10px;
+            max-height:260px;overflow-y:auto;
+            margin:15px 0;padding:10px;">
+</div>
+
+<!-- MENSAGEM DO CLIENTE -->
+<form id="form-lala-mensagem"
+      style="display:grid;gap:10px;">
+
+  <label>
+    Sua mensagem
+    <textarea id="lala-mensagem"
+              rows="3"
+              maxlength="500"
+              required
+              placeholder="Ex.: qnt tá o kit basco do safare?">
+    </textarea>
+  </label>
+
+  <button type="submit"
+          class="botao primaria cheia">
+    💬 Enviar para a Lalá
+  </button>
+</form>
+
+<hr style="border:0;border-top:1px solid #eedde4;
+           margin:20px 0;">
+
+<p class="aviso">
+  Prefere falar diretamente com nossa equipe?
+  Use o formulário abaixo.
+</p>
+
 
 <!-- ATENDIMENTO GUIADO DA LALÁ -->
 <div id="lala-orientacoes">
