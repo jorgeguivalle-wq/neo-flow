@@ -537,15 +537,1778 @@ h4 { color: var(--primary-dark); font-size: 15px; font-weight: 600; }
   margin-top: 14px;
   font-size: 13px;
 }
-/* === VITRINE E LALÁ: PAINÉIS INTERNOS === */
-#tp-vitrine,#tp-lala-atendente{padding:22px;min-width:0}
-#tp-vitrine[hidden],#tp-lala-atendente[hidden],#tp-vitrine [hidden],#tp-lala-atendente [hidden]{display:none!important}
-#tp-vitrine .tp-pagina-header,#tp-lala-atendente .tp-pagina-header{display:flex;gap:18px;justify-content:space-between;align-items:center;margin-bottom:22px}
-#tp-vitrine .tp-config-grid,#tp-lala-atendente .tp-config-grid,#tp-lala-atendente .tp-treinamento-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:14px}
-#tp-vitrine .tp-config-card,#tp-lala-atendente .tp-config-card{background:#fff;border:1px solid #eadce2;border-radius:14px;text-align:left;display:flex;flex-direction:column;gap:8px;padding:20px;min-height:140px;cursor:pointer;color:#453540}
-#tp-vitrine .tp-config-card:hover,#tp-lala-atendente .tp-config-card:hover{border-color:#a3536a}
-#tp-vitrine .tp-config-emoji,#tp-lala-atendente .tp-config-emoji{font-size:26px}
-#tp-vitrine .tp-config-painel,#tp-lala-atendente .tp-config-painel{padding:24px;background:#fff;border:1px solid #eadce2;border-radius:14px;margin-top:15px}
-#tp-vitrine .tp-btn-voltar,#tp-lala-atendente .tp-btn-voltar{background:transparent;border:0;color:#a3536a;padding:10px;cursor:pointer}
-#tp-vitrine #tp-vitrine-conteudo select,#tp-lala-atendente select{padding:12px;border-radius:10px;border:1px solid #ded5da;max-width:100%;background:#fff}
-@media(max-width:650px){#tp-vitrine,#tp-lala-atendente{padding:12px}#tp-vitrine .tp-config-grid,#tp-lala-atendente .tp-config-grid{grid-template-columns:1fr}}
+
+/* ==========================================
+   TRALALÁ PRO - NOVO DASHBOARD
+   BRANCO + ROSA | SEM BIBLIOTECAS
+   ========================================== */
+
+@media screen {
+  body.tp-logado {
+    background: #f3f5f8;
+    padding: 12px;
+    display: block;
+  }
+
+  body.tp-logado > .site-container {
+    max-width: 1500px;
+    padding: 12px;
+    margin: 0 auto;
+    background: #f3f5f8;
+    border: 1px solid #e5e7eb;
+    border-radius: 22px;
+    box-shadow: none;
+  }
+
+  /* A logo original fica no login.
+     No painel ela aparece na lateral. */
+  body.tp-logado .fachada {
+    display: none;
+  }
+
+  #secao-verificador[style*="display: block"] {
+    display: grid !important;
+    grid-template-columns: 250px minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+  }
+
+  #secao-verificador > * {
+    grid-column: 2;
+    min-width: 0;
+  }
+
+  #tp-sidebar {
+    grid-column: 1 !important;
+    grid-row: 1 / span 100;
+    background: white;
+    border: 1px solid #edf0f3;
+    border-radius: 17px;
+    padding: 20px 12px;
+    min-height: calc(100vh - 50px);
+    position: sticky;
+    top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .tp-marca {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 4px 8px 20px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .tp-logo {
+    width: 43px;
+    height: 43px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  .tp-marca strong {
+    display: block;
+    font-size: 15px;
+    color: #172033;
+  }
+
+  .tp-marca small {
+    display: block;
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 3px;
+  }
+
+  .tp-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .tp-nav {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    border-radius: 10px;
+    padding: 13px 14px;
+    text-align: left;
+    font: 500 13px Poppins, sans-serif;
+    color: #475569;
+    cursor: pointer;
+    transition: background .2s, color .2s;
+  }
+
+  .tp-nav:hover {
+    background: #f8eaf0;
+    color: #a3536a;
+  }
+
+  .tp-nav.ativo {
+    background: #fceef2;
+    color: #91455d;
+    font-weight: 700;
+  }
+
+  .tp-menu-rodape {
+    margin-top: auto;
+    padding-top: 15px;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  /* Apenas a página inicial fica visível */
+  #tp-home {
+    display: none;
+    min-width: 0;
+  }
+
+  #secao-verificador.tp-inicio #tp-home {
+    display: block;
+  }
+
+  #secao-verificador.tp-inicio
+  > :not(#tp-sidebar):not(#tp-home) {
+    display: none !important;
+  }
+
+  .tp-cabecalho {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin: 10px 0 25px;
+  }
+
+  .tp-cabecalho h2 {
+    color: #172033;
+    margin: 0;
+    font-size: 26px;
+  }
+
+  .tp-cabecalho p {
+    margin: 6px 0 0;
+    color: #64748b;
+    font-size: 13px;
+  }
+
+  .tp-etiqueta {
+    border: 1px solid #f1d7e0;
+    background: #fff;
+    padding: 10px 13px;
+    border-radius: 20px;
+    color: #a3536a;
+    font-size: 12px;
+  }
+
+  /* CARDS DA VISÃO GERAL */
+  .tp-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .tp-card {
+    background: #fff;
+    border: 1px solid #edf0f3;
+    border-radius: 16px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    min-height: 155px;
+    box-shadow: 0 2px 8px #0f172a05;
+  }
+
+  .tp-card-emoji {
+    width: 42px;
+    height: 42px;
+    background: #fceef2;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 21px;
+  }
+
+  .tp-card strong {
+    font-size: 27px;
+    font-weight: 700;
+    color: #172033;
+    overflow-wrap: anywhere;
+  }
+
+  .tp-card > span:last-child {
+    color: #64748b;
+    font-size: 13px;
+  }
+
+  /* LISTA DE FESTAS E LALÁ */
+  .tp-painel {
+    background: white;
+    border: 1px solid #edf0f3;
+    border-radius: 16px;
+    padding: 22px;
+    margin-bottom: 18px;
+  }
+
+  .tp-painel h3 {
+    color: #172033;
+    font-size: 17px;
+    margin: 0;
+  }
+
+  .tp-painel-titulo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    gap: 10px;
+  }
+
+  .tp-painel button {
+    border: 1px solid #e4c2ce;
+    border-radius: 9px;
+    background: #fff;
+    color: #a3536a;
+    padding: 10px 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .tp-painel button:hover {
+    background: #fceef2;
+  }
+
+  .tp-festa-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 14px 0;
+    border-bottom: 1px solid #edf0f3;
+  }
+
+  .tp-festa-item:last-child {
+    border-bottom: 0;
+  }
+
+  .tp-festa-item strong {
+    color: #253247;
+    font-size: 13px;
+  }
+
+  .tp-festa-item small {
+    color: #64748b;
+    font-size: 12px;
+    display: block;
+    margin-top: 4px;
+  }
+
+  .tp-festa-data {
+    color: #a3536a;
+    font-size: 12px;
+    white-space: nowrap;
+    font-weight: 600;
+  }
+
+  .tp-lala-card p {
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  /* RESPONSIVO */
+  @media (max-width: 850px) {
+    #secao-verificador[style*="display: block"] {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    #secao-verificador > * {
+      grid-column: 1 !important;
+    }
+
+    #tp-sidebar {
+      grid-column: 1 !important;
+      grid-row: auto;
+      min-height: auto;
+      position: static;
+    }
+
+    .tp-menu {
+      flex-direction: row;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .tp-nav {
+      white-space: nowrap;
+      width: auto;
+      flex-shrink: 0;
+    }
+
+    .tp-menu-rodape {
+      margin-top: 0;
+    }
+  }
+
+  @media (max-width: 530px) {
+    body.tp-logado {
+      padding: 6px;
+    }
+
+    body.tp-logado > .site-container {
+      padding: 8px;
+    }
+
+    .tp-cards {
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+    }
+
+    .tp-card {
+      padding: 14px;
+      min-height: 135px;
+    }
+
+    .tp-card strong {
+      font-size: 20px;
+    }
+
+    .tp-etiqueta {
+      display: none;
+    }
+
+    .tp-painel {
+      padding: 15px;
+    }
+  }
+}
+
+/* ==========================================
+   TRALALÁ PRO - CONFIGURAÇÕES
+   ========================================== */
+
+@media screen {
+
+  #tp-configuracoes {
+    display: none;
+    min-width: 0;
+    padding: 8px 0 30px;
+  }
+
+  #secao-verificador.tp-configuracoes
+  #tp-configuracoes {
+    display: block;
+  }
+
+  #secao-verificador.tp-configuracoes
+  > :not(#tp-sidebar):not(#tp-configuracoes) {
+    display: none !important;
+  }
+
+  .tp-config-header {
+    margin-bottom: 25px;
+  }
+
+  .tp-config-header h2 {
+    color: #172033;
+    font-size: 27px;
+    margin: 0 0 7px;
+  }
+
+  .tp-config-header p {
+    color: #64748b;
+    font-size: 13px;
+    margin: 0;
+  }
+
+  .tp-config-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 17px;
+  }
+
+  .tp-config-card {
+    min-height: 190px;
+    background: #fff;
+    border: 1px solid #e8ebf0;
+    border-radius: 17px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    gap: 11px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px #0f172a06;
+    transition: border-color .2s, box-shadow .2s;
+  }
+
+  .tp-config-card:hover {
+    border-color: #d9a3b2;
+    box-shadow: 0 7px 24px #a3536a12;
+  }
+
+  .tp-config-emoji {
+    background: #fceef2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 49px;
+    height: 49px;
+    border-radius: 12px;
+    font-size: 24px;
+  }
+
+  .tp-config-card strong {
+    color: #172033;
+    font-size: 16px;
+  }
+
+  .tp-config-card small {
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.5;
+  }
+
+  .tp-config-seta {
+    align-self: flex-end;
+    font-size: 20px;
+    color: #a3536a;
+    margin-top: auto;
+  }
+
+  #tp-config-voltar {
+    background: transparent;
+    color: #a3536a;
+    font-weight: 600;
+    border: 0;
+    padding: 8px 0 18px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+
+  .tp-config-painel {
+    background: white;
+    border: 1px solid #e8ebf0;
+    border-radius: 18px;
+    padding: 28px;
+    box-shadow: 0 3px 12px #0f172a05;
+  }
+
+  .tp-config-painel h3 {
+    color: #172033;
+    font-size: 20px;
+    margin: 0 0 8px;
+  }
+
+  .tp-config-painel > p {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 22px;
+  }
+
+  .tp-config-opcao {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    margin: 9px 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 11px;
+    background: #fff;
+    cursor: pointer;
+    color: #334155;
+    font-size: 13px;
+  }
+
+  .tp-config-opcao:hover {
+    background: #fcf6f8;
+  }
+
+  .tp-config-opcao input {
+    accent-color: #a3536a;
+    width: 17px;
+    height: 17px;
+  }
+
+  #tp-config-conteudo h4 {
+    margin: 18px 0 12px;
+    color: #334155;
+  }
+
+  #tp-config-conteudo .tp-config-aviso {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 13px;
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 15px;
+  }
+
+  @media (max-width: 600px) {
+    .tp-config-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .tp-config-card {
+      min-height: 145px;
+      padding: 18px;
+    }
+
+    .tp-config-painel {
+      padding: 18px;
+    }
+  }
+}
+
+/* =========================================
+   TRALALÁ PRO - TEMA ESCURO
+   Não altera o login nem a impressão
+   ========================================= */
+
+@media screen {
+  body.tp-logado.tp-tema-escuro {
+    --primary: #da8ca5;
+    --primary-light: #a8667f;
+    --primary-dark: #f2b7ca;
+    --bg-color: #101827;
+    --bg-panel: #1e293b;
+    --text-main: #f1f5f9;
+    --text-muted: #a5b4c7;
+    --border-color: #334155;
+
+    background: #101827;
+    color: #f1f5f9;
+  }
+
+  body.tp-logado.tp-tema-escuro .site-container {
+    background: #101827;
+    border-color: #334155;
+  }
+
+  body.tp-logado.tp-tema-escuro #tp-sidebar,
+  body.tp-logado.tp-tema-escuro .tp-card,
+  body.tp-logado.tp-tema-escuro .tp-painel,
+  body.tp-logado.tp-tema-escuro .tp-config-card,
+  body.tp-logado.tp-tema-escuro .tp-config-painel {
+    background: #1e293b;
+    border-color: #334155;
+    box-shadow: none;
+  }
+
+  body.tp-logado.tp-tema-escuro
+  :is(
+    .tp-marca strong,
+    .tp-card strong,
+    .tp-config-card strong,
+    .tp-config-header h2,
+    .tp-cabecalho h2,
+    .tp-painel h3,
+    .tp-config-painel h3,
+    .tp-festa-item strong
+  ) {
+    color: #f8fafc;
+  }
+
+  body.tp-logado.tp-tema-escuro
+  :is(
+    .tp-marca small,
+    .tp-card > span:last-child,
+    .tp-config-card small,
+    .tp-config-header p,
+    .tp-cabecalho p,
+    .tp-festa-item small,
+    .tp-lala-card p,
+    .tp-config-painel > p
+  ) {
+    color: #a5b4c7;
+  }
+
+  body.tp-logado.tp-tema-escuro .tp-nav {
+    color: #cbd5e1;
+  }
+
+  body.tp-logado.tp-tema-escuro .tp-nav:hover,
+  body.tp-logado.tp-tema-escuro .tp-nav.ativo {
+    color: #ffd2e0;
+    background: #493044;
+  }
+
+  body.tp-logado.tp-tema-escuro
+  :is(.tp-card-emoji, .tp-config-emoji) {
+    background: #493044;
+  }
+
+  body.tp-logado.tp-tema-escuro
+  :is(.tp-config-opcao, .tp-config-aviso) {
+    background: #273449;
+    color: #e2e8f0;
+    border-color: #475569;
+  }
+
+  body.tp-logado.tp-tema-escuro
+  :is(.tp-painel button, .tp-etiqueta) {
+    background: #273449;
+    color: #f3b8ca;
+    border-color: #674158;
+  }
+
+  body.tp-logado.tp-tema-escuro
+  :is(.tp-festa-item, .tp-marca, .tp-menu-rodape) {
+    border-color: #334155;
+  }
+
+  body.tp-logado.tp-tema-escuro
+  .tp-config-opcao input {
+    accent-color: #da8ca5;
+  }
+}
+#tp-config-cards[hidden],
+#tp-config-detalhes[hidden] {
+  display: none !important;
+}
+
+/* SEGURANÇA - CONFIGURAÇÕES */
+
+.tp-seguranca-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: linear-gradient(120deg, #fff, #fff1f5);
+  border: 1px solid #f1cbd8;
+  border-radius: 17px;
+  padding: 22px;
+  margin-bottom: 22px;
+}
+
+.tp-seguranca-icone {
+  background: #f8dce5;
+  border-radius: 14px;
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  font-size: 25px;
+  flex-shrink: 0;
+}
+
+.tp-seguranca-info {
+  flex: 1;
+}
+
+.tp-seguranca-info strong {
+  color: #91455d;
+  font-size: 16px;
+}
+
+.tp-seguranca-info p {
+  font-size: 12px;
+  color: #64748b;
+  margin: 5px 0;
+}
+
+#tp-seguranca-status {
+  font-size: 11px;
+  color: #a3536a;
+}
+
+#tp-configurar-senha {
+  background: #a3536a;
+  border: none;
+  color: white;
+  border-radius: 10px;
+  padding: 12px 17px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#tp-configurar-senha:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 650px) {
+  .tp-seguranca-banner {
+    flex-wrap: wrap;
+  }
+
+  #tp-configurar-senha {
+    width: 100%;
+  }
+}
+
+/* ==========================================
+   MODAL DE SEGURANÇA - TRALALÁ PRO
+   ========================================== */
+
+.tp-seg-overlay[hidden] {
+  display: none !important;
+}
+
+.tp-seg-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(15, 23, 42, .65);
+  backdrop-filter: blur(7px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.tp-seg-modal {
+  width: 100%;
+  max-width: 430px;
+  background: #fff;
+  color: #334155;
+  padding: 35px 28px;
+  border-radius: 24px;
+  text-align: center;
+  box-shadow: 0 25px 80px rgba(0,0,0,.25);
+  animation: tpSegEntrada .3s ease;
+}
+
+@keyframes tpSegEntrada {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.tp-seg-icone {
+  width: 75px;
+  height: 75px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 18px;
+  background: #fff0f5;
+  border-radius: 22px;
+  font-size: 36px;
+}
+
+.tp-seg-modal h2 {
+  font-size: 23px;
+  color: #a3536a;
+  margin: 0 0 10px;
+}
+
+.tp-seg-modal p {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+#tp-seg-form {
+  margin-top: 22px;
+}
+
+#tp-seg-form[hidden] {
+  display: none !important;
+}
+
+#tp-seg-form input {
+  width: 100%;
+  padding: 14px;
+  margin-bottom: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 14px;
+}
+
+#tp-seg-form input:focus {
+  outline: none;
+  border-color: #a3536a;
+  box-shadow: 0 0 0 3px #a3536a20;
+}
+
+#tp-seg-confirmar,
+.tp-seg-continuar {
+  width: 100%;
+  background: #a3536a;
+  color: white;
+  padding: 14px;
+  border: 0;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#tp-seg-confirmar:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
+#tp-seg-recuperar,
+#tp-seg-fechar {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: block;
+  margin: 15px auto 0;
+  color: #a3536a;
+  font-size: 13px;
+}
+
+#tp-seg-fechar {
+  color: #64748b;
+}
+
+#tp-seg-mensagem {
+  font-size: 12px;
+  margin: 12px 0;
+}
+
+#tp-seg-mensagem .tp-seg-continuar {
+  margin-top: 10px;
+}
+
+/* ==========================================
+   TRALALÁ PRO - SELETOR DE CARDS
+   ========================================== */
+
+.tp-seletor-cards[hidden] {
+  display: none !important;
+}
+
+.tp-seletor-cards {
+  background: #ffffff;
+  border: 1px solid #e8d4dc;
+  border-radius: 16px;
+  padding: 20px;
+  margin-top: 18px;
+  box-shadow: 0 5px 20px rgba(163,83,106,.08);
+}
+
+.tp-seletor-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+}
+
+.tp-seletor-topo h3 {
+  margin: 0 0 6px;
+  color: #a3536a;
+  font-size: 18px;
+}
+
+.tp-seletor-topo p {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.tp-lista-selecao {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0;
+  max-height: 330px;
+  overflow-y: auto;
+}
+
+.tp-item-selecao {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 15px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  background: white;
+}
+
+.tp-item-selecao:hover {
+  background: #fcf5f8;
+  border-color: #d9a3b2;
+}
+
+.tp-item-selecao:has(input:checked) {
+  background: #fceef2;
+  border-color: #a3536a;
+}
+
+.tp-item-selecao input {
+  width: 19px;
+  height: 19px;
+  accent-color: #a3536a;
+  flex-shrink: 0;
+}
+
+.tp-item-selecao strong {
+  display: block;
+  font-size: 13px;
+  color: #172033;
+}
+
+.tp-item-selecao small {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.tp-seletor-rodape {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid #eee;
+  padding-top: 16px;
+}
+
+.tp-seletor-rodape span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+/* =====================================================
+   TRALALÁ PRO — LALÁ ATENDENTE E VITRINE
+   Design Clean | Branco + Rosa | Responsivo
+   ===================================================== */
+
+/* ===== PÁGINAS PRINCIPAIS ===== */
+
+#tp-lala-atendente,
+#tp-vitrine {
+  --tp-rosa: #a3536a;
+  --tp-rosa-escuro: #8e465e;
+  --tp-rosa-claro: #fceef2;
+  --tp-fundo: #f5f6f9;
+  --tp-texto: #172033;
+  --tp-muted: #64748b;
+  --tp-borda: #e8eaf0;
+
+  width: 100%;
+  min-width: 0;
+  padding: 10px 0 35px;
+  color: var(--tp-texto);
+}
+
+/* Respeitar a propriedade hidden */
+
+#tp-lala-atendente [hidden],
+#tp-vitrine [hidden] {
+  display: none !important;
+}
+
+/* As páginas ficam escondidas até a navegação ativar */
+
+#tp-lala-atendente[hidden],
+#tp-vitrine[hidden] {
+  display: none !important;
+}
+
+/* Mostrar apenas a página selecionada */
+
+@media screen {
+  #secao-verificador.tp-isolado
+  > #tp-lala-atendente.tp-modulo-visivel,
+
+  #secao-verificador.tp-isolado
+  > #tp-vitrine.tp-modulo-visivel {
+    display: block !important;
+    grid-column: 2;
+    min-width: 0;
+  }
+}
+
+/* ===== CABEÇALHO ===== */
+
+#tp-lala-atendente .tp-pagina-header,
+#tp-vitrine .tp-pagina-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-bottom: 28px;
+  padding: 7px 0;
+}
+
+#tp-lala-atendente .tp-pagina-header h2,
+#tp-vitrine .tp-pagina-header h2 {
+  margin: 0 0 7px;
+  font-size: 27px;
+  font-weight: 700;
+  color: var(--tp-texto);
+  letter-spacing: -0.5px;
+}
+
+#tp-lala-atendente .tp-pagina-header p,
+#tp-vitrine .tp-pagina-header p {
+  margin: 0;
+  color: var(--tp-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* ===== STATUS DA LALÁ ===== */
+
+#tp-lala-atendente .tp-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 15px;
+  background: #fff8eb;
+  border: 1px solid #f3dfb8;
+  border-radius: 30px;
+  color: #a16207;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+#tp-lala-atendente .tp-status.ativo {
+  background: #edf9f1;
+  border-color: #bbebc9;
+  color: #16803d;
+}
+
+#tp-lala-atendente .tp-status.inativo {
+  background: #f9eef0;
+  border-color: #efcbd0;
+  color: #ab4051;
+}
+
+/* ===== CARDS PRINCIPAIS ===== */
+
+#tp-lala-atendente .tp-config-grid,
+#tp-vitrine .tp-config-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+#tp-lala-atendente .tp-config-card,
+#tp-vitrine .tp-config-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 12px;
+
+  width: 100%;
+  min-height: 190px;
+  padding: 23px;
+
+  background: #ffffff;
+  border: 1px solid var(--tp-borda);
+  border-radius: 17px;
+
+  box-shadow: 0 3px 12px rgba(20, 30, 50, 0.035);
+
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+#tp-lala-atendente .tp-config-card:hover,
+#tp-vitrine .tp-config-card:hover {
+  transform: translateY(-3px);
+  border-color: #daa7b7;
+  box-shadow: 0 10px 25px rgba(163, 83, 106, 0.11);
+}
+
+#tp-lala-atendente .tp-config-card:focus-visible,
+#tp-vitrine .tp-config-card:focus-visible {
+  outline: 3px solid #d7a1b2;
+  outline-offset: 3px;
+}
+
+#tp-lala-atendente .tp-config-emoji,
+#tp-vitrine .tp-config-emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 49px;
+  height: 49px;
+
+  background: var(--tp-rosa-claro);
+  border-radius: 13px;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+#tp-lala-atendente .tp-config-card strong,
+#tp-vitrine .tp-config-card strong {
+  display: block;
+  color: var(--tp-texto);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+#tp-lala-atendente .tp-config-card small,
+#tp-vitrine .tp-config-card small {
+  color: var(--tp-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+#tp-lala-atendente .tp-config-seta,
+#tp-vitrine .tp-config-seta {
+  align-self: flex-end;
+  margin-top: auto;
+  font-size: 20px;
+  color: var(--tp-rosa);
+}
+
+/* ===== PAINÉIS INTERNOS ===== */
+
+#tp-lala-atendente .tp-config-painel,
+#tp-vitrine .tp-config-painel {
+  width: 100%;
+  padding: 26px;
+
+  background: #ffffff;
+  border: 1px solid var(--tp-borda);
+  border-radius: 18px;
+
+  box-shadow: 0 4px 18px rgba(20, 30, 50, 0.04);
+}
+
+#tp-lala-atendente .tp-config-painel > h3,
+#tp-vitrine .tp-config-painel > h3 {
+  color: var(--tp-texto);
+  margin: 0 0 8px;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+#tp-lala-atendente .tp-config-painel > p,
+#tp-vitrine .tp-config-painel > p {
+  margin: 0 0 22px;
+  font-size: 13px;
+  color: var(--tp-muted);
+  line-height: 1.7;
+}
+
+/* ===== BOTÕES VOLTAR ===== */
+
+#tp-lala-atendente .tp-btn-voltar,
+#tp-vitrine .tp-btn-voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 10px 0;
+  margin-bottom: 15px;
+
+  background: transparent;
+  color: var(--tp-rosa);
+  border: none;
+  border-radius: 7px;
+
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+
+  transition: color 0.2s ease;
+}
+
+#tp-lala-atendente .tp-btn-voltar:hover,
+#tp-vitrine .tp-btn-voltar:hover {
+  color: var(--tp-rosa-escuro);
+  text-decoration: underline;
+}
+
+/* ===== OS 9 CARDS DE TREINAMENTO ===== */
+
+#tp-lala-cards-treinamento {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+}
+
+#tp-lala-cards-treinamento[hidden] {
+  display: none !important;
+}
+
+#tp-lala-cards-treinamento .tp-config-card {
+  min-height: 164px;
+  padding: 19px;
+}
+
+#tp-lala-cards-treinamento .tp-config-card strong {
+  font-size: 14px;
+}
+
+#tp-lala-cards-treinamento .tp-config-card small {
+  font-size: 11px;
+}
+
+/* ===== EDITOR DE TREINAMENTO ===== */
+
+#tp-lala-editor {
+  margin-top: 6px;
+}
+
+#tp-lala-editor-titulo {
+  color: var(--tp-texto);
+  font-size: 19px;
+  margin: 0 0 20px;
+}
+
+#tp-lala-editor-conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  min-width: 0;
+}
+
+/* Campos dinâmicos criados no JavaScript */
+
+#tp-lala-editor-conteudo input:not([type="checkbox"]):not([type="radio"]),
+#tp-lala-editor-conteudo textarea,
+#tp-lala-editor-conteudo select,
+#tp-vitrine-conteudo input:not([type="checkbox"]):not([type="radio"]),
+#tp-vitrine-conteudo textarea,
+#tp-vitrine-conteudo select {
+  width: 100%;
+  padding: 12px 14px;
+
+  background: #fff;
+  border: 1px solid #dce1e8;
+  border-radius: 10px;
+
+  color: #334155;
+  font-size: 13px;
+  font-family: 'Poppins', sans-serif;
+
+  outline: none;
+  transition: border-color .2s;
+}
+
+#tp-lala-editor-conteudo input:focus,
+#tp-lala-editor-conteudo textarea:focus,
+#tp-lala-editor-conteudo select:focus,
+#tp-vitrine-conteudo input:focus,
+#tp-vitrine-conteudo textarea:focus,
+#tp-vitrine-conteudo select:focus {
+  border-color: var(--tp-rosa);
+}
+
+#tp-lala-editor-conteudo label,
+#tp-vitrine-conteudo label {
+  font-size: 13px;
+  color: #475569;
+  font-weight: 500;
+}
+
+#tp-lala-editor-conteudo textarea,
+#tp-vitrine-conteudo textarea {
+  min-height: 105px;
+  resize: vertical;
+}
+
+/* ===== REGRAS E CONHECIMENTOS ===== */
+
+.tp-lala-regra,
+.tp-lala-conhecimento {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 13px;
+
+  background: #fff;
+  border: 1px solid #e6e9ef;
+  border-radius: 12px;
+
+  padding: 16px;
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.6;
+}
+
+.tp-lala-regra:hover,
+.tp-lala-conhecimento:hover {
+  border-color: #dfbdc8;
+}
+
+.tp-lala-regra-acoes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ===== 15 PERSONALIDADES ===== */
+
+.tp-lala-personalidades {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.tp-lala-personalidade {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  padding: 18px 10px;
+  min-height: 112px;
+
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 13px;
+
+  text-align: center;
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  color: #475569;
+
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tp-lala-personalidade:hover {
+  background: #fff5f8;
+  border-color: #daadbb;
+}
+
+.tp-lala-personalidade.ativo,
+.tp-lala-personalidade[aria-pressed="true"] {
+  background: #fceef2;
+  border: 2px solid #a3536a;
+  color: #91455d;
+  font-weight: 700;
+}
+
+.tp-lala-personalidade .emoji {
+  font-size: 27px;
+}
+
+.tp-lala-previa {
+  margin-top: 16px;
+  padding: 19px;
+  background: #f9f3f6;
+  border: 1px solid #ecd8e0;
+  border-radius: 13px;
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.7;
+}
+
+/* ===== GERADOR DE KITS ===== */
+
+.tp-lala-kits-lista {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.tp-lala-kit-item {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 13px;
+  padding: 17px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tp-lala-kit-item strong {
+  color: #172033;
+  font-size: 14px;
+}
+
+.tp-lala-kit-item small {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.tp-lala-kit-preco {
+  color: #a3536a;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.tp-lala-kit-item label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tp-lala-kit-item input[type="checkbox"] {
+  accent-color: #a3536a;
+}
+
+/* ===== OBJETIVOS E FLUXO ===== */
+
+.tp-lala-opcao {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 11px;
+  padding: 15px;
+
+  color: #334155;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.tp-lala-opcao:hover {
+  background: #fdf5f8;
+}
+
+.tp-lala-opcao input {
+  accent-color: #a3536a;
+}
+
+.tp-lala-fluxo-item {
+  background: #fff;
+  border-left: 4px solid #a3536a;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.04);
+}
+
+/* ===== ATENDIMENTO HUMANO ===== */
+
+.tp-lala-atendimento-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 12px;
+}
+
+.tp-lala-atendimento-card.pendente {
+  border-left: 4px solid #f59e0b;
+}
+
+.tp-lala-atendimento-card.em-atendimento {
+  border-left: 4px solid #2563eb;
+}
+
+.tp-lala-atendimento-card.finalizado {
+  border-left: 4px solid #16a34a;
+}
+
+.tp-lala-atendimento-card h4 {
+  color: #172033;
+  font-size: 15px;
+  margin: 0 0 9px;
+}
+
+.tp-lala-atendimento-card p {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.tp-lala-atendimento-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 16px;
+}
+
+.tp-lala-alerta-humano {
+  padding: 15px;
+  background: #fff8ec;
+  border: 1px solid #f2dfb5;
+  border-radius: 12px;
+  color: #92400e;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+/* ===== SIMULADOR TESTAR LALÁ ===== */
+
+.tp-lala-chat-teste {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  background: #fcfafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+
+  padding: 18px;
+  min-height: 260px;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.tp-lala-chat-msg {
+  max-width: 84%;
+  padding: 11px 15px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.tp-lala-chat-msg.cliente {
+  align-self: flex-end;
+  background: #a3536a;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.tp-lala-chat-msg.lala {
+  align-self: flex-start;
+  background: white;
+  color: #334155;
+  border: 1px solid #efdce3;
+  border-bottom-left-radius: 4px;
+}
+
+/* ===== PUBLICAÇÃO ===== */
+
+#tp-lala-publicacao {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+#tp-lala-publicacao button {
+  margin: 0;
+}
+
+.tp-publicacao-info {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.tp-publicacao-sucesso {
+  background: #effaf2;
+  border: 1px solid #bce7c5;
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 13px;
+  color: #166534;
+}
+
+/* ===== TUTORIAL OBRIGATÓRIO ===== */
+
+#tp-lala-tutorial {
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+}
+
+.tp-tutorial-progresso {
+  padding: 12px 16px;
+  background: #fceef2;
+  border-radius: 11px;
+  color: #a3536a;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+#tp-lala-tutorial-titulo {
+  margin: 6px 0;
+  color: #172033;
+  font-size: 19px;
+}
+
+#tp-lala-tutorial-texto {
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.9;
+}
+
+.tp-aviso-cadastro {
+  padding: 19px;
+  background: #fff3f6;
+  border: 1px solid #edc6d4;
+  border-left: 4px solid #a3536a;
+  border-radius: 12px;
+
+  color: #783b51;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.tp-aviso-cadastro strong {
+  display: block;
+  margin-bottom: 11px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tp-aviso-cadastro p {
+  margin: 0;
+}
+
+.tp-tutorial-acoes {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+/* ===== GERENCIAMENTO DA VITRINE ===== */
+
+.tp-vitrine-produto {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  padding: 15px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.tp-vitrine-produto img {
+  width: 68px;
+  height: 68px;
+  object-fit: cover;
+  border-radius: 9px;
+  background: #f1f5f9;
+}
+
+.tp-vitrine-produto-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tp-vitrine-produto-info strong {
+  display: block;
+  font-size: 13px;
+  color: #172033;
+}
+
+.tp-vitrine-produto-info small {
+  color: #64748b;
+  font-size: 11px;
+}
+
+.tp-vitrine-produto input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #a3536a;
+}
+
+/* ===== BOTÕES DE AÇÃO ===== */
+
+#tp-lala-atendente .tp-btn-rosa,
+#tp-vitrine .tp-btn-rosa {
+  background: #a3536a;
+  color: white;
+  border: 1px solid #a3536a;
+  border-radius: 10px;
+  padding: 11px 18px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#tp-lala-atendente .tp-btn-rosa:hover,
+#tp-vitrine .tp-btn-rosa:hover {
+  background: #8e465e;
+}
+
+#tp-lala-atendente button:disabled,
+#tp-vitrine button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+/* ===== RESPONSIVIDADE ===== */
+
+@media (max-width: 1050px) {
+  #tp-lala-cards-treinamento {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 850px) {
+  #secao-verificador.tp-isolado
+  > #tp-lala-atendente.tp-modulo-visivel,
+
+  #secao-verificador.tp-isolado
+  > #tp-vitrine.tp-modulo-visivel {
+    grid-column: 1;
+  }
+
+  #tp-lala-atendente .tp-pagina-header h2,
+  #tp-vitrine .tp-pagina-header h2 {
+    font-size: 23px;
+  }
+}
+
+@media (max-width: 600px) {
+  #tp-lala-atendente .tp-config-grid,
+  #tp-vitrine .tp-config-grid,
+  #tp-lala-cards-treinamento,
+  .tp-lala-kits-lista {
+    grid-template-columns: 1fr;
+  }
+
+  .tp-lala-personalidades {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #tp-lala-atendente .tp-config-card,
+  #tp-vitrine .tp-config-card {
+    min-height: 145px;
+    padding: 18px;
+  }
+
+  #tp-lala-atendente .tp-config-painel,
+  #tp-vitrine .tp-config-painel {
+    padding: 17px;
+  }
+
+  .tp-tutorial-acoes {
+    flex-direction: column;
+  }
+
+  .tp-tutorial-acoes button {
+    width: 100%;
+  }
+
+  .tp-lala-chat-msg {
+    max-width: 95%;
+  }
+
+  .tp-vitrine-produto {
+    flex-wrap: wrap;
+  }
+}
+
+/* ===== ACESSIBILIDADE ===== */
+
+@media (prefers-reduced-motion: reduce) {
+  #tp-lala-atendente .tp-config-card,
+  #tp-vitrine .tp-config-card {
+    transition: none;
+  }
+
+  #tp-lala-atendente .tp-config-card:hover,
+  #tp-vitrine .tp-config-card:hover {
+    transform: none;
+  }
+}
