@@ -91,12 +91,28 @@
     const clean = { kits: {}, itens: {} };
 
     for (const type of ['kits', 'itens']) {
-      for (const [id, p] of Object.entries(raw?.[type] || {})) {
-        if (!p || typeof p !== 'object' ||
-            typeof p.nome !== 'string') {
+      // Se o filtro for de uma categoria específica, verifica se bate com a categoria do produto
+      const isCategoriaNova = filter !== 'todos' && filter !== 'temas' && filter !== 'kits' && filter !== 'itens';
+      
+      if (isCategoriaNova) {
+        // Se não for 'todos' nem uma das abas padrão, pula produtos que não são dessa categoria
+        // (Ignoramos o type e filtramos direto pela string da categoria)
+      } else if (filter !== 'todos' && filter !== type) {
+        continue;
+      }
+
+      for (const p of Object.values(catalog[type])) {
+        const catProduto = (p.categoria || '').toLocaleLowerCase('pt-BR');
+        
+        // Se for uma categoria nova, exige que a categoria bata
+        if (isCategoriaNova && catProduto !== filter) continue;
+        
+        // Se for filtro normal ou todos, faz a busca normal por texto
+        if (!(p.nome + ' ' + p.categoria)
+          .toLocaleLowerCase('pt-BR')
+          .includes(q)) {
           continue;
         }
-
         clean[type][id] = {
           id,
           nome: p.nome.slice(0, 130),
@@ -1404,17 +1420,12 @@ iniciarLalaInteligente();
       });
     }
 
-    document.querySelectorAll('[data-fechar]')
-      .forEach(button => button.addEventListener(
-        'click',
-        () => dialog(button.dataset.fechar, false)
-      ));
-
-    document.querySelectorAll('.filtro[data-filtro]')
+      document.querySelectorAll('.filtro[data-filtro]')
       .forEach(button => button.addEventListener(
         'click',
         () => {
           filter = button.dataset.filtro;
+          $('busca').value = ''; // Limpa a busca ao trocar de categoria
 
           document.querySelectorAll('.filtro[data-filtro]')
             .forEach(x => x.classList.toggle(
@@ -1425,7 +1436,6 @@ iniciarLalaInteligente();
           renderProducts();
         }
       ));
-
     $('busca').addEventListener('input', renderProducts);
 
     $('btn-carrinho').addEventListener(
@@ -1532,6 +1542,7 @@ iniciarLalaInteligente();
 
     $('pedido-data').min = localToday();
     load();
+     carregarCategoriasVitrine();
   }
 
   if (document.readyState === 'loading') {
@@ -1540,3 +1551,65 @@ iniciarLalaInteligente();
     init();
   }
 })();
+    /* ============================================================
+   CARREGAR CATEGORIAS DINÂMICAS NA VITRINE PÚBLICA
+   ============================================================ */
+function carregarCategoriasVitrine() {
+  // ⚠️ UID do Admin
+  const UID_ADMIN = "6geLSmP0wuZeJT5KFnQOBiUcnpM2"; 
+
+  let tentativas = 0;
+  const intervalo = setInterval(() => {
+    tentativas++;
+    const containerAbas = document.querySelector(".abas");
+    
+    if (!containerAbas || typeof firebase === "undefined" || !firebase.apps.length) {
+      if (tentativas > 20) clearInterval(intervalo);
+      return;
+    }
+
+    // Puxa as categorias do Firebase
+    db.ref("categorias/vitrine/" + UID_ADMIN).once("value")
+      .then((snapshot) => {
+        clearInterval(intervalo); // Para de tentar, já achou a div e o firebase
+        
+        const dados = snapshot.val();
+        if (!dados) return;
+
+        const categorias = Array.isArray(dados) ? dados : Object.values(dados);
+
+        categorias.forEach((cat) => {
+          const nome = cat.nome;
+          if (!nome) return;
+
+          const filtroNome = nome.toLowerCase().replace(/\s+/g, '-'); // ex: "3d", "safari"
+
+          // Evita duplicar
+          if (document.querySelector(`.abas [data-filtro="${filtroNome}"]`)) return;
+
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "filtro";
+          btn.dataset.filtro = filtroNome; 
+          btn.textContent = nome;
+
+          // Lógica de clique igual aos outros filtros
+          btn.addEventListener("click", function () {
+            filter = btn.dataset.filtro;
+            $('busca').value = '';
+
+            document.querySelectorAll(".abas .filtro").forEach(b => b.classList.remove("ativo"));
+            this.classList.add("ativo");
+            
+            renderProducts();
+          });
+
+          containerAbas.appendChild(btn);
+        });
+      })
+      .catch((erro) => {
+        clearInterval(intervalo);
+        console.warn("Erro ao carregar categorias:", erro);
+      });
+  }, 100);
+}
