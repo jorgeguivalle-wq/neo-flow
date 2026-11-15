@@ -1068,6 +1068,7 @@ function lalaDetectarData(texto) {
   );
 }
 
+
 function lalaFalar(texto, cliente = false) {
   const conversa = document.getElementById(
     "lala-conversa"
@@ -1075,24 +1076,37 @@ function lalaFalar(texto, cliente = false) {
 
   if (!conversa) return;
 
+  const linha = document.createElement("div");
+  linha.className = "lala-linha " +
+    (cliente ? "cliente" : "bot");
+
   const mensagem = document.createElement("div");
+  mensagem.className = "lala-mensagem " +
+    (cliente ? "cliente" : "bot");
 
   mensagem.textContent = texto;
 
-  mensagem.style.cssText =
-    "padding:12px 14px;border-radius:15px;" +
-    "line-height:1.6;white-space:pre-line;" +
-    "overflow-wrap:anywhere;" +
-    "background:" +
-    (cliente ? "#f4dce6" : "#f8f4f6") + ";" +
-    "margin-left:" +
-    (cliente ? "28px" : "0") + ";" +
-    "margin-right:" +
-    (cliente ? "0" : "28px") + ";";
+  const meta = document.createElement("span");
+  meta.className = "lala-meta";
 
-  conversa.append(mensagem);
+  const horario = new Date().toLocaleTimeString(
+    "pt-BR",
+    {
+      hour: "2-digit",
+      minute: "2-digit"
+    }
+  );
+
+  meta.textContent = cliente
+    ? horario + " · ✓ Enviada"
+    : horario;
+
+  linha.append(mensagem, meta);
+  conversa.append(linha);
+
   conversa.scrollTop = conversa.scrollHeight;
 }
+
 
 function lalaConfirmarTema(tema) {
   const conversa = document.getElementById(
@@ -1364,6 +1378,31 @@ function iniciarLalaInteligente() {
     
 iniciarAtendimentoGuiado();
 iniciarLalaInteligente();
+
+    // Abrir e fechar o formulário de atendimento humano
+    const btnHumano = $('btn-lala-humano');
+    const formHumano = $('lala-form-humano');
+
+    if (btnHumano && formHumano) {
+      btnHumano.addEventListener('click', () => {
+        const abrir = formHumano.hidden;
+
+        formHumano.hidden = !abrir;
+
+        btnHumano.textContent = abrir
+          ? '✕ Fechar formulário'
+          : '🙋 Solicitar atendimento humano';
+
+        if (abrir) {
+          $('ajuda-texto').focus();
+
+          formHumano.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest'
+          });
+        }
+      });
+    }
 
     document.querySelectorAll('[data-fechar]')
       .forEach(button => button.addEventListener(
