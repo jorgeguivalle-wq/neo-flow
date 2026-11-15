@@ -156,156 +156,243 @@
 
   // Fila interna compartilhada entre usuários autorizados.
   // Não expõe clientes ao público.
-  async function renderQueue(){
-    const area=$('tp-lala-fila-atendimento');
-    if(!area)return;
+  
+async function renderQueue(){
+  const area = $('tp-lala-fila-atendimento');
+  if(!area) return;
 
-    area.replaceChildren();
+  area.replaceChildren();
 
-    if(!authorized()){
-      area.append(notice('Faça login.'));
+  if(!authorized()){
+    area.append(notice('Faça login.'));
+    return;
+  }
+
+  heading(area, '🚨 Fila de Atendimento Humano');
+
+  area.append(notice(
+    'Aqui aparecem os atendimentos registrados pela equipe e as solicitações encaminhadas pelas clientes na vitrine.'
+  ));
+
+  const name = input('text', 'Nome ou apelido do cliente');
+  const reason = input('text', 'Motivo da transferência');
+  const whatsapp = input('text', 'WhatsApp (opcional)');
+
+  const list = node('div');
+  list.id = 'tp-fila-real';
+
+  const save = btn('➕ Registrar atendimento humano', async()=>{
+    if(!name.value.trim() || !reason.value.trim()){
+      alert('Informe cliente e motivo.');
       return;
     }
 
-    heading(area,'🚨 Fila de Atendimento Humano');
+    save.disabled = true;
 
-    area.append(notice(
-      'Transferências serão inseridas pela equipe ou por uma futura integração segura com a vitrine. A Lalá não pode continuar o atendimento automaticamente após a transferência.'
-    ));
+    try{
+      const record = {
+        nome: name.value.trim().slice(0,120),
+        motivo: reason.value.trim().slice(0,600),
+        whatsapp: whatsapp.value.trim().slice(0,40),
+        status: 'pendente',
+        criadoPor: S().usuarioUID,
+        criadoEm: firebase.database.ServerValue.TIMESTAMP,
+        atualizadoEm: firebase.database.ServerValue.TIMESTAMP
+      };
 
-    const name=input('text','Nome ou apelido do cliente');
-    const reason=input('text','Motivo da transferência');
-    const whatsapp=input('text','WhatsApp (opcional)');
+      await queue().push().set(record);
 
-    const save=btn('➕ Registrar atendimento humano',async()=>{
-      if(!name.value.trim()||!reason.value.trim()){
-        alert('Informe cliente e motivo.');
+      name.value = '';
+      reason.value = '';
+      whatsapp.value = '';
+
+      await drawList();
+    }catch(e){
+      alert('Falha ao registrar: ' + e.message);
+    }finally{
+      save.disabled = false;
+    }
+  });
+
+  area.append(name, reason, whatsapp, save, list);
+
+  async function drawList(){
+    list.replaceChildren(notice('Carregando fila...'));
+
+    try{
+      // Busca os atendimentos registrados manualmente.
+      const manualSnap = await queue()
+        .orderByChild('criadoEm')
+        .limitToLast(100)
+        .once('value');
+
+      const rows = [];
+
+      Object.entries(manualSnap.val() || {}).forEach(([id, rec])=>{
+        rows.push({
+          id,
+          origem: 'manual',
+          registro: rec,
+          nome: rec.nome || 'Cliente',
+          motivo: rec.motivo || 'Sem motivo'
+        });
+      });
+
+      // Busca solicitações enviadas pelas clientes na vitrine.
+      // Esta leitura só funciona para usuários autorizados.
+      const clientesSnap = await firebase.database()
+        .ref('clientesVitrine')
+        .once('value');
+
+      clientesSnap.forEach(clienteSnap=>{
+        const uid = clienteSnap.key;
+        const cliente = clienteSnap.val() || {};
+        const perfil = cliente.perfil || {};
+        const solicitacoes = cliente.solicitacoes || {};
+
+        Object.entries(solicitacoes).forEach(([id, rec])=>{
+          if(!rec || rec.tipo !== 'atendimento') return;
+
+          rows.push({
+            id,
+            uid,
+            origem: 'vitrine',
+            registro: rec,
+            nome: rec.nome || perfil.nome || 'Cliente da vitrine',
+            motivo: rec.mensagem || 'Solicitou atendimento humano'
+          });
+        });
+      });
+
+      // Ordena tudo do mais recente para o mais antigo.
+      rows.sort((a,b)=>{
+        return (Number(b.registro.criadoEm) || 0) -
+               (Number(a.registro.criadoEm) || 0);
+      });
+
+      const recentes = rows.slice(0,100);
+
+      list.replaceChildren();
+
+      if(!recentes.length){
+        list.append(notice('Nenhum atendimento na fila.'));
         return;
       }
 
-      save.disabled=true;
+      for(const item of recentes){
+        const rec = item.registro;
+        const status = rec.status || 'pendente';
 
-      try{
-        const record={
-          nome:name.value.trim().slice(0,120),
-          motivo:reason.value.trim().slice(0,600),
-          whatsapp:whatsapp.value.trim().slice(0,40),
-          status:'pendente',
-          criadoPor:S().usuarioUID,
-          criadoEm:firebase.database.ServerValue.TIMESTAMP,
-          atualizadoEm:firebase.database.ServerValue.TIMESTAMP
-        };
+        const card = node(
+          'article',
+          undefined,
+          'tp-lala-atendimento-card ' +
+          (status === 'pendente'
+            ? 'pendente'
+            : status === 'em-atendimento'
+              ? 'em-atendimento'
+              : 'finalizado')
+        );
 
-        await queue().push().set(record);
-        name.value='';
-        reason.value='';
-        whatsapp.value='';
-        await drawList();
-      }catch(e){
-        alert('Falha ao registrar: '+e.message);
-      }finally{
-        save.disabled=false;
-      }
-    });
+        card.append(
+          node('h4', item.nome + ' — ' + status),
+          node('p', item.motivo)
+        );
 
-    area.append(name,reason,whatsapp,save);
-
-    const list=node('div');
-    list.id='tp-fila-real';
-    area.append(list);
-
-    async function drawList(){
-      list.replaceChildren(notice('Carregando fila...'));
-
-      try{
-        const snap=await queue()
-          .orderByChild('criadoEm')
-          .limitToLast(100)
-          .once('value');
-
-        const rows=Object.entries(snap.val()||{}).reverse();
-        list.replaceChildren();
-
-        if(!rows.length){
-          list.append(notice('Nenhum atendimento na fila.'));
-          return;
-        }
-
-        for(const [id,rec] of rows){
-          const card=node(
-            'article',
-            undefined,
-            'tp-lala-atendimento-card '+
-            (rec.status==='pendente'
-              ?'pendente'
-              :rec.status==='em-atendimento'
-                ?'em-atendimento'
-                :'finalizado')
-          );
-
+        if(item.origem === 'vitrine'){
           card.append(
-            node('h4',(rec.nome||'Cliente')+' — '+(rec.status||'pendente')),
-            node('p',rec.motivo||'Sem motivo')
+            node('small', 'Origem: Vitrine Tralalá')
           );
-
-          if(rec.whatsapp){
-            card.append(node('p','Contato informado: '+rec.whatsapp));
-          }
-
-          const actions=node('div',undefined,'tp-lala-atendimento-acoes');
-
-          if(rec.status==='pendente'){
-            actions.append(
-              btn('🙋 Assumir',()=>change(id,'pendente','em-atendimento'))
-            );
-          }
-
-          if(rec.status==='em-atendimento'){
-            actions.append(
-              btn('✅ Finalizar',()=>change(id,'em-atendimento','finalizado'))
-            );
-          }
-
-          card.append(actions);
-          list.append(card);
-        }
-      }catch(e){
-        list.replaceChildren(notice(
-          'Falha ao ler fila: '+e.message+
-          ' Verifique as regras do Firebase.'
-        ));
-      }
-    }
-
-    async function change(id,from,to){
-      try{
-        const ref=queue().child(id);
-        const user=S().usuarioUID;
-
-        const result=await ref.transaction(old=>{
-          if(!old||old.status!==from)return;
-
-          return {
-            ...old,
-            status:to,
-            responsavelUid:to==='em-atendimento'
-              ?user:(old.responsavelUid||user),
-            atualizadoEm:firebase.database.ServerValue.TIMESTAMP
-          };
-        });
-
-        if(!result.committed){
-          alert('Este atendimento já foi assumido ou alterado.');
+        }else{
+          card.append(
+            node('small', 'Origem: Registro da equipe')
+          );
         }
 
-        await drawList();
-      }catch(e){
-        alert('Erro ao alterar atendimento: '+e.message);
-      }
-    }
+        if(rec.whatsapp){
+          card.append(
+            node('p', 'Contato informado: ' + rec.whatsapp)
+          );
+        }
 
-    await drawList();
+        const actions = node(
+          'div',
+          undefined,
+          'tp-lala-atendimento-acoes'
+        );
+
+        if(status === 'pendente'){
+          actions.append(
+            btn('🙋 Assumir', ()=>{
+              change(item, 'pendente', 'em-atendimento');
+            })
+          );
+        }
+
+        if(status === 'em-atendimento'){
+          actions.append(
+            btn('✅ Finalizar', ()=>{
+              change(item, 'em-atendimento', 'finalizado');
+            })
+          );
+        }
+
+        card.append(actions);
+        list.append(card);
+      }
+
+    }catch(e){
+      list.replaceChildren(notice(
+        'Falha ao ler fila: ' + e.message +
+        ' Verifique as regras do Firebase.'
+      ));
+    }
   }
+
+  async function change(item, from, to){
+    try{
+      let ref;
+
+      if(item.origem === 'vitrine'){
+        // Atualiza a solicitação original da cliente.
+        ref = firebase.database()
+          .ref('clientesVitrine')
+          .child(item.uid)
+          .child('solicitacoes')
+          .child(item.id);
+      }else{
+        // Atualiza o registro manual já existente.
+        ref = queue().child(item.id);
+      }
+
+      const user = S().usuarioUID;
+
+      const result = await ref.transaction(old=>{
+        if(!old || old.status !== from) return;
+
+        return {
+          ...old,
+          status: to,
+          responsavelUid: to === 'em-atendimento'
+            ? user
+            : (old.responsavelUid || user),
+          atualizadoEm: Date.now()
+        };
+      });
+
+      if(!result.committed){
+        alert('Este atendimento já foi assumido ou alterado.');
+      }
+
+      await drawList();
+
+    }catch(e){
+      alert('Erro ao alterar atendimento: ' + e.message);
+    }
+  }
+
+  await drawList();
+}
 
   async function renderCatalogAdmin(){
     const area=$('tp-vitrine-conteudo');
