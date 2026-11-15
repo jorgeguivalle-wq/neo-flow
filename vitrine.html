@@ -342,135 +342,110 @@
     <p role="status" id="status-pedido"></p>
   </dialog>
 
-  <!-- ATENDIMENTO -->
-  <dialog id="dialog-lala" class="modal">
-    <div class="modal-cabecalho">
-      <h2>🌸 Atendimento Lalá</h2>
-      <button class="fechar" type="button"
+<!-- ATENDIMENTO LALÁ -->
+<dialog id="dialog-lala" class="modal modal-lala">
+
+  <div class="lala-app">
+
+    <!-- CABEÇALHO -->
+    <header class="lala-topo">
+
+      <div class="lala-avatar">🌸</div>
+
+      <div class="lala-identidade">
+        <strong>Lalá</strong>
+        <span><i></i> Online</span>
+      </div>
+
+      <button class="fechar"
+              type="button"
               data-fechar="dialog-lala"
-              aria-label="Fechar">✕</button>
+              aria-label="Fechar">
+        ✕
+      </button>
+
+    </header>
+
+    <!-- APRESENTAÇÃO -->
+    <div id="lala-boas-vindas"
+         class="lala-boas-vindas">
+      <strong>Oiê! Eu sou a Lalá! 💗</strong>
+      <p>
+        Estou aqui para ajudar você a escolher
+        o tema e o kit da sua comemoração!
+      </p>
     </div>
 
-    
-<!-- APRESENTAÇÃO DA LALÁ -->
-<div id="lala-boas-vindas">
-  <p>
-    Oiê! 💗 Eu sou a <strong>Lalá</strong>,
-    assistente virtual da Tralalá Festas! 🌸
-  </p>
+    <!-- CONVERSA -->
+    <div id="lala-conversa"
+         class="lala-conversa"
+         role="log"
+         aria-label="Conversa com Lalá"
+         aria-live="polite">
+    </div>
 
-  <p>
-    Estou aqui para ajudar você a escolher
-    o tema e o kit da sua comemoração! 🎈
-  </p>
+    <!-- ATENDIMENTO HUMANO -->
+    <div class="lala-area-humano">
 
-  <p class="aviso">
-    <strong>
-      ✨ Sou uma assistente virtual e posso
-      cometer errinhos ao entender suas mensagens.
-      Se isso acontecer, pode me corrigir, tá bem?
-      Vou fazer o possível para te ajudar! 💕
-    </strong>
-  </p>
-</div>
+      <button type="button"
+              id="btn-lala-humano"
+              class="lala-human-button">
+        🙋 Solicitar atendimento humano
+      </button>
 
-<!-- CONVERSA -->
-<div id="lala-conversa"
-     role="log"
-     aria-label="Conversa com Lalá"
-     style="display:grid;gap:10px;
-            max-height:260px;overflow-y:auto;
-            margin:15px 0;padding:10px;">
-</div>
+      <div id="lala-form-humano" hidden>
 
-<!-- MENSAGEM DO CLIENTE -->
-<form id="form-lala-mensagem"
-      style="display:grid;gap:10px;">
+        <p class="lala-ajuda-titulo">
+          Conte o que você precisa e nossa equipe
+          receberá sua solicitação. 💗
+        </p>
 
-  <label>
-    Sua mensagem
-    <textarea id="lala-mensagem"
-              rows="3"
-              maxlength="500"
-              required
-              placeholder="Ex.: qnt tá o kit basco do safare?">
-    </textarea>
-  </label>
+        <form id="form-ajuda">
 
-  <button type="submit"
-          class="botao primaria cheia">
-    💬 Enviar para a Lalá
-  </button>
-</form>
+          <label>
+            Como podemos ajudar?
+            <textarea id="ajuda-texto"
+                      required
+                      maxlength="1500"
+                      rows="3"
+                      placeholder="Escreva sua dúvida..."></textarea>
+          </label>
 
-<hr style="border:0;border-top:1px solid #eedde4;
-           margin:20px 0;">
+          <button class="botao primaria cheia"
+                  type="submit">
+            Enviar solicitação
+          </button>
 
-<p class="aviso">
-  Prefere falar diretamente com nossa equipe?
-  Use o formulário abaixo.
-</p>
+        </form>
 
+        <p role="status" id="status-ajuda"></p>
 
-<!-- ATENDIMENTO GUIADO DA LALÁ -->
-<div id="lala-orientacoes">
+      </div>
 
-  <p>
-    🌸 Oi! Sou a Lalá!
-    Como posso ajudar você?
-  </p>
+    </div>
 
-  <div class="abas">
+    <!-- CAMPO DE MENSAGEM -->
+    <form id="form-lala-mensagem"
+          class="lala-compositor">
 
-    <button type="button"
-            class="filtro"
-            data-lala-ajuda="kits">
-      🎁 Kits
-    </button>
+      <textarea id="lala-mensagem"
+                rows="1"
+                maxlength="500"
+                required
+                placeholder="Digite sua mensagem..."></textarea>
 
-    <button type="button"
-            class="filtro"
-            data-lala-ajuda="reservas">
-      📅 Reservas
-    </button>
+      <button type="submit"
+              class="lala-enviar"
+              aria-label="Enviar mensagem">
+        ➤
+      </button>
 
-    <button type="button"
-            class="filtro"
-            data-lala-ajuda="pagamentos">
-      💳 Pagamentos
-    </button>
-
-    <button type="button"
-            class="filtro"
-            data-lala-ajuda="humano">
-      🙋 Atendente
-    </button>
+    </form>
 
   </div>
 
-  <p id="lala-resposta"
-     role="status"
-     aria-live="polite">
-    Escolha uma opção acima. 💗
-  </p>
+</dialog>
 
-</div>
-
-    <form id="form-ajuda">
-      <label>
-        Como podemos ajudar?
-        <textarea id="ajuda-texto" required maxlength="1500"
-                  rows="4"
-                  placeholder="Conte o que você precisa..."></textarea>
-      </label>
-
-      <button class="botao primaria cheia" type="submit">
-        🚨 Solicitar atendimento humano
-      </button>
-    </form>
-
-    <p role="status" id="status-ajuda"></p>
-  </dialog>
 
   <div id="notificacao" role="status" aria-live="polite"></div>
 
