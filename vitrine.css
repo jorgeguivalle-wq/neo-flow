@@ -733,3 +733,261 @@ a:focus-visible {
     font-size: 20px;
   }
 }
+
+/* =====================================================
+   LALÁ 2.0 — CHAT BRANCO E ROSA
+   ===================================================== */
+
+.modal-lala {
+  width: min(95vw, 460px);
+  height: min(720px, 85vh);
+  max-height: 85vh;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #f0dce5;
+  border-radius: 22px;
+  background: #fff;
+}
+
+.lala-app {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+/* Cabeçalho */
+
+.lala-topo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 18px;
+  background: #fff0f6;
+  border-bottom: 1px solid #f1dce6;
+}
+
+.lala-avatar {
+  width: 43px;
+  height: 43px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: white;
+  font-size: 23px;
+}
+
+.lala-identidade {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lala-identidade strong {
+  color: #66394e;
+  font-size: 16px;
+}
+
+.lala-identidade span {
+  color: #638b70;
+  font-size: 12px;
+}
+
+.lala-identidade i {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 4px;
+  border-radius: 50%;
+  background: #54b879;
+}
+
+/* Apresentação */
+
+.lala-boas-vindas {
+  padding: 14px 18px 8px;
+  color: #68475a;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.lala-boas-vindas p {
+  margin: 5px 0;
+}
+
+/* Histórico da conversa */
+
+.lala-conversa {
+  flex: 1;
+  min-height: 120px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 15px;
+  background: #fff9fc;
+  scroll-behavior: smooth;
+}
+
+.lala-linha {
+  display: flex;
+  flex-direction: column;
+  max-width: 85%;
+}
+
+.lala-linha.cliente {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.lala-linha.bot {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.lala-mensagem {
+  padding: 11px 14px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.lala-mensagem.cliente {
+  color: #59364a;
+  background: #f8dce9;
+  border-bottom-right-radius: 5px;
+}
+
+.lala-mensagem.bot {
+  color: #4d4050;
+  background: white;
+  border: 1px solid #f0e3e9;
+  border-bottom-left-radius: 5px;
+}
+
+.lala-meta {
+  margin: 4px 5px 0;
+  color: #9b8993;
+  font-size: 10px;
+}
+
+/* Botão de atendimento humano */
+
+.lala-area-humano {
+  padding: 9px 14px;
+  background: white;
+  border-top: 1px solid #f3e5eb;
+}
+
+.lala-human-button {
+  display: block;
+  margin-left: auto;
+  padding: 9px 13px;
+  border: 1px solid #d99ab5;
+  border-radius: 20px;
+  background: white;
+  color: #a3536a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.lala-human-button:hover {
+  background: #fff0f6;
+}
+
+.lala-ajuda-titulo {
+  color: #68475a;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+#lala-form-humano form {
+  display: grid;
+  gap: 10px;
+}
+
+#lala-form-humano label {
+  display: grid;
+  gap: 6px;
+  color: #68475a;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+#lala-form-humano textarea {
+  width: 100%;
+  padding: 11px;
+  border: 1px solid #ead5df;
+  border-radius: 12px;
+  resize: vertical;
+}
+
+/* Campo de mensagem */
+
+.lala-compositor {
+  display: flex;
+  align-items: flex-end;
+  gap: 9px;
+  padding: 12px;
+  background: white;
+  border-top: 1px solid #f1dce6;
+}
+
+.lala-compositor textarea {
+  flex: 1;
+  min-width: 0;
+  max-height: 100px;
+  resize: none;
+  padding: 12px 15px;
+  border: 1px solid #ecd8e2;
+  border-radius: 22px;
+  outline: none;
+  background: #fff8fb;
+  color: #493747;
+  font-size: 14px;
+}
+
+.lala-compositor textarea:focus {
+  border-color: #d99ab5;
+}
+
+.lala-enviar {
+  flex-shrink: 0;
+  width: 43px;
+  height: 43px;
+  border: 0;
+  border-radius: 50%;
+  background: #a3536a;
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.lala-enviar:hover {
+  background: #863951;
+}
+
+/* Celular */
+
+@media (max-width: 520px) {
+  .modal-lala {
+    width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    max-width: none;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  .lala-app {
+    height: 100%;
+  }
+
+  .lala-human-button {
+    font-size: 11px;
+  }
+}
