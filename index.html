@@ -3009,6 +3009,793 @@ vitrine: 'tp-vitrine',
     $('tp-contrato-abrir').addEventListener('click', () => {
       $('btn-abrir-gerador-contrato')?.click();
     });
+    
+    // =========================================
+    // GESTÃO 3D - MÓDULO COMPLETO
+    // =========================================
+
+    if (!$('tp-pagina-gestao-3d')) {
+      const pagina3D = document.createElement('section');
+      pagina3D.id = 'tp-pagina-gestao-3d';
+
+      pagina3D.innerHTML = `
+        <style>
+          #tp-pagina-gestao-3d {padding:22px;color:#263044}
+          #tp-pagina-gestao-3d .g3-cards {
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(175px,1fr));
+            gap:13px;margin:18px 0
+          }
+          #tp-pagina-gestao-3d .g3-card {
+            background:white;border:1px solid #eadde2;
+            border-radius:13px;padding:18px;text-align:left;
+            cursor:pointer;color:#263044
+          }
+          #tp-pagina-gestao-3d .g3-card:hover {border-color:#a3536a}
+          #tp-pagina-gestao-3d .g3-card strong {display:block;margin:8px 0}
+          #tp-pagina-gestao-3d .g3-card small {color:#718096}
+          #tp-pagina-gestao-3d .g3-painel {
+            background:white;border:1px solid #eadde2;
+            border-radius:13px;padding:18px;margin-top:15px
+          }
+          #tp-pagina-gestao-3d .g3-form {
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+            gap:12px;margin:16px 0
+          }
+          #tp-pagina-gestao-3d .g3-campo {
+            display:flex;flex-direction:column;gap:5px
+          }
+          #tp-pagina-gestao-3d .g3-campo label {
+            font-size:12px;font-weight:600
+          }
+          #tp-pagina-gestao-3d input,
+          #tp-pagina-gestao-3d select {
+            width:100%;box-sizing:border-box;padding:10px;
+            border:1px solid #ddd;border-radius:8px;font:inherit
+          }
+          #tp-pagina-gestao-3d .g3-btn {
+            border:0;border-radius:8px;padding:10px 14px;
+            background:#a3536a;color:white;cursor:pointer;
+            font-weight:600
+          }
+          #tp-pagina-gestao-3d .g3-sec {
+            background:#f5e9ed;color:#91455d
+          }
+          #tp-pagina-gestao-3d .g3-tabela-wrap {overflow-x:auto}
+          #tp-pagina-gestao-3d table {
+            width:100%;border-collapse:collapse;margin-top:15px
+          }
+          #tp-pagina-gestao-3d th,
+          #tp-pagina-gestao-3d td {
+            border-bottom:1px solid #eee;padding:10px;
+            text-align:left;font-size:13px
+          }
+          #tp-pagina-gestao-3d th {background:#fbf4f6}
+          #tp-pagina-gestao-3d .g3-resumo {
+            background:#fbf4f6;border-radius:10px;
+            padding:15px;margin:12px 0
+          }
+          #tp-pagina-gestao-3d .g3-aviso {
+            padding:12px;border-radius:9px;
+            background:#fff5e8;color:#80551b;margin:12px 0
+          }
+          #tp-pagina-gestao-3d .g3-status {min-width:130px}
+          @media(max-width:600px) {
+            #tp-pagina-gestao-3d {padding:12px}
+            #tp-pagina-gestao-3d .g3-painel {padding:12px}
+          }
+        </style>
+
+        <header>
+          <h2>🖨️ Gestão 3D</h2>
+          <p>Controle de pedidos, peças, produção, filamentos e custos.</p>
+        </header>
+
+        <div id="g3-inicio">
+          <div class="g3-resumo" id="g3-resumo">
+            Carregando...
+          </div>
+
+          <div class="g3-cards">
+            <button class="g3-card" data-g3-tela="pedidos">
+              <span>📥</span>
+              <strong>Pedidos 3D</strong>
+              <small>Cadastre e acompanhe encomendas.</small>
+            </button>
+
+            <button class="g3-card" data-g3-tela="pecas">
+              <span>🧸</span>
+              <strong>Cadastro de peças</strong>
+              <small>Modelos, peso, impressão e preço.</small>
+            </button>
+
+            <button class="g3-card" data-g3-tela="producao">
+              <span>⚙️</span>
+              <strong>Produção</strong>
+              <small>Acompanhe as etapas.</small>
+            </button>
+
+            <button class="g3-card" data-g3-tela="filamentos">
+              <span>🧵</span>
+              <strong>Filamentos</strong>
+              <small>Estoque, cores e custo.</small>
+            </button>
+
+            <button class="g3-card" data-g3-tela="custos">
+              <span>💰</span>
+              <strong>Calculadora de custos</strong>
+              <small>Calcule o preço de venda.</small>
+            </button>
+          </div>
+        </div>
+
+        <div id="g3-detalhes" hidden>
+          <button class="g3-btn g3-sec" data-g3-voltar>
+            ← Voltar
+          </button>
+          <div class="g3-painel" id="g3-conteudo"></div>
+        </div>
+      `;
+
+      secao.appendChild(pagina3D);
+      modulos.gestao3d = [pagina3D];
+
+      const g3 = {
+        db:null,
+        uid:null,
+        pronto:false,
+        carregando:false,
+        tela:'inicio',
+        dados:{
+          pedidos:{},
+          pecas:{},
+          filamentos:{}
+        }
+      };
+
+      const g3El = id => pagina3D.querySelector('#' + id);
+
+      const g3Esc = valor =>
+        String(valor ?? '').replace(/[&<>"']/g, c => ({
+          '&':'&amp;',
+          '<':'&lt;',
+          '>':'&gt;',
+          '"':'&quot;',
+          "'":'&#39;'
+        }[c]));
+
+      const g3Num = valor => {
+        const n = Number(String(valor ?? '').replace(',', '.'));
+        return Number.isFinite(n) ? n : 0;
+      };
+
+      const g3Dinheiro = valor =>
+        g3Num(valor).toLocaleString('pt-BR',{
+          style:'currency',
+          currency:'BRL'
+        });
+
+      const g3Lista = tipo =>
+        Object.entries(g3.dados[tipo] || {});
+
+      async function g3Inicializar() {
+        const state = window.State;
+        const uid = state?.usuarioUID;
+        const banco = state?.db;
+
+        if (!uid || !banco) {
+          g3El('g3-resumo').textContent =
+            'Faça login para acessar a Gestão 3D.';
+          return false;
+        }
+
+        if (g3.pronto && g3.uid === uid) return true;
+        if (g3.carregando) return false;
+
+        g3.carregando = true;
+        g3.uid = uid;
+        g3.db = banco;
+
+        try {
+          const snap = await banco.ref(
+            'gestao3d/' + uid
+          ).once('value');
+
+          const dados = snap.val() || {};
+
+          g3.dados = {
+            pedidos:dados.pedidos || {},
+            pecas:dados.pecas || {},
+            filamentos:dados.filamentos || {}
+          };
+
+          g3.pronto = true;
+          g3Resumo();
+          return true;
+
+        } catch (erro) {
+          console.error('Gestão 3D:',erro);
+          g3El('g3-resumo').textContent =
+            'Erro ao carregar. Confira sua conexão e as regras do Firebase.';
+          return false;
+
+        } finally {
+          g3.carregando = false;
+        }
+      }
+
+      async function g3Salvar(tipo,id,dados) {
+        if (!g3.db || !g3.uid) {
+          throw new Error('Faça login novamente.');
+        }
+
+        await g3.db.ref(
+          'gestao3d/' + g3.uid + '/' + tipo + '/' + id
+        ).set(dados);
+
+        g3.dados[tipo][id] = dados;
+      }
+
+      async function g3Excluir(tipo,id) {
+        if (!confirm('Deseja excluir este registro?')) return;
+
+        await g3.db.ref(
+          'gestao3d/' + g3.uid + '/' + tipo + '/' + id
+        ).remove();
+
+        delete g3.dados[tipo][id];
+        g3Render();
+      }
+
+      function g3Resumo() {
+        const pedidos = g3Lista('pedidos');
+        const pecas = g3Lista('pecas');
+        const filamentos = g3Lista('filamentos');
+
+        const abertos = pedidos.filter(([,p]) =>
+          !['Concluído','Cancelado'].includes(p.status)
+        ).length;
+
+        g3El('g3-resumo').innerHTML = `
+          <strong>📊 Resumo da Gestão 3D</strong>
+          <div class="g3-cards">
+            <div><strong>${pedidos.length}</strong><br>
+              <small>Pedidos cadastrados</small></div>
+            <div><strong>${abertos}</strong><br>
+              <small>Pedidos em andamento</small></div>
+            <div><strong>${pecas.length}</strong><br>
+              <small>Peças cadastradas</small></div>
+            <div><strong>${filamentos.length}</strong><br>
+              <small>Filamentos cadastrados</small></div>
+          </div>
+        `;
+      }
+
+      function g3Tabela(cabecalho,linhas) {
+        return `
+          <div class="g3-tabela-wrap">
+            <table>
+              <thead>
+                <tr>${cabecalho.map(x => `<th>${x}</th>`).join('')}</tr>
+              </thead>
+              <tbody>
+                ${linhas || `
+                  <tr><td colspan="${cabecalho.length}">
+                    Nenhum registro cadastrado.
+                  </td></tr>
+                `}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      function g3Campo(nome,label,tipo='text') {
+        return `
+          <div class="g3-campo">
+            <label>${label}</label>
+            <input name="${nome}" type="${tipo}"
+              ${tipo === 'number' ? 'min="0" step="any"' : ''}
+              required>
+          </div>
+        `;
+      }
+
+      function g3Pedidos() {
+        const linhas = g3Lista('pedidos').map(([id,p]) => `
+          <tr>
+            <td>${g3Esc(p.cliente)}</td>
+            <td>${g3Esc(p.peca)}</td>
+            <td>${g3Esc(p.quantidade)}</td>
+            <td>
+              <select data-g3-status="${g3Esc(id)}">
+                ${[
+                  'Recebido',
+                  'Em produção',
+                  'Em acabamento',
+                  'Concluído',
+                  'Cancelado'
+                ].map(s => `
+                  <option value="${s}" ${p.status === s ? 'selected' : ''}>
+                    ${s}
+                  </option>
+                `).join('')}
+              </select>
+            </td>
+            <td>${g3Dinheiro(p.valor)}</td>
+            <td>
+              <button class="g3-btn g3-sec"
+                data-g3-excluir="pedidos"
+                data-id="${g3Esc(id)}">Excluir</button>
+            </td>
+          </tr>
+        `).join('');
+
+        return `
+          <h3>📥 Pedidos 3D</h3>
+
+          <form class="g3-form" data-g3-form="pedido">
+            ${g3Campo('cliente','Nome do cliente')}
+            ${g3Campo('peca','Peça solicitada')}
+            ${g3Campo('quantidade','Quantidade','number')}
+            ${g3Campo('valor','Valor combinado (R$)','number')}
+            ${g3Campo('entrega','Data de entrega','date')}
+
+            <div class="g3-campo">
+              <label>Status</label>
+              <select name="status">
+                <option>Recebido</option>
+                <option>Em produção</option>
+                <option>Em acabamento</option>
+                <option>Concluído</option>
+                <option>Cancelado</option>
+              </select>
+            </div>
+
+            <div class="g3-campo">
+              <label>Observações</label>
+              <input name="observacoes">
+            </div>
+
+            <button class="g3-btn" type="submit">
+              + Cadastrar pedido
+            </button>
+          </form>
+
+          ${g3Tabela(
+            ['Cliente','Peça','Qtd.','Status','Valor','Ações'],
+            linhas
+          )}
+        `;
+      }
+
+      function g3Pecas() {
+        const linhas = g3Lista('pecas').map(([id,p]) => `
+          <tr>
+            <td>${g3Esc(p.nome)}</td>
+            <td>${g3Esc(p.categoria)}</td>
+            <td>${g3Esc(p.peso)} g</td>
+            <td>${g3Esc(p.tempo)} h</td>
+            <td>${g3Dinheiro(p.preco)}</td>
+            <td>
+              <button class="g3-btn g3-sec"
+                data-g3-excluir="pecas"
+                data-id="${g3Esc(id)}">Excluir</button>
+            </td>
+          </tr>
+        `).join('');
+
+        return `
+          <h3>🧸 Cadastro de peças</h3>
+
+          <form class="g3-form" data-g3-form="peca">
+            ${g3Campo('nome','Nome da peça')}
+            ${g3Campo('categoria','Categoria')}
+            ${g3Campo('peso','Peso em gramas','number')}
+            ${g3Campo('tempo','Tempo de impressão (horas)','number')}
+            ${g3Campo('preco','Preço de venda (R$)','number')}
+
+            <div class="g3-campo">
+              <label>Descrição</label>
+              <input name="descricao">
+            </div>
+
+            <button class="g3-btn" type="submit">
+              + Cadastrar peça
+            </button>
+          </form>
+
+          ${g3Tabela(
+            ['Peça','Categoria','Peso','Tempo','Preço','Ações'],
+            linhas
+          )}
+        `;
+      }
+
+      function g3Filamentos() {
+        const linhas = g3Lista('filamentos').map(([id,f]) => `
+          <tr>
+            <td>${g3Esc(f.material)}</td>
+            <td>${g3Esc(f.cor)}</td>
+            <td>${g3Esc(f.peso)} g</td>
+            <td>${g3Esc(f.restante)} g</td>
+            <td>${g3Dinheiro(f.custo)}</td>
+            <td>
+              <button class="g3-btn g3-sec"
+                data-g3-excluir="filamentos"
+                data-id="${g3Esc(id)}">Excluir</button>
+            </td>
+          </tr>
+        `).join('');
+
+        return `
+          <h3>🧵 Filamentos e materiais</h3>
+
+          <form class="g3-form" data-g3-form="filamento">
+            <div class="g3-campo">
+              <label>Material</label>
+              <select name="material">
+                <option>PETG</option>
+                <option>PLA</option>
+                <option>ABS</option>
+                <option>TPU</option>
+                <option>Outro</option>
+              </select>
+            </div>
+
+            ${g3Campo('cor','Cor')}
+            ${g3Campo('peso','Peso total do rolo (g)','number')}
+            ${g3Campo('restante','Quantidade restante (g)','number')}
+            ${g3Campo('custo','Preço pago pelo rolo (R$)','number')}
+
+            <button class="g3-btn" type="submit">
+              + Cadastrar filamento
+            </button>
+          </form>
+
+          ${g3Tabela(
+            ['Material','Cor','Rolo','Restante','Custo','Ações'],
+            linhas
+          )}
+        `;
+      }
+
+      function g3Producao() {
+        const pedidos = g3Lista('pedidos').filter(([,p]) =>
+          !['Concluído','Cancelado'].includes(p.status)
+        );
+
+        const linhas = pedidos.map(([id,p]) => `
+          <tr>
+            <td>${g3Esc(p.cliente)}</td>
+            <td>${g3Esc(p.peca)}</td>
+            <td>${g3Esc(p.quantidade)}</td>
+            <td>
+              <select data-g3-status="${g3Esc(id)}">
+                ${[
+                  'Recebido',
+                  'Em produção',
+                  'Em acabamento',
+                  'Concluído',
+                  'Cancelado'
+                ].map(s => `
+                  <option value="${s}" ${p.status === s ? 'selected' : ''}>
+                    ${s}
+                  </option>
+                `).join('')}
+              </select>
+            </td>
+            <td>${p.entrega ? g3Esc(p.entrega) : 'Não informada'}</td>
+          </tr>
+        `).join('');
+
+        return `
+          <h3>⚙️ Controle de produção</h3>
+          <div class="g3-resumo">
+            Atualize o status conforme cada peça avança na produção.
+          </div>
+          ${g3Tabela(
+            ['Cliente','Peça','Quantidade','Etapa','Entrega'],
+            linhas
+          )}
+        `;
+      }
+
+      function g3Custos() {
+        const filamentos = g3Lista('filamentos');
+
+        const opcoes = filamentos.map(([id,f]) => `
+          <option value="${g3Esc(id)}">
+            ${g3Esc(f.material)} - ${g3Esc(f.cor)}
+          </option>
+        `).join('');
+
+        return `
+          <h3>💰 Calculadora de custos</h3>
+
+          <div class="g3-aviso">
+            O cálculo utiliza o preço e o peso total do rolo cadastrado.
+          </div>
+
+          ${!filamentos.length ? `
+            <div class="g3-aviso">
+              Cadastre um filamento antes de calcular.
+            </div>
+          ` : ''}
+
+          <form class="g3-form" data-g3-form="custos">
+            <div class="g3-campo">
+              <label>Filamento</label>
+              <select name="filamento" required>
+                <option value="">Selecione</option>
+                ${opcoes}
+              </select>
+            </div>
+
+            ${g3Campo('gramas','Peso utilizado (g)','number')}
+            ${g3Campo('horas','Tempo de impressão (h)','number')}
+
+            <div class="g3-campo">
+              <label>Consumo da impressora (kW)</label>
+              <input name="consumo" type="number"
+                min="0" step="any" value="0.12" required>
+            </div>
+
+            <div class="g3-campo">
+              <label>Preço do kWh (R$)</label>
+              <input name="energia" type="number"
+                min="0" step="any" value="0.90" required>
+            </div>
+
+            ${g3Campo('acabamento','Acabamento (R$)','number')}
+            ${g3Campo('margem','Margem de lucro (%)','number')}
+
+            <button class="g3-btn" type="submit">
+              Calcular preço
+            </button>
+          </form>
+
+          <div id="g3-resultado-custos"></div>
+        `;
+      }
+
+      function g3Render() {
+        g3Resumo();
+
+        const telas = {
+          pedidos:g3Pedidos,
+          pecas:g3Pecas,
+          producao:g3Producao,
+          filamentos:g3Filamentos,
+          custos:g3Custos
+        };
+
+        if (g3.tela === 'inicio') {
+          g3El('g3-inicio').hidden = false;
+          g3El('g3-detalhes').hidden = true;
+          return;
+        }
+
+        g3El('g3-inicio').hidden = true;
+        g3El('g3-detalhes').hidden = false;
+
+        g3El('g3-conteudo').innerHTML =
+          telas[g3.tela] ? telas[g3.tela]() : '';
+      }
+
+      async function g3AbrirTela(tela) {
+        const ok = await g3Inicializar();
+        if (!ok) return;
+
+        g3.tela = tela;
+        g3Render();
+      }
+
+      // Disponibiliza a abertura para a navegação principal.
+      pagina3D._tpAbrir = async () => {
+        const ok = await g3Inicializar();
+        if (ok) {
+          g3.tela = 'inicio';
+          g3Render();
+        }
+      };
+
+      pagina3D.addEventListener('click', async evento => {
+        const card = evento.target.closest('[data-g3-tela]');
+        const voltar = evento.target.closest('[data-g3-voltar]');
+        const excluir = evento.target.closest('[data-g3-excluir]');
+
+        if (card) {
+          await g3AbrirTela(card.dataset.g3Tela);
+          return;
+        }
+
+        if (voltar) {
+          g3.tela = 'inicio';
+          g3Render();
+          return;
+        }
+
+        if (excluir) {
+          try {
+            await g3Excluir(
+              excluir.dataset.g3Excluir,
+              excluir.dataset.id
+            );
+          } catch (erro) {
+            console.error(erro);
+            alert('Erro ao excluir o registro.');
+          }
+        }
+      });
+
+      pagina3D.addEventListener('change', async evento => {
+        const select = evento.target.closest('[data-g3-status]');
+        if (!select) return;
+
+        const id = select.dataset.g3Status;
+        const pedido = g3.dados.pedidos[id];
+        if (!pedido) return;
+
+        try {
+          await g3Salvar('pedidos',id,{
+            ...pedido,
+            status:select.value,
+            atualizadoEm:Date.now()
+          });
+
+          g3Render();
+
+        } catch (erro) {
+          console.error(erro);
+          alert('Não foi possível atualizar o status.');
+        }
+      });
+
+      pagina3D.addEventListener('submit', async evento => {
+        const form = evento.target.closest('[data-g3-form]');
+        if (!form) return;
+
+        evento.preventDefault();
+
+        const tipo = form.dataset.g3Form;
+        const dados = Object.fromEntries(
+          new FormData(form).entries()
+        );
+
+        const botao = form.querySelector('[type="submit"]');
+        if (botao) {
+          botao.disabled = true;
+          botao.textContent = 'Salvando...';
+        }
+
+        try {
+          if (tipo === 'custos') {
+            const filamento = g3.dados.filamentos[dados.filamento];
+            if (!filamento) throw new Error('Selecione um filamento.');
+
+            const pesoRolo = g3Num(filamento.peso);
+            const restante = g3Num(filamento.restante);
+            const gramas = g3Num(dados.gramas);
+            const horas = g3Num(dados.horas);
+            const consumo = g3Num(dados.consumo);
+            const energia = g3Num(dados.energia);
+            const acabamento = g3Num(dados.acabamento);
+            const margem = g3Num(dados.margem);
+
+            if (pesoRolo <= 0 || gramas <= 0) {
+              throw new Error('Confira o peso do rolo e da peça.');
+            }
+
+            const custoGrama = g3Num(filamento.custo) / pesoRolo;
+            const custoFilamento = custoGrama * gramas;
+            const custoEnergia = consumo * horas * energia;
+            const custoTotal =
+              custoFilamento + custoEnergia + acabamento;
+            const precoSugerido =
+              custoTotal * (1 + margem / 100);
+
+            g3El('g3-resultado-custos').innerHTML = `
+              <div class="g3-resumo">
+                <strong>Resultado do cálculo</strong><br>
+                Filamento: ${g3Dinheiro(custoFilamento)}<br>
+                Energia estimada: ${g3Dinheiro(custoEnergia)}<br>
+                Acabamento: ${g3Dinheiro(acabamento)}<br>
+                <hr>
+                Custo total: <strong>${g3Dinheiro(custoTotal)}</strong><br>
+                Preço sugerido: <strong>${g3Dinheiro(precoSugerido)}</strong>
+                <br><small>Margem aplicada sobre o custo.</small>
+                ${restante < gramas ? `
+                  <p class="g3-aviso">
+                    Atenção: o estoque cadastrado não tem gramas suficientes.
+                  </p>
+                ` : ''}
+              </div>
+            `;
+
+            return;
+          }
+
+          const id = g3.db.ref().push().key;
+          let registro = {
+            criadoEm:Date.now()
+          };
+
+          if (tipo === 'pedido') {
+            registro = {
+              ...registro,
+              ...dados,
+              quantidade:Math.max(1,g3Num(dados.quantidade)),
+              valor:Math.max(0,g3Num(dados.valor))
+            };
+
+            await g3Salvar('pedidos',id,registro);
+
+          } else if (tipo === 'peca') {
+            registro = {
+              ...registro,
+              ...dados,
+              peso:Math.max(0,g3Num(dados.peso)),
+              tempo:Math.max(0,g3Num(dados.tempo)),
+              preco:Math.max(0,g3Num(dados.preco))
+            };
+
+            await g3Salvar('pecas',id,registro);
+
+          } else if (tipo === 'filamento') {
+            const peso = Math.max(0,g3Num(dados.peso));
+            const restante = Math.max(0,g3Num(dados.restante));
+
+            if (peso <= 0 || restante > peso) {
+              throw new Error('Confira o peso total e o restante do rolo.');
+            }
+
+            registro = {
+              ...registro,
+              ...dados,
+              peso,
+              restante,
+              custo:Math.max(0,g3Num(dados.custo))
+            };
+
+            await g3Salvar('filamentos',id,registro);
+          }
+
+          alert('Registro salvo no Firebase!');
+          g3Render();
+
+        } catch (erro) {
+          console.error(erro);
+          alert(erro.message || 'Não foi possível salvar.');
+
+        } finally {
+          if (botao) {
+            botao.disabled = false;
+            botao.textContent = 'Salvar';
+          }
+        }
+      });
+
+      // Botão de navegação lateral
+      if (!menu.querySelector('[data-pagina="gestao3d"]')) {
+        const btn3D = document.createElement('button');
+        btn3D.type = 'button';
+        btn3D.className = 'tp-nav';
+        btn3D.dataset.pagina = 'gestao3d';
+        btn3D.textContent = '🖨️ Gestão 3D';
+
+        const config = menu.querySelector(
+          '[data-pagina="configuracoes"]'
+        );
+
+        if (config) {
+          config.insertAdjacentElement('beforebegin',btn3D);
+        } else {
+          menu.appendChild(btn3D);
+        }
+      }
+    }
 
     // O menu Campanhas agora tem o seu próprio item.
     if (!menu.querySelector('[data-pagina="campanhas"]')) {
@@ -3023,7 +3810,6 @@ vitrine: 'tp-vitrine',
       else if (botaoConfig) botaoConfig.insertAdjacentElement('beforebegin', btn);
       else menu.appendChild(btn);
     }
-
     // O cabeçalho da área de acesso e o ponto eletrônico ficam na reserva.
     // Podem ser adicionados a outra página depois, se você desejar.
     const barraUsuario = secao.querySelector('.usuario-logado');
