@@ -187,6 +187,95 @@
   #tp-sidebar .tp-nav.ativo {background:#fceef2;color:#91455d;font-weight:700;}
   @media(max-width:850px){#secao-verificador.tp-isolado > .tp-modulo-visivel{grid-column:1;}}
 }
+  /* ===== GERENCIADOR DE CATEGORIAS DA VITRINE ===== */
+#tp-vitrine-categorias-box {
+  background: #fff;
+  border: 1.5px solid #e1cbd4;
+  border-radius: 12px;
+  padding: 18px;
+  margin-top: 15px;
+}
+#tp-vitrine-categorias-box h4 {
+  margin: 0 0 12px 0;
+  color: #a3536a;
+  font-size: 14px;
+}
+.tp-vit-cat-linha {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.tp-vit-cat-linha input {
+  flex: 1;
+  min-width: 180px;
+  padding: 10px 12px;
+  border: 1.5px solid #e1cbd4;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+}
+.tp-vit-cat-linha button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #a3536a;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.tp-vit-cat-linha button:hover { background: #8e5868; }
+#tp-vit-cat-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+.tp-vit-cat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #fdfbfc;
+  border: 1px solid #f1e6f5;
+  border-radius: 8px;
+}
+.tp-vit-cat-item span {
+  font-weight: 600;
+  color: #5a3a44;
+  font-size: 13px;
+}
+.tp-vit-cat-item .tp-vit-cat-acoes {
+  display: flex;
+  gap: 6px;
+}
+.tp-vit-cat-item .tp-vit-cat-acoes button {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  transition: transform 0.15s;
+}
+.tp-vit-cat-item .tp-vit-cat-acoes button:hover { transform: scale(1.1); }
+.tp-vit-cat-edit { background: #fff3e0; color: #e65100; }
+.tp-vit-cat-del  { background: #ffebee; color: #c62828; }
+.tp-vit-cat-vazio {
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+  padding: 15px;
+}
+#tp-vit-cat-status {
+  font-size: 12px;
+  margin-top: 8px;
+  min-height: 16px;
+  color: #27ae60;
+}
 </style>
 </head>
 <body>
@@ -2262,7 +2351,257 @@
 
   <!-- SCRIPTS -->
   <script src="app.js"></script>
-      
+  <script>
+/* ============================================================
+   GERENCIADOR DE CATEGORIAS DA VITRINE — AUTOCONTIDO
+   Caminho Firebase: vitrine_categorias/{uid}
+   NÃO altera categorias do estoque, Lalá, pedidos ou reservas.
+   ============================================================ */
+(function () {
+  "use strict";
+
+    const CAMINHO = "categorias/vitrine";
+  let categoriasVitrine = [];
+  let desenhoPronto = false;
+
+  function uid() {
+    // Reaproveita o padrão do sistema (State.usuarioUID) com fallback
+    return (window.State && window.State.usuarioUID) ||
+           (window.auth && window.auth.currentUser && window.auth.currentUser.uid) ||
+           null;
+  }
+
+  function refCategorias() {
+    const u = uid();
+    if (!u || typeof db === "undefined" || !db) {
+      throw new Error("Usuário não autenticado ou Firebase indisponível.");
+    }
+    return db.ref(CAMINHO + "/" + u);
+  }
+
+  function status(msg, cor) {
+    const el = document.getElementById("tp-vit-cat-status");
+    if (!el) return;
+    el.textContent = msg || "";
+    el.style.color = cor || "#27ae60";
+  }
+
+  function renderizarLista() {
+    const lista = document.getElementById("tp-vit-cat-lista");
+    if (!lista) return;
+    lista.replaceChildren();
+
+    if (!categoriasVitrine.length) {
+      const vazio = document.createElement("div");
+      vazio.className = "tp-vit-cat-vazio";
+      vazio.textContent = "Nenhuma categoria cadastrada ainda.";
+      lista.appendChild(vazio);
+      return;
+    }
+
+    categoriasVitrine.forEach(function (cat, idx) {
+      const item = document.createElement("div");
+      item.className = "tp-vit-cat-item";
+
+      const nome = document.createElement("span");
+      nome.textContent = cat.nome || "(sem nome)";
+      item.appendChild(nome);
+
+      const acoes = document.createElement("div");
+      acoes.className = "tp-vit-cat-acoes";
+
+      const btnEdit = document.createElement("button");
+      btnEdit.type = "button";
+      btnEdit.className = "tp-vit-cat-edit";
+      btnEdit.title = "Renomear";
+      btnEdit.textContent = "✏️";
+      btnEdit.onclick = function () { renomear(idx); };
+      acoes.appendChild(btnEdit);
+
+      const btnDel = document.createElement("button");
+      btnDel.type = "button";
+      btnDel.className = "tp-vit-cat-del";
+      btnDel.title = "Excluir";
+      btnDel.textContent = "🗑️";
+      btnDel.onclick = function () { excluir(idx); };
+      acoes.appendChild(btnDel);
+
+      item.appendChild(acoes);
+      lista.appendChild(item);
+    });
+  }
+
+  function salvar() {
+    return refCategorias().set(categoriasVitrine).then(function () {
+      status("✅ Categorias salvas.", "#27ae60");
+    }).catch(function (e) {
+      console.error(e);
+      status("❌ " + e.message, "#c62828");
+      throw e;
+    });
+  }
+
+  function adicionar() {
+    const input = document.getElementById("tp-vit-cat-input");
+    if (!input) return;
+    const nome = (input.value || "").trim();
+    if (!nome) { status("Digite um nome.", "#c62828"); return; }
+    if (categoriasVitrine.some(function (c) {
+      return (c.nome || "").toLowerCase() === nome.toLowerCase();
+    })) {
+      status("Essa categoria já existe.", "#c62828");
+      return;
+    }
+    categoriasVitrine.push({ nome: nome, id: "cat_" + Date.now() });
+    input.value = "";
+    renderizarLista();
+    salvar();
+  }
+
+  function renomear(idx) {
+    const atual = categoriasVitrine[idx];
+    if (!atual) return;
+    const novo = prompt("Novo nome da categoria:", atual.nome);
+    if (novo === null) return;
+    const limpo = novo.trim();
+    if (!limpo) { status("Nome vazio — nada alterado.", "#c62828"); return; }
+    if (categoriasVitrine.some(function (c, i) {
+      return i !== idx && (c.nome || "").toLowerCase() === limpo.toLowerCase();
+    })) {
+      status("Já existe uma categoria com esse nome.", "#c62828");
+      return;
+    }
+    atual.nome = limpo;
+    renderizarLista();
+    salvar();
+  }
+
+  function excluir(idx) {
+    const atual = categoriasVitrine[idx];
+    if (!atual) return;
+    if (!confirm('Excluir a categoria "' + atual.nome + '"?')) return;
+    categoriasVitrine.splice(idx, 1);
+    renderizarLista();
+    salvar();
+  }
+
+  function montarPainel() {
+    const container = document.getElementById("tp-vitrine-conteudo");
+    if (!container) return;
+    container.replaceChildren();
+
+    const box = document.createElement("div");
+    box.id = "tp-vitrine-categorias-box";
+
+    const titulo = document.createElement("h4");
+    titulo.textContent = "🏷️ Categorias da Vitrine";
+    box.appendChild(titulo);
+
+    const linha = document.createElement("div");
+    linha.className = "tp-vit-cat-linha";
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.id = "tp-vit-cat-input";
+    input.placeholder = "Nome da nova categoria (ex: Infantil, Casamento...)";
+    input.autocomplete = "off";
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); adicionar(); }
+    });
+    linha.appendChild(input);
+
+    const btnAdd = document.createElement("button");
+    btnAdd.type = "button";
+    btnAdd.textContent = "➕ Adicionar";
+    btnAdd.onclick = adicionar;
+    linha.appendChild(btnAdd);
+
+    box.appendChild(linha);
+
+    const lista = document.createElement("div");
+    lista.id = "tp-vit-cat-lista";
+    box.appendChild(lista);
+
+    const st = document.createElement("div");
+    st.id = "tp-vit-cat-status";
+    box.appendChild(st);
+
+    container.appendChild(box);
+
+    renderizarLista();
+    status("Carregando categorias...", "#999");
+    refCategorias().once("value").then(function (snap) {
+      const val = snap.val();
+      categoriasVitrine = Array.isArray(val) ? val : (val ? Object.values(val) : []);
+      renderizarLista();
+      status(categoriasVitrine.length + " categoria(s) carregada(s).", "#27ae60");
+    }).catch(function (e) {
+      console.error(e);
+      status("❌ Não foi possível carregar: " + e.message, "#c62828");
+    });
+  }
+
+  function liberarBotaoAdmin() {
+    const btn = document.getElementById("btn-vitrine-categorias");
+    if (!btn) return;
+    if (uid()) {
+      btn.style.display = "";
+    } else {
+      btn.style.display = "none";
+    }
+  }
+
+  // Delegação: intercepta clique no card data-vitrine="categorias"
+  document.addEventListener("click", function (e) {
+    const alvo = e.target.closest && e.target.closest('[data-vitrine="categorias"]');
+    if (!alvo) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!uid()) {
+      alert("Faça login para gerenciar categorias.");
+      return;
+    }
+
+    // Esconde o menu principal e mostra o painel de detalhes da vitrine
+    const menu = document.getElementById("tp-vitrine-menu");
+    const detalhes = document.getElementById("tp-vitrine-detalhes");
+    const tituloEl = document.getElementById("tp-vitrine-titulo");
+    const descEl = document.getElementById("tp-vitrine-descricao");
+
+    // A sua aba tem apenas #tp-vitrine-detalhes; o grid de cards fica solto.
+    // Então escondemos o grid via seletor direto:
+    const grid = alvo.parentElement;
+    if (grid && grid.classList.contains("tp-config-grid")) grid.hidden = true;
+    if (menu) menu.hidden = true;
+
+    if (detalhes) detalhes.hidden = false;
+    if (tituloEl) tituloEl.textContent = "🏷️ Gerenciar Categorias da Vitrine";
+    if (descEl) descEl.textContent = "Adicione, renomeie ou exclua categorias usadas no catálogo público.";
+
+    montarPainel();
+  }, true);
+
+  // Libera o botão quando o app iniciar / após login
+  document.addEventListener("DOMContentLoaded", function () {
+    setTimeout(liberarBotaoAdmin, 800);
+    setTimeout(liberarBotaoAdmin, 2500);
+  });
+
+  // Expõe utilitário público para uso futuro no cadastro de produtos da vitrine
+  window.VitrineCategorias = {
+    listar: function () {
+      return refCategorias().once("value").then(function (s) {
+        const v = s.val();
+        return Array.isArray(v) ? v : (v ? Object.values(v) : []);
+      });
+    },
+    nomes: function () {
+      return categoriasVitrine.map(function (c) { return c.nome; });
+    }
+  };
+})();
+</script>    
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <script>
