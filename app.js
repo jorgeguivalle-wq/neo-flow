@@ -3260,7 +3260,34 @@ async function listarMinhasPlanilhas() {
 
 function bindTudo() {
   var b;
-  
+    // ==========================================
+  // ATUALIZAÇÃO AUTOMÁTICA DOS VALORES
+  // ==========================================
+  ["valor-festa", "valor-sinal"].forEach(function(id) {
+    var campo = document.getElementById(id);
+
+    if (campo) {
+      campo.addEventListener("input", recalcularTotais);
+      campo.addEventListener("change", recalcularTotais);
+    }
+  });
+
+  // Atualizar valores quando o frete mudar
+  ["calc-km", "calc-valor-litro", "chk-segunda-viagem"].forEach(function(id) {
+    var campo = document.getElementById(id);
+
+    if (campo) {
+      campo.addEventListener("input", function() {
+        FreteCalc.renderizar();
+      });
+
+      campo.addEventListener("change", function() {
+        FreteCalc.renderizar();
+      });
+    }
+  });
+
+  recalcularTotais();
   // ==========================================
   // SALVAR PEÇA NO ACERVO
   // ==========================================
